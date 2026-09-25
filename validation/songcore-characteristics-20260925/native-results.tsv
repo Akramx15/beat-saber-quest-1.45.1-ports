@@ -1,0 +1,39 @@
+BEGIN	native-original-vs-installed-public
+REGISTRY	100	Lightshow	1
+REGISTRY	101	Lawless	1
+REGISTRY	1000	MissingCharacteristic	1
+SERIALIZE	0	Standard	Standard	1
+SERIALIZE	1	OneSaber	OneSaber	1
+SERIALIZE	2	Legacy	Legacy	1
+SERIALIZE	3	NoArrows	NoArrows	1
+SERIALIZE	4	360Degree	360Degree	1
+SERIALIZE	5	90Degree	90Degree	1
+SERIALIZE	100	Standard	Lightshow	1
+SERIALIZE	101	Standard	Lawless	1
+SERIALIZE	1000	Standard	MissingCharacteristic	1
+SERIALIZE	-1	Standard	Standard	1
+SERIALIZE	999	Standard	Standard	1
+PARSE	Standard	1	0	1	0	1
+PARSE	OneSaber	1	1	1	1	1
+PARSE	Legacy	1	2	1	2	1
+PARSE	NoArrows	1	3	1	3	1
+PARSE	360Degree	1	4	1	4	1
+PARSE	90Degree	1	5	1	5	1
+PARSE	Lightshow	0	0	1	100	1
+PARSE	Lawless	0	0	1	101	1
+PARSE	MissingCharacteristic	0	0	1	1000	1
+PARSE		0	0	0	0	1
+PARSE	lawless	0	0	0	0	1
+PARSE	Lawless 	0	0	0	0	1
+PARSE	UnregisteredDiagnosticName	0	0	0	0	1
+PARSE	<null>	0	0	0	0	1
+ROUNDTRIP	0	Standard	0	Standard	0	1
+ROUNDTRIP	1	OneSaber	1	OneSaber	1	1
+ROUNDTRIP	2	Legacy	2	Legacy	2	1
+ROUNDTRIP	3	NoArrows	3	NoArrows	3	1
+ROUNDTRIP	4	360Degree	4	360Degree	4	1
+ROUNDTRIP	5	90Degree	5	90Degree	5	1
+ROUNDTRIP	100	Standard	0	Lightshow	100	1
+ROUNDTRIP	101	Standard	0	Lawless	101	1
+ROUNDTRIP	1000	Standard	0	MissingCharacteristic	1000	1
+COMPLETE	34	0	no-save-access

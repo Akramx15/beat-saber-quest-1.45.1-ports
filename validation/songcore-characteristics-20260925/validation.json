@@ -1,0 +1,159 @@
+{
+  "date": "2026-09-25",
+  "base_commit": "fa75600323dad78660f52e6f6d45541264806350",
+  "candidate_hook_file_sha256": "bf6814b4ab3b79267e7c385455cae1ac9d2fc3246e67c63e13144526f44cc2b4",
+  "upstream_build": {
+    "target_headers": "1.45.0_26420",
+    "qpm": "qpm 1.5.9+feb4590",
+    "ndk": "29.0.14206865 (r29)",
+    "clang": "21.0.0",
+    "cpp_standard": "26",
+    "abi": "arm64-v8a",
+    "android_api": 24,
+    "build_type": "RelWithDebInfo",
+    "base_build_passed": true,
+    "candidate_incremental_build_and_full_link_passed": true,
+    "artifact_hashes": [
+      {
+        "path": "artifacts/base/debug_libsongcore.so",
+        "size": 63513608,
+        "sha256": "54b5b42939bae085b8c570e0b3746e2e4770cb856f3188852f6e3d02b9f6e85d"
+      },
+      {
+        "path": "artifacts/base/libsongcore.so",
+        "size": 5134888,
+        "sha256": "cfcd7018ae52714e2edb652cbc3e02b7f31d7566fd384c94d18ad79dc0eb97be"
+      },
+      {
+        "path": "artifacts/candidate/debug_libsongcore.so",
+        "size": 63586168,
+        "sha256": "651fbec4c9fbe24f26b70a6fc0ddaac262db92b0eabc679c1e4ebc3fc35faa5e"
+      },
+      {
+        "path": "artifacts/candidate/libsongcore.so",
+        "size": 5141816,
+        "sha256": "774210bab4420671f1a71ae97d9d77613a67700378ebccd379d74b802fad4fcd"
+      }
+    ],
+    "dependency_sources": [
+      {
+        "id": "bs-cordl",
+        "version": "4500.0.0",
+        "commit": "ba55ce49fedb50780455c63e17c681d466d84f88",
+        "remote": "https://github.com/QuestPackageManager/bs-cordl.git"
+      },
+      {
+        "id": "lapiz",
+        "version": "0.3.5",
+        "commit": "af63b64eec3723e24613089f3ab85a5028b1b694",
+        "remote": "https://github.com/raineaeternal/Lapiz.git"
+      },
+      {
+        "id": "metacore",
+        "version": "2.0.3",
+        "commit": "a75b1ce9f2a4cec25f32e9807939d50895063fee",
+        "remote": "https://github.com/Metalit/MetaCore.git"
+      },
+      {
+        "id": "tinyxml2",
+        "version": "10.0.0",
+        "commit": "3a9698dedab1e1e77e2a4b91ff55483ca6498399",
+        "remote": "https://github.com/MillzyDev/NDK-tinyxml2.git"
+      },
+      {
+        "id": "fmt",
+        "version": "11.0.2",
+        "commit": "eb4e30be15dc7f1e91145092ef1987b3510bc453",
+        "remote": "https://github.com/Fernthedev/fmt-qpm.git"
+      },
+      {
+        "id": "scotland2",
+        "version": "0.1.7",
+        "commit": "2680804c7fb80c6d0c3ce3a819d7701cd940122a",
+        "remote": "https://github.com/sc2ad/scotland2.git"
+      },
+      {
+        "id": "flamingo",
+        "version": "1.2.1",
+        "commit": "62e275572b2fb4937e18ffec6365057d4543f2b8",
+        "remote": "https://github.com/QuestPackageManager/Flamingo.git"
+      },
+      {
+        "id": "libil2cpp",
+        "version": "0.5.0",
+        "commit": null,
+        "remote": null
+      },
+      {
+        "id": "custom-types",
+        "version": "0.20.1",
+        "commit": "5c13408053c449adf20dc9737e744717e01d6d21",
+        "remote": "https://github.com/QuestPackageManager/Il2CppQuestTypePatching.git"
+      },
+      {
+        "id": "mod-scripts",
+        "version": "1.0.2",
+        "commit": "ca636b6ef2afbde08f13d4956b379607f63767e7",
+        "remote": "https://github.com/Metalit/quest-mod-scripts.git"
+      },
+      {
+        "id": "libcryptopp",
+        "version": "8.5.0",
+        "commit": "99c8f2aeb72234dd1b7989b0e8da0089d88711a0",
+        "remote": "https://github.com/darknight1050/cryptopp-qpm.git"
+      },
+      {
+        "id": "paper2_scotland2",
+        "version": "4.8.0",
+        "commit": "1188ed60ed5a9c15ce95f31bbc0d58ede6e00a0e",
+        "remote": "https://github.com/Fernthedev/paperlog.git"
+      },
+      {
+        "id": "bsml",
+        "version": "0.5.5",
+        "commit": "da84e4ac66285ee7ad4a31e63c0942980ec8a02c",
+        "remote": "https://github.com/bsq-ports/Quest-BSML.git"
+      },
+      {
+        "id": "beatsaber-hook",
+        "version": "8.1.0",
+        "commit": "e15e6272ec3f6327023169792d4b6d6ef425f691",
+        "remote": "https://github.com/QuestPackageManager/beatsaber-hook.git"
+      }
+    ]
+  },
+  "device_test": {
+    "game": "1.45.1_27839",
+    "version_code": 3071,
+    "headset": "Quest 3",
+    "original_trampoline_control": true,
+    "installed_public_entrypoints": true,
+    "cases": 34,
+    "failed": 0,
+    "diagnostic_native_sha256": "e444c4eb22d37dc20a3712d8e8f1d03409501fd2e0a823e5a81a10f9ac6b71c1",
+    "restored_native_sha256": "33c424a6312f92d2cd13462ec84c95500ffa3f5a95886353995ab432246e3775",
+    "production_hook_bytes_unchanged_in_diagnostic": true,
+    "isolated_port_build": "Clang22 / NDKr27c sysroot / C++23 wrapper / exact1.45.1 headers",
+    "runs_after": "default characteristic registration in late_load",
+    "diagnostic_accesses_player_saves": false,
+    "normal_startup_may_save": true,
+    "stats_rows_before": 320,
+    "stats_rows_after": 320,
+    "all_previous_statistics_preserved": true,
+    "only_other_profile_difference": "userAgeCategory changed during normal startup; values omitted",
+    "controller_offset_config_and_slots_unchanged": true,
+    "device_1_45_0_tested": false
+  },
+  "evidence_sha256": {
+    "device-diagnostic.cpp": "76391d1f138e8f16c3b4a5b41e9a009b8a6552e2b503622172aa35335ba63c14",
+    "native-results.tsv": "208b5df796211d2feb500b8562af3cdf98b8fb726c7c7b2e4467f09b6e0b9a51",
+    "source-only.patch": "18ecebd37da859dc3f21df12f8f72eaecc34a1f95942318a8974b02462b7899f"
+  },
+  "limits": [
+    "Not a 1.45.0 device validation",
+    "No late-registration or ID-collision coverage",
+    "No recovery of already-corrupted statistics",
+    "Not complete mod compatibility validation",
+    "The former host test modeled native behavior and was removed from the upstream diff"
+  ]
+}
