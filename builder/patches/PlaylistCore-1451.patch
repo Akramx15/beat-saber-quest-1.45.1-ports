@@ -1,0 +1,13 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index bea4b97..665e80a 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -9,2 +9,2 @@ project(${COMPILE_ID})
+-set(CMAKE_CXX_STANDARD 26)
+-set(CMAKE_CXX_STANDARD_REQUIRED 26)
++set(CMAKE_CXX_STANDARD 23)
++set(CMAKE_CXX_STANDARD_REQUIRED 23)
+@@ -59,0 +60,3 @@ include(extern.cmake)
++# Exact target API generated from the local 1.45.1 APK.
++target_include_directories(${COMPILE_ID} BEFORE PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../../toolchain/codegen/include")
++

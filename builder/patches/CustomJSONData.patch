@@ -1,0 +1,628 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 5034db2..9d9941d 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -21,2 +21,2 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+-set(CMAKE_CXX_STANDARD 20)
+-set(CMAKE_CXX_STANDARD_REQUIRED 20)
++set(CMAKE_CXX_STANDARD 23)
++set(CMAKE_CXX_STANDARD_REQUIRED ON)
+@@ -106,0 +107,7 @@ add_custom_command(TARGET ${COMPILE_ID} POST_BUILD
++
++if(DEFINED BEAT_SABER_CODEGEN_INCLUDE)
++    target_include_directories(${COMPILE_ID} BEFORE PRIVATE "${BEAT_SABER_CODEGEN_INCLUDE}")
++endif()
++
++# A port artifact must not hide missing generated method implementations.
++target_link_options(${COMPILE_ID} PRIVATE -Wl,--no-undefined)
+diff --git a/include/CustomJSONDataHooks.h b/include/CustomJSONDataHooks.h
+index 52feb16..37ec15b 100644
+--- a/include/CustomJSONDataHooks.h
++++ b/include/CustomJSONDataHooks.h
+@@ -3,2 +3,2 @@
+-#include "beatsaber-hook/shared/utils/logging.hpp"
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "beatsaber-hook/shared/utils.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+diff --git a/include/HookUtils.hpp b/include/HookUtils.hpp
+index 1d5daab..f402117 100644
+--- a/include/HookUtils.hpp
++++ b/include/HookUtils.hpp
+@@ -6 +6 @@
+-#include "beatsaber-hook/shared/config/rapidjson-utils.hpp"
++#include "beatsaber-hook/shared/rapidjson.hpp"
+diff --git a/shared/CJDLogger.h b/shared/CJDLogger.h
+index ef20494..087b80a 100644
+--- a/shared/CJDLogger.h
++++ b/shared/CJDLogger.h
+@@ -2 +2 @@
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
++#include "beatsaber-hook/shared/members.hpp"
+@@ -21,41 +20,0 @@ public:
+-// Implements a try-catch handler which will first attempt to run the provided body.
+-// If there is an uncaught RunMethodException, it will first attempt to log the backtrace.
+-// If it holds a valid C# exception, it will attempt to raise it, such that it is caught in the il2cpp domain.
+-// If an exception is thrown that is otherwise what-able is caught, it will attempt to call the what() method
+-// and then rethrow the exception to the il2cpp domain.
+-// If an unknown exception is caught, it will terminate explicitly, as opposed to letting it be thrown across the il2cpp
+-// domain. All logs that occur as a result of this function will be under the core beatsaber-hook global logger.
+-#define PAPER_IL2CPP_CATCH_HANDLER(...)                                                                                \
+-  try {                                                                                                                \
+-    __VA_ARGS__                                                                                                        \
+-  } catch (::il2cpp_utils::RunMethodException const& exc) {                                                            \
+-    CJDLogger::Logger.fmtLog<LogLevel::ERR>("Uncaught RunMethodException! what(): {}", exc.what());                    \
+-    Paper::Logger::WaitForFlush();                                                                                     \
+-    CJDLogger::Logger.error("Uncaught RunMethodException! what(): {}", exc.what());                                    \
+-    exc.log_backtrace();                                                                                               \
+-    CJDLogger::Logger.Backtrace(100);                                                                                  \
+-    if (exc.ex) {                                                                                                      \
+-      exc.rethrow();                                                                                                   \
+-    }                                                                                                                  \
+-    SAFE_ABORT();                                                                                                      \
+-  } catch (::il2cpp_utils::exceptions::StackTraceException const& exc) {                                               \
+-    CJDLogger::Logger.error("Uncaught StackTraceException! what(): {}", exc.what());                                   \
+-    CJDLogger::Logger.fmtLog<LogLevel::ERR>("Uncaught StackTraceException! what(): {}", exc.what());                   \
+-    exc.log_backtrace();                                                                                               \
+-    CJDLogger::Logger.Backtrace(100);                                                                                  \
+-    SAFE_ABORT();                                                                                                      \
+-  } catch (::std::exception const& exc) {                                                                              \
+-    CJDLogger::Logger.error("Uncaught C++ exception! type name: {}, what(): {}", typeid(exc).name(), exc.what());      \
+-    CJDLogger::Logger.fmtLog<LogLevel::ERR>("Uncaught C++ exception! type name: {}, what(): {}", typeid(exc).name(),   \
+-                                            exc.what());                                                               \
+-    Paper::Logger::WaitForFlush();                                                                                     \
+-    CJDLogger::Logger.Backtrace(100);                                                                                  \
+-    ::il2cpp_utils::raise(exc);                                                                                        \
+-  } catch (...) {                                                                                                      \
+-    CJDLogger::Logger.fmtLog<LogLevel::ERR>(                                                                           \
+-        "Uncaught, unknown C++ exception (not std::exception) with no known what() method!");                          \
+-    Paper::Logger::WaitForFlush();                                                                                     \
+-    CJDLogger::Logger.error("Uncaught, unknown C++ exception (not std::exception) with no known what() method!");      \
+-    CJDLogger::Logger.Backtrace(100);                                                                                  \
+-    SAFE_ABORT();                                                                                                      \
+-  }
+@@ -63,4 +22,21 @@ public:
+-template <auto Func, class T>
+-/// @brief Exposes a static wrapper method that forwards to the provided function pointer, wrapping it in
+-/// IL2CPP_CATCH_HANDLER.
+-struct PaperHookCatchWrapper;
++#include "beatsaber-hook/shared/hooking.hpp"
++#include "beatsaber-hook/shared/safeptr.hpp"
++#include "beatsaber-hook/shared/callback.hpp"
++#ifndef csTypeOf
++#define csTypeOf(...) ::i2c::cs_type_of<__VA_ARGS__>()
++#endif
++#ifndef classof
++#define classof(...) ::i2c::class_of<__VA_ARGS__>()
++#endif
++#define PAPER_IL2CPP_CATCH_HANDLER(...) \
++  try { __VA_ARGS__ } \
++  catch (::i2c::trace_exception const& exc) { \
++    CJDLogger::Logger.error("Uncaught trace exception: {}", exc.what()); \
++    exc.log_backtrace(); Paper::Logger::WaitForFlush(); SAFE_ABORT("CustomJSONData trace exception"); \
++  } catch (::std::exception const& exc) { \
++    CJDLogger::Logger.error("Uncaught C++ exception: {}", exc.what()); \
++    Paper::Logger::WaitForFlush(); \
++    ::i2c::functions::initialize(); \
++    ::i2c::functions::raise_exception(::i2c::functions::exception_from_name_msg(::i2c::functions::get_corlib(), "System", "Exception", exc.what())); \
++    SAFE_ABORT("CustomJSONData exception could not be raised"); \
++  } catch (...) { SAFE_ABORT("Unknown CustomJSONData exception"); }
+@@ -67,0 +44 @@ struct PaperHookCatchWrapper;
++template <auto Func, class T> struct PaperHookCatchWrapper;
+@@ -69,3 +46 @@ template <auto Func, class R, class... TArgs> struct PaperHookCatchWrapper<Func,
+-  static R wrapper(TArgs... args) {
+-    PAPER_IL2CPP_CATCH_HANDLER(return Func(args...);)
+-  }
++  static R wrapper(TArgs... args) { PAPER_IL2CPP_CATCH_HANDLER(return Func(args...);) }
+@@ -73,46 +48,17 @@ template <auto Func, class R, class... TArgs> struct PaperHookCatchWrapper<Func,
+-
+-// Make a hook that uses the provided method pointer in a match an ensures the signature matches.
+-// This should be your go-to hook macro when hooking anything that has a codegen equivalent.
+-// Also includes a catch handler.
+-#define MAKE_PAPER_HOOK_MATCH(name_, mPtr, retval, ...)                                                                \
+-  struct Hook_##name_ {                                                                                                \
+-    using funcType = retval (*)(__VA_ARGS__);                                                                          \
+-    static_assert(std::is_same_v<funcType, ::Hooking::InternalMethodCheck<decltype(mPtr)>::funcType>,                  \
+-                  "Hook method signature does not match!");                                                            \
+-    constexpr static char const* name() {                                                                              \
+-      return #name_;                                                                                                   \
+-    }                                                                                                                  \
+-    static MethodInfo const* getInfo() {                                                                               \
+-      return ::il2cpp_utils::il2cpp_type_check::MetadataGetter<mPtr>::methodInfo();                                    \
+-    }                                                                                                                  \
+-    static funcType* trampoline() {                                                                                    \
+-      return &name_;                                                                                                   \
+-    }                                                                                                                  \
+-    static inline retval (*name_)(__VA_ARGS__) = nullptr;                                                              \
+-    static funcType hook() {                                                                                           \
+-      return &::PaperHookCatchWrapper<&hook_##name_, funcType>::wrapper;                                               \
+-    }                                                                                                                  \
+-    static retval hook_##name_(__VA_ARGS__);                                                                           \
+-  };                                                                                                                   \
+-  retval Hook_##name_::hook_##name_(__VA_ARGS__)
+-
+-// Same as MAKE_PAPER_HOOK_MATCH, but for manual MethodInfo* usage.
+-#define MAKE_PAPER_HOOK_FIND(name_, infoGet, retval, ...)                                                              \
+-  struct Hook_##name_ {                                                                                                \
+-    using funcType = retval (*)(__VA_ARGS__);                                                                          \
+-    constexpr static char const* name() {                                                                              \
+-      return #name_;                                                                                                   \
+-    }                                                                                                                  \
+-    static MethodInfo const* getInfo() {                                                                               \
+-      return infoGet;                                                                                                  \
+-    }                                                                                                                  \
+-    static funcType* trampoline() {                                                                                    \
+-      return &name_;                                                                                                   \
+-    }                                                                                                                  \
+-    static inline retval (*name_)(__VA_ARGS__) = nullptr;                                                              \
+-    static funcType hook() {                                                                                           \
+-      return &::PaperHookCatchWrapper<&hook_##name_, funcType>::wrapper;                                               \
+-    }                                                                                                                  \
+-    static retval hook_##name_(__VA_ARGS__);                                                                           \
+-  };                                                                                                                   \
+-  retval Hook_##name_::hook_##name_(__VA_ARGS__)
+\ No newline at end of file
++#define MAKE_PAPER_HOOK_MATCH(name_, mPtr, retval, ...) \
++  struct hook_##name_ { \
++    using func_t = retval (*)(__VA_ARGS__); \
++    static constexpr auto cast_test = []<typename T>() { return requires { static_cast<T>(mPtr); }; }; \
++    using cast_t = ::i2c::detail::method_check<cast_test, func_t>::type; \
++    static_assert(cast_test.operator()<cast_t>(), "Hook method signature does not match!"); \
++    static_assert(::i2c::detail::match_hookable<static_cast<cast_t>(mPtr)>, "Method cannot be hooked!"); \
++    constexpr static char const* name() { return #name_; } \
++    static auto addr() { return ::i2c::metadata_getter<static_cast<cast_t>(mPtr)>::method_info(); } \
++    static func_t* trampoline() { return &name_; } \
++    static inline retval (*name_)(__VA_ARGS__) = nullptr; \
++    static inline flamingo::HookHandle install_handle; \
++    static inline flamingo::HookPriority install_priority; \
++    static func_t hook() { return &::PaperHookCatchWrapper<&hook_m_##name_, func_t>::wrapper; } \
++    static retval hook_m_##name_(__VA_ARGS__); \
++  }; \
++  retval hook_##name_::hook_m_##name_(__VA_ARGS__)
+diff --git a/shared/CustomBeatmapData.h b/shared/CustomBeatmapData.h
+index 5a71487..e47e52c 100644
+--- a/shared/CustomBeatmapData.h
++++ b/shared/CustomBeatmapData.h
+@@ -72 +72 @@ public:
+-      if (auto event = il2cpp_utils::try_cast<GlobalNamespace::BeatmapEventData>(beatmapDataItem)) {
++      if (auto event = i2c::cast<i2c::result<GlobalNamespace::BeatmapEventData*>>(beatmapDataItem)) {
+@@ -76 +76 @@ public:
+-      if (auto object = il2cpp_utils::try_cast<GlobalNamespace::BeatmapObjectData>(beatmapDataItem)) {
++      if (auto object = i2c::cast<i2c::result<GlobalNamespace::BeatmapObjectData*>>(beatmapDataItem)) {
+@@ -80 +80 @@ public:
+-      if (auto customEvent = il2cpp_utils::try_cast<CustomEventData>(beatmapDataItem)) {
++      if (auto customEvent = i2c::cast<i2c::result<CustomEventData*>>(beatmapDataItem)) {
+@@ -153 +153 @@ DECLARE_CLASS_CODEGEN(CustomJSONData, CustomBeatmapEventData, GlobalNamespace::B
+-  DECLARE_OVERRIDE_METHOD(CustomBeatmapEventData*, GetCopy, il2cpp_utils::FindMethod("", "BeatmapDataItem", "GetCopy"));
++  DECLARE_OVERRIDE_METHOD(CustomBeatmapEventData*, GetCopy, i2c::find_method({"", "BeatmapDataItem"}, "GetCopy"));
+@@ -163 +163 @@ DECLARE_CLASS_CODEGEN(CustomJSONData, CustomObstacleData, GlobalNamespace::Obsta
+-  DECLARE_OVERRIDE_METHOD(CustomObstacleData*, GetCopy, il2cpp_utils::FindMethod("", "BeatmapDataItem", "GetCopy"));
++  DECLARE_OVERRIDE_METHOD(CustomObstacleData*, GetCopy, i2c::find_method({"", "BeatmapDataItem"}, "GetCopy"));
+@@ -181 +181 @@ DECLARE_CLASS_CODEGEN(CustomJSONData, CustomNoteData, GlobalNamespace::NoteData)
+-  DECLARE_OVERRIDE_METHOD(CustomNoteData*, GetCopy, il2cpp_utils::FindMethod("", "BeatmapDataItem", "GetCopy"));
++  DECLARE_OVERRIDE_METHOD(CustomNoteData*, GetCopy, i2c::find_method({"", "BeatmapDataItem"}, "GetCopy"));
+@@ -203 +203 @@ DECLARE_CLASS_CODEGEN(CustomJSONData, CustomSliderData, GlobalNamespace::SliderD
+-  DECLARE_OVERRIDE_METHOD(CustomSliderData*, GetCopy, il2cpp_utils::FindMethod("", "BeatmapDataItem", "GetCopy"));
++  DECLARE_OVERRIDE_METHOD(CustomSliderData*, GetCopy, i2c::find_method({"", "BeatmapDataItem"}, "GetCopy"));
+@@ -217 +217 @@ DECLARE_CLASS_CODEGEN(CustomJSONData, CustomWaypointData, GlobalNamespace::Waypo
+-  DECLARE_OVERRIDE_METHOD(CustomWaypointData*, GetCopy, il2cpp_utils::FindMethod("", "BeatmapDataItem", "GetCopy"));
++  DECLARE_OVERRIDE_METHOD(CustomWaypointData*, GetCopy, i2c::find_method({"", "BeatmapDataItem"}, "GetCopy"));
+diff --git a/shared/CustomBeatmapSaveDatav2.h b/shared/CustomBeatmapSaveDatav2.h
+index fad7992..9049c92 100644
+--- a/shared/CustomBeatmapSaveDatav2.h
++++ b/shared/CustomBeatmapSaveDatav2.h
+@@ -4 +4 @@
+-#include "beatsaber-hook/shared/config/rapidjson-utils.hpp"
++#include "beatsaber-hook/shared/rapidjson.hpp"
+diff --git a/shared/CustomBeatmapSaveDatav3.h b/shared/CustomBeatmapSaveDatav3.h
+index 731b952..fe95edf 100644
+--- a/shared/CustomBeatmapSaveDatav3.h
++++ b/shared/CustomBeatmapSaveDatav3.h
+@@ -4 +4 @@
+-#include "beatsaber-hook/shared/config/rapidjson-utils.hpp"
++#include "beatsaber-hook/shared/rapidjson.hpp"
+@@ -184 +184 @@ CustomBeatmapSaveData_ColorNoteData* DeserializeColorNote(rapidjson::Value const
+-extern UnorderedEventCallback<v3::CustomBeatmapSaveData*> ParsedEvent;
++extern unordered_event_callback<v3::CustomBeatmapSaveData*> ParsedEvent;
+diff --git a/shared/CustomEventData.h b/shared/CustomEventData.h
+index dfa4277..99ddb54 100644
+--- a/shared/CustomEventData.h
++++ b/shared/CustomEventData.h
+@@ -3,0 +4 @@
++#include "System/Collections/Generic/LinkedListNode_1.hpp"
+@@ -8 +9 @@
+-#include "beatsaber-hook/shared/config/rapidjson-utils.hpp"
++#include "beatsaber-hook/shared/rapidjson.hpp"
+@@ -26 +27 @@ class BeatmapCallbacksController;
+-#define FindMethodGetter(methodName) ::il2cpp_utils::il2cpp_type_check::MetadataGetter<methodName>::methodInfo()
++#define FindMethodGetter(methodName) ::i2c::metadata_getter<methodName>::method_info()
+@@ -36 +37 @@ public:
+-  DECLARE_OVERRIDE_METHOD(CustomEventData*, GetCopy, il2cpp_utils::FindMethod("", "BeatmapDataItem", "GetCopy"));
++  DECLARE_OVERRIDE_METHOD(CustomEventData*, GetCopy, i2c::find_method({"", "BeatmapDataItem"}, "GetCopy"));
+@@ -89 +90 @@ public:
+-  static SafePtr<System::Collections::Generic::LinkedListNode_1<GlobalNamespace::BeatmapDataItem*>> firstNode;
++  static safe_ptr<System::Collections::Generic::LinkedListNode_1<GlobalNamespace::BeatmapDataItem*>*> firstNode;
+diff --git a/shared/JSONWrapper.h b/shared/JSONWrapper.h
+index b88be39..6adcf38 100644
+--- a/shared/JSONWrapper.h
++++ b/shared/JSONWrapper.h
+@@ -4 +4 @@
+-#include "beatsaber-hook/shared/config/rapidjson-utils.hpp"
++#include "beatsaber-hook/shared/rapidjson.hpp"
+diff --git a/shared/JsonUtils.h b/shared/JsonUtils.h
+index e11a5f0..7108658 100644
+--- a/shared/JsonUtils.h
++++ b/shared/JsonUtils.h
+@@ -15 +15 @@
+-#include "beatsaber-hook/shared/config/rapidjson-utils.hpp"
++#include "beatsaber-hook/shared/rapidjson.hpp"
+diff --git a/shared/LowLevelUtils.hpp b/shared/LowLevelUtils.hpp
+index 37106e8..c15f408 100644
+--- a/shared/LowLevelUtils.hpp
++++ b/shared/LowLevelUtils.hpp
+@@ -3 +3 @@
+-#include "beatsaber-hook/shared/utils/il2cpp-utils-methods.hpp"
++#include "beatsaber-hook/shared/members.hpp"
+@@ -18 +18 @@ constexpr T NewFast(TArgs&&... args) {
+-  return il2cpp_utils::NewSpecificUnsafe<T>(std::forward<TArgs>(args)...);
++  return std::remove_pointer_t<T>::New_ctor(std::forward<TArgs>(args)...);
+@@ -21,12 +20,0 @@ constexpr T NewFast(TArgs&&... args) {
+-// // Faster allocation with method cache
+-// template <class T, class... TArgs>
+-// // Bonus points for a requires clause here for classof(T)
+-// T NewFastKlass(Il2CppClass* klass, TArgs&&... args) {
+-//   //        return CRASH_UNLESS(il2cpp_utils::New<T, il2cpp_utils::CreationType::Temporary, TArgs...>(klass,
+-//   //        std::forward<TArgs>(args)...));
+-//   static auto ctor = CRASH_UNLESS(il2cpp_utils::FindMethod(
+-//       klass, ".ctor", std::array<Il2CppType const*, sizeof...(TArgs)>{ il2cpp_utils::ExtractIndependentType<TArgs>()... }));
+-//   auto* obj = CRASH_UNLESS(il2cpp_functions::object_new(klass));
+-//   il2cpp_utils::RunMethodRethrow(obj, ctor, std::forward<TArgs>(args)...);
+-//   return reinterpret_cast<T>(obj);
+-// }
+@@ -34,41 +22,2 @@ constexpr T NewFast(TArgs&&... args) {
+-// // Faster allocation with method cache
+-// template <class T, class... TArgs>
+-// // Bonus points for a requires clause here for classof(T)
+-// T NewFastUnsafe(TArgs&&... args) {
+-//   static auto klass = classof(T);
+-//   return NewFastKlass<T, TArgs...>(klass, std::forward<TArgs>(args)...);
+-// }
+-
+-// // Faster allocation with method cache
+-// template <class T, class... TArgs>
+-// requires(CtorArgs<std::remove_pointer_t<T>, TArgs...>)
+-//     // Bonus points for a requires clause here for classof(T)
+-//     T NewFast(TArgs&&... args) {
+-//   static auto klass = classof(T);
+-//   return NewFastKlass<T, TArgs...>(klass, std::forward<TArgs>(args)...);
+-// }
+-
+-// Declare a method with name that will be called on construction.
+-//#define DECLARE_FASTER_CTOR(name, ...)  DECLARE_CTOR(name, __VA_ARGS__)
+-
+-#define DECLARE_FASTER_CTOR(name, ...)                                                                                 \
+-public:                                                                                                                \
+-  void name(__VA_ARGS__);                                                                                              \
+-  template <::il2cpp_utils::CreationType creationType = ::il2cpp_utils::CreationType::Temporary, class... TArgs>       \
+-  static ___TargetType* New_ctor(TArgs&&... args) {                                                                    \
+-    static_assert(::custom_types::Decomposer<decltype(&___TargetType::name)>::convertible<TArgs...>(),                 \
+-                  "Arguments provided to New_ctor must be convertible to the constructor!");                           \
+-    ___TargetType* obj;                                                                                                \
+-    if constexpr (creationType == ::il2cpp_utils::CreationType::Temporary) {                                           \
+-      obj = reinterpret_cast<___TargetType*>(::il2cpp_functions::object_new(___TypeRegistration::klass_ptr));          \
+-    } else {                                                                                                           \
+-      obj = reinterpret_cast<___TargetType*>(::il2cpp_utils::createManual(___TypeRegistration::klass_ptr));            \
+-    }                                                                                                                  \
+-    obj->name(std::forward<TArgs>(args)...);                                                                           \
+-    return obj;                                                                                                        \
+-  }                                                                                                                    \
+-  ___CREATE_INSTANCE_METHOD(name, ".ctor",                                                                             \
+-                            METHOD_ATTRIBUTE_PUBLIC | METHOD_ATTRIBUTE_HIDE_BY_SIG | METHOD_ATTRIBUTE_SPECIAL_NAME |   \
+-                                METHOD_ATTRIBUTE_RT_SPECIAL_NAME,                                                      \
+-                            nullptr)
+-} // namespace CustomJSONData
+\ No newline at end of file
++#define DECLARE_FASTER_CTOR(name, ...) DECLARE_CTOR(name, __VA_ARGS__)
++} // namespace CustomJSONData
+diff --git a/shared/VList.h b/shared/VList.h
+index bd4dc5e..380ce30 100644
+--- a/shared/VList.h
++++ b/shared/VList.h
+@@ -1,0 +2 @@
++#include "beatsaber-hook/shared/listw.hpp"
+@@ -48 +49 @@ template <typename Ty>
+-inline ListW<Ty, System::Collections::Generic::List_1<Ty>*> SpanToSystemList(std::span<Ty const> const span) {
++inline ListW<Ty> SpanToSystemList(std::span<Ty const> const span) {
+@@ -66 +67 @@ template<typename T>
+-using VList = ListW<T, System::Collections::Generic::List_1<T>*>;
++using VList = ListW<T>;
+diff --git a/shared/misc/BeatmapDataLoaderUtils.hpp b/shared/misc/BeatmapDataLoaderUtils.hpp
+index 108aa6e..d60d13a 100644
+--- a/shared/misc/BeatmapDataLoaderUtils.hpp
++++ b/shared/misc/BeatmapDataLoaderUtils.hpp
+@@ -466 +466 @@ struct CppConverter {
+-      //                    if (il2cpp_functions::class_is_assignable_from(klass, uKlass)) {
++      //                    if (i2c::functions::class_is_assignable_from(klass, uKlass)) {
+@@ -640 +640 @@ constexpr GlobalNamespace::IndexFilter* IndexFilterConvertor_Convert(BeatmapSave
+-      throw il2cpp_utils::exceptions::StackTraceException("ArgumentOutOfRangeException");
++      throw i2c::trace_exception("ArgumentOutOfRangeException");
+@@ -798 +798 @@ struct EventBoxGroupConvertor {
+-    if (auto dataForGroupUnity = il2cpp_utils::try_cast<UnityEngine::Object>(dataForGroup);
++    if (auto dataForGroupUnity = i2c::cast<i2c::result<UnityEngine::Object*>>(dataForGroup);
+diff --git a/src/CustomBeatmapData.cpp b/src/CustomBeatmapData.cpp
+index 9d2abe8..41e8bb3 100644
+--- a/src/CustomBeatmapData.cpp
++++ b/src/CustomBeatmapData.cpp
+@@ -97 +97 @@ System::Type* CustomJSONData::CustomBeatmapData::GetCustomType(Il2CppClass* obj)
+-        il2cpp_utils::ClassStandardName(obj), il2cpp_utils::ClassStandardName(CustomKlass));
++        i2c::class_standard_name(obj), i2c::class_standard_name(CustomKlass));
+@@ -100 +100 @@ System::Type* CustomJSONData::CustomBeatmapData::GetCustomType(Il2CppClass* obj)
+-                                                     il2cpp_utils::ClassStandardName(obj->parent));
++                                                     i2c::class_standard_name(obj->parent));
+@@ -102 +102 @@ System::Type* CustomJSONData::CustomBeatmapData::GetCustomType(Il2CppClass* obj)
+-      typePtr = il2cpp_utils::GetSystemType(obj->parent);
++      typePtr = i2c::get_system_type(obj->parent);
+@@ -105 +105 @@ System::Type* CustomJSONData::CustomBeatmapData::GetCustomType(Il2CppClass* obj)
+-                                                     il2cpp_utils::ClassStandardName(obj));
++                                                     i2c::class_standard_name(obj));
+@@ -107 +107 @@ System::Type* CustomJSONData::CustomBeatmapData::GetCustomType(Il2CppClass* obj)
+-      typePtr = il2cpp_utils::GetSystemType(obj);
++      typePtr = i2c::get_system_type(obj);
+diff --git a/src/CustomBeatmapSaveDatav2.cpp b/src/CustomBeatmapSaveDatav2.cpp
+index bf49d0f..cb3e67a 100644
+--- a/src/CustomBeatmapSaveDatav2.cpp
++++ b/src/CustomBeatmapSaveDatav2.cpp
+@@ -92 +92 @@ static void ConvertBeatmapSaveDataPreV2_5_0(CustomJSONData::v2::CustomBeatmapSav
+-    auto* eventData = il2cpp_utils::cast<CustomBeatmapSaveData_EventData>(originalEventData);
++    auto* eventData = i2c::cast<CustomBeatmapSaveData_EventData*>(originalEventData);
+@@ -301 +301 @@ CustomJSONData::v2::CustomBeatmapSaveData::Deserialize(std::shared_ptr<rapidjson
+-        Il2CppString* keyword_il2cpp = il2cpp_utils::newcsstr(keyword);
++        auto keyword_il2cpp = static_cast<System::String*>(StringW(keyword));
+@@ -316 +316 @@ CustomJSONData::v2::CustomBeatmapSaveData::Deserialize(std::shared_ptr<rapidjson
+-            CustomJSONData::NewFast<SpecialEventsForKeyword*>(keyword_il2cpp, specialEvents.getPtr()));
++            CustomJSONData::NewFast<SpecialEventsForKeyword*>(keyword_il2cpp, specialEvents.operator->()));
+@@ -321 +321 @@ CustomJSONData::v2::CustomBeatmapSaveData::Deserialize(std::shared_ptr<rapidjson
+-      CustomJSONData::NewFast<SpecialEventKeywordFiltersData*>(specialEventsKeywordFiltersList.getPtr());
++      CustomJSONData::NewFast<SpecialEventKeywordFiltersData*>(specialEventsKeywordFiltersList.operator->());
+diff --git a/src/CustomBeatmapSaveDatav3.cpp b/src/CustomBeatmapSaveDatav3.cpp
+index 5d21d85..c18fd2a 100644
+--- a/src/CustomBeatmapSaveDatav3.cpp
++++ b/src/CustomBeatmapSaveDatav3.cpp
+@@ -0,0 +1,3 @@
++#include "BeatmapSaveDataVersion3/LightColorEventBoxGroup.hpp"
++#include "BeatmapSaveDataVersion3/LightRotationEventBoxGroup.hpp"
++#include "BeatmapSaveDataVersion3/LightTranslationEventBoxGroup.hpp"
+@@ -30 +33 @@ using SList = System::Collections::Generic::List_1<T>;
+-UnorderedEventCallback<CustomJSONData::v3::CustomBeatmapSaveData*> CustomJSONData::v3::Parser::ParsedEvent;
++unordered_event_callback<CustomJSONData::v3::CustomBeatmapSaveData*> CustomJSONData::v3::Parser::ParsedEvent;
+@@ -110,4 +113,3 @@ void CustomBeatmapSaveData::ctor(
+-  if (rotationEvents && !il2cpp_utils ::AssignableFrom<
+-                            ::System::Collections::Generic::List_1<::BeatmapSaveDataVersion3::RotationEventData*>*>(
+-                            rotationEvents->klass)) {
+-    CJDLogger::Logger.fmtThrowError("Rotation events is bad! {}", il2cpp_utils::ClassStandardName(rotationEvents->klass, true));
++  if (rotationEvents && !i2c::functions::class_is_assignable_from(
++      i2c::class_of<::System::Collections::Generic::List_1<::BeatmapSaveDataVersion3::RotationEventData*>*>(), rotationEvents->klass)) {
++    throw i2c::trace_exception(fmt::format("Rotation events is bad! {}", i2c::class_standard_name(rotationEvents->klass)));
+@@ -366 +368 @@ auto DeserializeLightColorEventBoxGroup(rapidjson::Value const& val) {
+-            brightnessDistributionEaseType.value__, lightColorBaseDataList.getPtr());
++            brightnessDistributionEaseType.value__, lightColorBaseDataList.operator->());
+@@ -372 +374 @@ auto DeserializeLightColorEventBoxGroup(rapidjson::Value const& val) {
+-  return CustomJSONData::NewFast<BeatmapSaveDataVersion3::LightColorEventBoxGroup*>(beat, groupId, eventBoxes.getPtr());
++  return CustomJSONData::NewFast<BeatmapSaveDataVersion3::LightColorEventBoxGroup*>(beat, groupId, eventBoxes.operator->());
+@@ -420 +422 @@ auto DeserializeLightRotationEventBoxGroup(rapidjson::Value const& val) {
+-            rotationDistributionEaseType.value__, axis.value__, flipRotation, lightTranslationBaseDataList.getPtr());
++            rotationDistributionEaseType.value__, axis.value__, flipRotation, lightTranslationBaseDataList.operator->());
+@@ -425 +427 @@ auto DeserializeLightRotationEventBoxGroup(rapidjson::Value const& val) {
+-  return CustomJSONData::NewFast<BeatmapSaveDataVersion3::LightRotationEventBoxGroup*>(beat, groupId, eventBoxes.getPtr());
++  return CustomJSONData::NewFast<BeatmapSaveDataVersion3::LightRotationEventBoxGroup*>(beat, groupId, eventBoxes.operator->());
+@@ -478 +480 @@ auto DeserializeLightTranslationEventBoxGroup(rapidjson::Value const& val) {
+-            axis, flipTranslation, lightTranslationBaseDataList.getPtr());
++            axis, flipTranslation, lightTranslationBaseDataList.operator->());
+@@ -483 +485 @@ auto DeserializeLightTranslationEventBoxGroup(rapidjson::Value const& val) {
+-  return CustomJSONData::NewFast<BeatmapSaveDataVersion3::LightTranslationEventBoxGroup*>(beat, groupId, eventBoxes.getPtr());
++  return CustomJSONData::NewFast<BeatmapSaveDataVersion3::LightTranslationEventBoxGroup*>(beat, groupId, eventBoxes.operator->());
+@@ -564 +566 @@ BeatmapSaveDataVersion3::FxEventBoxGroup* DeserializeFxEventBoxGroupArray(rapidj
+-  return BeatmapSaveDataVersion3::FxEventBoxGroup::New_ctor(beat, groupId, type, eventBoxes.getPtr());
++  return BeatmapSaveDataVersion3::FxEventBoxGroup::New_ctor(beat, groupId, type, eventBoxes.operator->());
+@@ -580 +582 @@ auto DeserializeBasicEventTypesForKeyword(rapidjson::Value const& val) {
+-                                                                    eventTypes.getPtr());
++                                                                    eventTypes.operator->());
+@@ -716,5 +718,5 @@ CustomJSONData::v3::CustomBeatmapSaveData::Deserialize(std::shared_ptr<rapidjson
+-      bpmEvents.getPtr(), rotationEvents.getPtr(), colorNotes.getPtr(), bombNotes.getPtr(), obstacles.getPtr(),
+-      sliders.getPtr(), burstSliders.getPtr(), waypoints.getPtr(), basicBeatmapEvents.getPtr(),
+-      colorBoostBeatmapEvents.getPtr(), lightColorEventBoxGroups.getPtr(), lightRotationEventBoxGroups.getPtr(),
+-      lightTranslationEventBoxGroups, vfxEventBoxGroups.getPtr(), fxEventsCollection,
+-      BeatmapSaveDataCommon::BasicEventTypesWithKeywords::New_ctor(basicEventTypesForKeyword.getPtr()),useNormalEventsAsCompatibleEvents);
++      bpmEvents.operator->(), rotationEvents.operator->(), colorNotes.operator->(), bombNotes.operator->(), obstacles.operator->(),
++      sliders.operator->(), burstSliders.operator->(), waypoints.operator->(), basicBeatmapEvents.operator->(),
++      colorBoostBeatmapEvents.operator->(), lightColorEventBoxGroups.operator->(), lightRotationEventBoxGroups.operator->(),
++      lightTranslationEventBoxGroups, vfxEventBoxGroups.operator->(), fxEventsCollection,
++      BeatmapSaveDataCommon::BasicEventTypesWithKeywords::New_ctor(basicEventTypesForKeyword.operator->()),useNormalEventsAsCompatibleEvents);
+@@ -792 +794 @@ CustomBeatmapSaveData* CustomBeatmapSaveData::Convert2_6_0(CustomJSONData::v2::C
+-    auto* customN = il2cpp_utils::cast<CustomJSONData::v2::CustomBeatmapSaveData_NoteData>(n);
++    auto* customN = i2c::cast<CustomJSONData::v2::CustomBeatmapSaveData_NoteData*>(n);
+@@ -811 +813 @@ CustomBeatmapSaveData* CustomBeatmapSaveData::Convert2_6_0(CustomJSONData::v2::C
+-    auto* customN = il2cpp_utils::cast<CustomJSONData::v2::CustomBeatmapSaveData_ObstacleData>(n);
++    auto* customN = i2c::cast<CustomJSONData::v2::CustomBeatmapSaveData_ObstacleData*>(n);
+@@ -825 +827 @@ CustomBeatmapSaveData* CustomBeatmapSaveData::Convert2_6_0(CustomJSONData::v2::C
+-    auto* customN = il2cpp_utils::cast<CustomJSONData::v2::CustomBeatmapSaveData_SliderData>(n);
++    auto* customN = i2c::cast<CustomJSONData::v2::CustomBeatmapSaveData_SliderData*>(n);
+@@ -841 +843 @@ CustomBeatmapSaveData* CustomBeatmapSaveData::Convert2_6_0(CustomJSONData::v2::C
+-    auto* customN = il2cpp_utils::cast<CustomJSONData::v2::CustomBeatmapSaveData_ObstacleData>(n);
++    auto* customN = i2c::cast<CustomJSONData::v2::CustomBeatmapSaveData_ObstacleData*>(n);
+@@ -852 +854 @@ CustomBeatmapSaveData* CustomBeatmapSaveData::Convert2_6_0(CustomJSONData::v2::C
+-    auto* customN = il2cpp_utils::cast<CustomJSONData::v2::CustomBeatmapSaveData_EventData>(n);
++    auto* customN = i2c::cast<CustomJSONData::v2::CustomBeatmapSaveData_EventData*>(n);
+diff --git a/src/CustomEventData.cpp b/src/CustomEventData.cpp
+index bccef83..dbd795a 100644
+--- a/src/CustomEventData.cpp
++++ b/src/CustomEventData.cpp
+@@ -10 +10 @@
+-#include "beatsaber-hook/shared/utils/il2cpp-type-check.hpp"
++#include "beatsaber-hook/shared/types.hpp"
+@@ -26 +26 @@ CJD_MOD_EXPORT std::vector<CustomEventCallbackData> CustomEventCallbacks::custom
+-CJD_MOD_EXPORT SafePtr<System::Collections::Generic::LinkedListNode_1<GlobalNamespace::BeatmapDataItem*>>
++CJD_MOD_EXPORT safe_ptr<System::Collections::Generic::LinkedListNode_1<GlobalNamespace::BeatmapDataItem*>*>
+@@ -76 +76 @@ void CustomBeatmapDataCallbackWrapper::CallCallback(BeatmapDataItem* item) {
+-    CJDLogger::Logger.debug("Invokiong item {} time {}", il2cpp_utils::ClassStandardName(item->klass), item->time);
++    CJDLogger::Logger.debug("Invokiong item {} time {}", i2c::class_standard_name(item->klass), item->time);
+@@ -82 +82 @@ void CustomBeatmapDataCallbackWrapper::CallCallback(BeatmapDataItem* item) {
+-      auto castedItem = il2cpp_utils::cast<CustomEventData>(item);
++      auto castedItem = i2c::cast<CustomEventData*>(item);
+diff --git a/src/hooks/BeatmapHooks.cpp b/src/hooks/BeatmapHooks.cpp
+index c7742bb..bb3752c 100644
+--- a/src/hooks/BeatmapHooks.cpp
++++ b/src/hooks/BeatmapHooks.cpp
+@@ -51,3 +51,3 @@
+-#include "beatsaber-hook/shared/utils/typedefs-list.hpp"
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
+-#include "beatsaber-hook/shared/config/rapidjson-utils.hpp"
++#include "beatsaber-hook/shared/listw.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
++#include "beatsaber-hook/shared/rapidjson.hpp"
+@@ -61 +60,0 @@
+-#include "sombrero/shared/linq_functional.hpp"
+@@ -91,2 +90,2 @@ using namespace BeatmapSaveDataVersion4;
+-MAKE_HOOK_FIND_INSTANCE(CustomBeatmapDataSortedListForTypes_InsertItem,
+-                        classof(BeatmapDataSortedListForTypeAndIds_1<BeatmapDataItem*>*), "InsertItem",
++MAKE_HOOK(CustomBeatmapDataSortedListForTypes_InsertItem,
++                        (i2c::find_method(classof(BeatmapDataSortedListForTypeAndIds_1<BeatmapDataItem*>*), "InsertItem")),
+@@ -104,2 +103,2 @@ MAKE_HOOK_FIND_INSTANCE(CustomBeatmapDataSortedListForTypes_InsertItem,
+-MAKE_HOOK_FIND_INSTANCE(CustomBeatmapDataSortedListForTypes_RemoveItem,
+-                        classof(BeatmapDataSortedListForTypeAndIds_1<BeatmapDataItem*>*), "RemoveItem", void,
++MAKE_HOOK(CustomBeatmapDataSortedListForTypes_RemoveItem,
++                        (i2c::find_method(classof(BeatmapDataSortedListForTypeAndIds_1<BeatmapDataItem*>*), "RemoveItem")), void,
+@@ -109 +108 @@ MAKE_HOOK_FIND_INSTANCE(CustomBeatmapDataSortedListForTypes_RemoveItem,
+-  if (self->_itemToNodeMap->TryGetValue(item, byref(node))) {
++  if (self->_itemToNodeMap->TryGetValue(item, by_ref(node))) {
+@@ -139 +138 @@ MAKE_PAPER_HOOK_MATCH(CustomAddBeatmapObjectData, &BeatmapData::AddBeatmapObject
+-  if (auto customSelf = il2cpp_utils::try_cast<CustomBeatmapData>(self).value_or(nullptr)) {
++  if (auto customSelf = i2c::cast<i2c::result<CustomBeatmapData*>>(self).value_or(nullptr)) {
+@@ -147 +146 @@ MAKE_PAPER_HOOK_MATCH(CustomInsertBeatmapEventData, &BeatmapData::InsertBeatmapE
+-  if (auto customSelf = il2cpp_utils::try_cast<CustomBeatmapData>(self).value_or(nullptr)) {
++  if (auto customSelf = i2c::cast<i2c::result<CustomBeatmapData*>>(self).value_or(nullptr)) {
+@@ -154 +153 @@ MAKE_PAPER_HOOK_MATCH(BurstSliderSpawner_ProcessSliderData, &BurstSliderSpawner:
+-                      ::ByRef<::GlobalNamespace::SliderSpawnData> sliderSpawnData, bool forceIsFirstNote,
++                      ::by_ref<::GlobalNamespace::SliderSpawnData> sliderSpawnData, bool forceIsFirstNote,
+@@ -160 +159 @@ MAKE_PAPER_HOOK_MATCH(BurstSliderSpawner_ProcessSliderData, &BurstSliderSpawner:
+-  auto* customSliderData = il2cpp_utils::try_cast<CustomJSONData::CustomSliderData>(sliderData).value_or(nullptr);
++  auto* customSliderData = i2c::cast<i2c::result<CustomJSONData::CustomSliderData*>>(sliderData).value_or(nullptr);
+diff --git a/src/hooks/CustomJSONDataHooks.cpp b/src/hooks/CustomJSONDataHooks.cpp
+index 776f9df..e8b6673 100644
+--- a/src/hooks/CustomJSONDataHooks.cpp
++++ b/src/hooks/CustomJSONDataHooks.cpp
+@@ -39,3 +39,3 @@
+-#include "beatsaber-hook/shared/utils/typedefs-list.hpp"
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
+-#include "beatsaber-hook/shared/config/rapidjson-utils.hpp"
++#include "beatsaber-hook/shared/listw.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
++#include "beatsaber-hook/shared/rapidjson.hpp"
+@@ -49 +48,0 @@
+-#include "sombrero/shared/linq_functional.hpp"
+@@ -220 +219 @@ MAKE_PAPER_HOOK_MATCH(BeatmapDataStrobeFilterTransform_CreateTransformedData,
+-  //    auto customBeatmapData = il2cpp_utils::cast<CustomBeatmapData>(beatmapData);
++  //    auto customBeatmapData = i2c::cast<CustomBeatmapData*>(beatmapData);
+@@ -223 +222 @@ MAKE_PAPER_HOOK_MATCH(BeatmapDataStrobeFilterTransform_CreateTransformedData,
+-  ////    if (auto customBeatmapData = il2cpp_utils::try_cast<CustomBeatmapData>(beatmapData)) {
++  ////    if (auto customBeatmapData = i2c::cast<i2c::result<CustomBeatmapData*>>(beatmapData)) {
+@@ -249 +248 @@ MAKE_PAPER_HOOK_MATCH(BeatmapDataStrobeFilterTransform_CreateTransformedData,
+-  //        newBeatmap->InsertBeatmapEventDataInOrder(il2cpp_utils::cast<BeatmapEventData>(node->item));
++  //        newBeatmap->InsertBeatmapEventDataInOrder(i2c::cast<BeatmapEventData*>(node->item));
+@@ -252 +251 @@ MAKE_PAPER_HOOK_MATCH(BeatmapDataStrobeFilterTransform_CreateTransformedData,
+-  auto* customBeatmapData = il2cpp_utils::cast<CustomBeatmapData>(beatmapData);
++  auto* customBeatmapData = i2c::cast<CustomBeatmapData*>(beatmapData);
+@@ -279 +278 @@ MAKE_PAPER_HOOK_MATCH(BeatmapDataStrobeFilterTransform_CreateTransformedData,
+-        il2cpp_utils::try_cast<BasicBeatmapEventData>(beatmapDataItem).value_or(nullptr);
++        i2c::cast<i2c::result<BasicBeatmapEventData*>>(beatmapDataItem).value_or(nullptr);
+@@ -281 +280 @@ MAKE_PAPER_HOOK_MATCH(BeatmapDataStrobeFilterTransform_CreateTransformedData,
+-        il2cpp_utils::try_cast<LightColorBeatmapEventData>(beatmapDataItem).value_or(nullptr);
++        i2c::cast<i2c::result<LightColorBeatmapEventData*>>(beatmapDataItem).value_or(nullptr);
+@@ -373 +372 @@ MAKE_PAPER_HOOK_MATCH(BeatmapCallbacksController_Dispose, &BeatmapCallbacksContr
+-  CustomEventCallbacks::firstNode.emplace(nullptr);
++  CustomEventCallbacks::firstNode = nullptr;
+@@ -591 +590 @@ void CustomJSONData::InstallHooks() {
+-  il2cpp_functions::Class_Init(classof(BeatmapData*));
++  i2c::functions::Class_Init(classof(BeatmapData*));
+diff --git a/src/hooks/V2Hooks.cpp b/src/hooks/V2Hooks.cpp
+index c6b0f71..d2258d1 100644
+--- a/src/hooks/V2Hooks.cpp
++++ b/src/hooks/V2Hooks.cpp
+@@ -0,0 +1,2 @@
++#include "System/String.hpp"
++#include "GlobalNamespace/LightGroupSO.hpp"
+@@ -35,3 +37,3 @@
+-#include "beatsaber-hook/shared/utils/typedefs-list.hpp"
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
+-#include "beatsaber-hook/shared/config/rapidjson-utils.hpp"
++#include "beatsaber-hook/shared/listw.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
++#include "beatsaber-hook/shared/rapidjson.hpp"
+@@ -152,2 +154,2 @@ MAKE_PAPER_HOOK_MATCH(BeatmapDataLoader_GetBeatmapDataFromSaveDataJson_v2,
+-        EnvironmentKeywords::New_ctor(ListW<StringW>({})->i___System__Collections__Generic__IReadOnlyList_1_T_());
+-    environmentLightGroups = EnvironmentLightGroups::New_ctor(ListW<UnityW<LightGroupSO>>::New().getPtr())
++        EnvironmentKeywords::New_ctor(ListW<StringW>::New()->i___System__Collections__Generic__IReadOnlyList_1_T_());
++    environmentLightGroups = EnvironmentLightGroups::New_ctor(ListW<UnityW<LightGroupSO>>::New().operator->())
+@@ -204 +206 @@ MAKE_PAPER_HOOK_MATCH(BeatmapSaveData_ConvertBeatmapSaveDataPreV2_5_0Inline,
+-    auto const customEventData = il2cpp_utils::try_cast<v2::CustomBeatmapSaveData_EventData>(originalEventData);
++    auto const customEventData = i2c::cast<i2c::result<v2::CustomBeatmapSaveData_EventData*>>(originalEventData);
+@@ -220,2 +222 @@ MAKE_PAPER_HOOK_MATCH(BeatmapSaveData_ConvertBeatmapSaveDataPreV2_5_0Inline,
+-  auto list = ListW<BeatmapSaveDataVersion2_6_0AndEarlier::EventData*>::New(
+-      std::span<BeatmapSaveDataVersion2_6_0AndEarlier::EventData* const>(events));
++  auto list = CustomJSONData::SpanToSystemList(events);
+@@ -380 +381 @@ MAKE_PAPER_HOOK_MATCH(BeatmapDataLoader_GetBeatmapDataFromSaveData_v2,
+-  if (auto cBeatmapSaveData = il2cpp_utils::try_cast<v2::CustomBeatmapSaveData>(beatmapSaveData)) {
++  if (auto cBeatmapSaveData = i2c::cast<i2c::result<v2::CustomBeatmapSaveData*>>(beatmapSaveData)) {
+@@ -531 +532 @@ MAKE_PAPER_HOOK_MATCH(BeatmapDataLoader_GetBeatmapDataFromSaveData_v2,
+-      auto beatmapEventData = basicEventConverter(il2cpp_utils::cast<v2::CustomBeatmapSaveData_EventData>(e));
++      auto beatmapEventData = basicEventConverter(i2c::cast<v2::CustomBeatmapSaveData_EventData*>(e));
+@@ -539 +540 @@ MAKE_PAPER_HOOK_MATCH(BeatmapDataLoader_GetBeatmapDataFromSaveData_v2,
+-  if (auto customBeatmapSaveData = il2cpp_utils::try_cast<v2::CustomBeatmapSaveData>(beatmapSaveData)) {
++  if (auto customBeatmapSaveData = i2c::cast<i2c::result<v2::CustomBeatmapSaveData*>>(beatmapSaveData)) {
+@@ -566,0 +568 @@ MAKE_PAPER_HOOK_MATCH(BeatmapDataLoader_GetBeatmapDataFromSaveData_v2,
++        // Native 1.45.1 v2/v3 loaders pass false for both new lightshow flags.
+@@ -569 +571 @@ MAKE_PAPER_HOOK_MATCH(BeatmapDataLoader_GetBeatmapDataFromSaveData_v2,
+-                                                                    environmentLightGroups, lightEventConverter);
++                                                                    environmentLightGroups, lightEventConverter, false, false);
+diff --git a/src/hooks/V3Hooks.cpp b/src/hooks/V3Hooks.cpp
+index b364603..3c7eb67 100644
+--- a/src/hooks/V3Hooks.cpp
++++ b/src/hooks/V3Hooks.cpp
+@@ -0,0 +1 @@
++#include "GlobalNamespace/LightGroupSO.hpp"
+@@ -35,3 +36,3 @@
+-#include "beatsaber-hook/shared/utils/typedefs-list.hpp"
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
+-#include "beatsaber-hook/shared/config/rapidjson-utils.hpp"
++#include "beatsaber-hook/shared/listw.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
++#include "beatsaber-hook/shared/rapidjson.hpp"
+@@ -102,2 +103,2 @@ MAKE_PAPER_HOOK_MATCH(BeatmapDataLoader_GetBeatmapDataFromSaveDataJson_v3,
+-        EnvironmentKeywords::New_ctor(ListW<StringW>({})->i___System__Collections__Generic__IReadOnlyList_1_T_());
+-    environmentLightGroups = EnvironmentLightGroups::New_ctor(ListW<UnityW<LightGroupSO>>::New().getPtr())
++        EnvironmentKeywords::New_ctor(ListW<StringW>::New()->i___System__Collections__Generic__IReadOnlyList_1_T_());
++    environmentLightGroups = EnvironmentLightGroups::New_ctor(ListW<UnityW<LightGroupSO>>::New().operator->())
+@@ -248 +249 @@ MAKE_PAPER_HOOK_MATCH(BeatmapDataLoader_GetBeatmapDataFromSaveData_v3,
+-  if (auto cBeatmapSaveData = il2cpp_utils::try_cast<v3::CustomBeatmapSaveData>(beatmapSaveData)) {
++  if (auto cBeatmapSaveData = i2c::cast<i2c::result<v3::CustomBeatmapSaveData*>>(beatmapSaveData)) {
+@@ -403 +404 @@ MAKE_PAPER_HOOK_MATCH(BeatmapDataLoader_GetBeatmapDataFromSaveData_v3,
+-                                            il2cpp_utils::ClassStandardName(beatmapSaveData->rotationEvents->klass));
++                                            i2c::class_standard_name(beatmapSaveData->rotationEvents->klass));
+@@ -463,0 +465 @@ MAKE_PAPER_HOOK_MATCH(BeatmapDataLoader_GetBeatmapDataFromSaveData_v3,
++      // Native 1.45.1 v2/v3 loaders pass false for both new lightshow flags.
+@@ -466 +468 @@ MAKE_PAPER_HOOK_MATCH(BeatmapDataLoader_GetBeatmapDataFromSaveData_v3,
+-                                                                  environmentLightGroups, lightEventConverter);
++                                                                  environmentLightGroups, lightEventConverter, false, false);
+@@ -528 +530 @@ MAKE_PAPER_HOOK_MATCH(BeatmapDataLoader_GetBeatmapDataFromSaveData_v3,
+-  if (auto customBeatmapSaveData = il2cpp_utils::try_cast<v3::CustomBeatmapSaveData>(beatmapSaveData)) {
++  if (auto customBeatmapSaveData = i2c::cast<i2c::result<v3::CustomBeatmapSaveData*>>(beatmapSaveData)) {
+diff --git a/src/hooks/V4Hooks.cpp b/src/hooks/V4Hooks.cpp
+index 5b701e6..a5f1dbc 100644
+--- a/src/hooks/V4Hooks.cpp
++++ b/src/hooks/V4Hooks.cpp
+@@ -27,3 +27,3 @@
+-#include "beatsaber-hook/shared/utils/typedefs-list.hpp"
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
+-#include "beatsaber-hook/shared/config/rapidjson-utils.hpp"
++#include "beatsaber-hook/shared/listw.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
++#include "beatsaber-hook/shared/rapidjson.hpp"

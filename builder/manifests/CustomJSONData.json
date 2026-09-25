@@ -1,0 +1,42 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Lauriethefish/QuestPatcher.QMod/main/QuestPatcher.QMod/Resources/qmod.schema.json",
+  "_QPVersion": "0.1.2",
+  "name": "CustomJSONData (experimental 1.45.1)",
+  "id": "custom-json-data",
+  "author": "StackDoubleFlow, Fernthedev",
+  "version": "0.24.5+local.1451",
+  "packageId": "com.beatgames.beatsaber",
+  "packageVersion": "1.45.1_27839",
+  "description": "Local source port to exact Beat Saber 1.45.1. Runtime and custom-map validation pending.",
+  "dependencies": [
+    {
+      "id": "beatsaber-hook",
+      "version": "^8.2.1"
+    },
+    {
+      "id": "custom-types",
+      "version": "^0.20.1"
+    },
+    {
+      "id": "songcore",
+      "version": "^1.3.2"
+    },
+    {
+      "id": "paper2_scotland2",
+      "version": "^4.8.0"
+    },
+    {
+      "id": "flamingo",
+      "version": "^1.2.1"
+    }
+  ],
+  "modFiles": [],
+  "lateModFiles": [
+    "libcustom-json-data.so"
+  ],
+  "libraryFiles": [
+    "libcustom-json-data.so"
+  ],
+  "fileCopies": [],
+  "modloader": "Scotland2"
+}

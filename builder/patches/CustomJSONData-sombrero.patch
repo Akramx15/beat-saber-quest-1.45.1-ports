@@ -1,0 +1,46 @@
+diff --git a/shared/ColorUtils.hpp b/shared/ColorUtils.hpp
+--- a/shared/ColorUtils.hpp
++++ b/shared/ColorUtils.hpp
+@@ -8 +8 @@
+-#include "beatsaber-hook/shared/utils/typedefs.h"
++#include "beatsaber-hook/shared/types.hpp"
+@@ -383 +383,2 @@
+-DEFINE_IL2CPP_ARG_TYPE(Sombrero::FastColor, "UnityEngine", "Color");
++MARK_VAL_T(Sombrero::FastColor);
++DEFINE_IL2CPP_CLASS(Sombrero::FastColor, "UnityEngine", "Color");
+diff --git a/shared/QuaternionUtils.hpp b/shared/QuaternionUtils.hpp
+--- a/shared/QuaternionUtils.hpp
++++ b/shared/QuaternionUtils.hpp
+@@ -8 +8 @@
+-#include "beatsaber-hook/shared/utils/typedefs.h"
++#include "beatsaber-hook/shared/types.hpp"
+@@ -174 +174,2 @@
+-DEFINE_IL2CPP_ARG_TYPE(Sombrero::FastQuaternion, "UnityEngine", "Quaternion");
++MARK_VAL_T(Sombrero::FastQuaternion);
++DEFINE_IL2CPP_CLASS(Sombrero::FastQuaternion, "UnityEngine", "Quaternion");
+diff --git a/shared/Vector2Utils.hpp b/shared/Vector2Utils.hpp
+--- a/shared/Vector2Utils.hpp
++++ b/shared/Vector2Utils.hpp
+@@ -8 +8 @@
+-#include "beatsaber-hook/shared/utils/typedefs.h"
++#include "beatsaber-hook/shared/types.hpp"
+@@ -190 +190,2 @@
+-DEFINE_IL2CPP_ARG_TYPE(Sombrero::FastVector2, "UnityEngine", "Vector2");
++MARK_VAL_T(Sombrero::FastVector2);
++DEFINE_IL2CPP_CLASS(Sombrero::FastVector2, "UnityEngine", "Vector2");
+diff --git a/shared/Vector3Utils.hpp b/shared/Vector3Utils.hpp
+--- a/shared/Vector3Utils.hpp
++++ b/shared/Vector3Utils.hpp
+@@ -8 +8 @@
+-#include "beatsaber-hook/shared/utils/typedefs.h"
++#include "beatsaber-hook/shared/types.hpp"
+@@ -220 +220,2 @@
+-DEFINE_IL2CPP_ARG_TYPE(Sombrero::FastVector3, "UnityEngine", "Vector3");
++MARK_VAL_T(Sombrero::FastVector3);
++DEFINE_IL2CPP_CLASS(Sombrero::FastVector3, "UnityEngine", "Vector3");
+diff --git a/shared/linq.hpp b/shared/linq.hpp
+--- a/shared/linq.hpp
++++ b/shared/linq.hpp
+@@ -6 +6 @@
+-#include "beatsaber-hook/shared/utils/typedefs-array.hpp"
++#include "beatsaber-hook/shared/arrayw.hpp"

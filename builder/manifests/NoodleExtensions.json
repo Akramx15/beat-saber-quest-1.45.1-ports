@@ -1,0 +1,54 @@
+{
+  "_QPVersion": "0.1.1",
+  "name": "NoodleExtensions (experimental 1.45.1)",
+  "id": "NoodleExtensions",
+  "author": "StackDoubleFlow",
+  "version": "1.6.3+local.1451.4",
+  "packageId": "com.beatgames.beatsaber",
+  "packageVersion": "1.45.1_27839",
+  "description": "Local source port to exact Beat Saber 1.45.1 with local CJD/Tracks animation dependencies. Runtime and custom-map validation pending.",
+  "modFiles": [],
+  "lateModFiles": [
+    "libnoodleextensions.so"
+  ],
+  "dependencies": [
+    {
+      "id": "beatsaber-hook",
+      "version": "^8.2.1"
+    },
+    {
+      "id": "custom-types",
+      "version": "^0.20.1"
+    },
+    {
+      "id": "custom-json-data",
+      "version": "^0.24.5"
+    },
+    {
+      "id": "tracks",
+      "version": "^2.5.4"
+    },
+    {
+      "id": "bsml",
+      "version": "^0.5.8"
+    },
+    {
+      "id": "songcore",
+      "version": "^1.3.2"
+    },
+    {
+      "id": "paper2_scotland2",
+      "version": "^4.8.0"
+    },
+    {
+      "id": "flamingo",
+      "version": "^1.2.1"
+    }
+  ],
+  "libraryFiles": [
+    "libnoodleextensions.so"
+  ],
+  "fileCopies": [],
+  "copyExtensions": [],
+  "modloader": "Scotland2"
+}

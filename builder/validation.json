@@ -1,0 +1,80 @@
+{
+  "schema": 1,
+  "target_game": "1.45.1_27839",
+  "experimental": true,
+  "complete_clean_build_pass": false,
+  "runtime_tested_portable_outputs": false,
+  "host_tests": {
+    "passed": 18,
+    "failed": 0,
+    "scope": "Integrity guards, safe archive paths, compiler launch arguments, fingerprint tampering, declared build order."
+  },
+  "source_reconstruction": {
+    "targets": 11,
+    "changed_files": 227,
+    "result": "pass",
+    "report": "source-reconstruction-validation.json"
+  },
+  "dependency_patch_reconstruction": {
+    "projects": 4,
+    "result": "pass",
+    "report": "dependency-patch-validation.json"
+  },
+  "generator": {
+    "state": "passed_fresh_fetch_patch_compile_and_own_APK_generate",
+    "generator_commit": "458e5d94a79ccb9c534eeb6729e0e8128b0984fc",
+    "brocolib_commit": "618b38b1fd6d697474c93079c74198eae9475c74",
+    "headers_sentinels_sha256_matched": 4,
+    "private_files_uploaded": false,
+    "complete_deterministic_tree_sha256": "d96e6d3c9039acf152342edfbe48d18ca1fb96af45a16307eda9757abaf7a2a1",
+    "identical_full_regenerations": 2,
+    "file_count": 45820
+  },
+  "builds": {
+    "Quest-BSML": {
+      "state": "fresh_Android_compile_and_strict_link_passed_initial_receipt_pending_final_seal"
+    },
+    "MetaCore-1451": {
+      "state": "fresh_Android_target_compile_and_strict_link_passed",
+      "packaging": "initial run reached packaging before recipe fingerprint was sealed; final receipt pending"
+    },
+    "metacore-bs-1451": {
+      "state": "not_yet_clean_built"
+    },
+    "UnicodeQuest": {
+      "state": "fresh_Android_build_and_initial_QMOD_passed_final_receipt_pending"
+    },
+    "CustomJSONData": {
+      "state": "fresh_Android_build_and_initial_QMOD_passed_final_receipt_pending"
+    },
+    "Tracks": {
+      "state": "not_yet_clean_built"
+    },
+    "NoodleExtensions": {
+      "state": "not_yet_clean_built"
+    },
+    "Chroma": {
+      "state": "not_yet_clean_built"
+    },
+    "PlaylistCore-1451": {
+      "state": "not_yet_clean_built"
+    },
+    "BetterSongList": {
+      "state": "not_yet_clean_built"
+    },
+    "SongDownloader": {
+      "state": "not_yet_clean_built"
+    }
+  },
+  "bootstrap": {
+    "ndk_archive_sha256_verified": true,
+    "official_ndk_35_symlink_targets_checked": true,
+    "tool_archive_extraction_on_WSL_tested": false,
+    "llvm_archive_downloaded_in_this_validation": false
+  },
+  "limitations": [
+    "No portable output has been installed or runtime-tested on a headset.",
+    "Windows WSL execution and the optional full toolchain bootstrap have not been end-to-end tested.",
+    "CongXinJian remains held pending calibration review."
+  ]
+}

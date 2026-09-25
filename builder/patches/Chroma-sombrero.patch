@@ -1,0 +1,74 @@
+diff --git a/shared/ColorUtils.hpp b/shared/ColorUtils.hpp
+--- a/shared/ColorUtils.hpp
++++ b/shared/ColorUtils.hpp
+@@ -8 +8 @@
+-#include "beatsaber-hook/shared/utils/typedefs.h"
++#include "beatsaber-hook/shared/types.hpp"
+@@ -383 +383,2 @@
+-DEFINE_IL2CPP_ARG_TYPE(Sombrero::FastColor, "UnityEngine", "Color");
++MARK_VAL_T(Sombrero::FastColor);
++DEFINE_IL2CPP_CLASS(Sombrero::FastColor, "UnityEngine", "Color");
+diff --git a/shared/QuaternionUtils.hpp b/shared/QuaternionUtils.hpp
+--- a/shared/QuaternionUtils.hpp
++++ b/shared/QuaternionUtils.hpp
+@@ -8 +8 @@
+-#include "beatsaber-hook/shared/utils/typedefs.h"
++#include "beatsaber-hook/shared/types.hpp"
+@@ -174 +174,2 @@
+-DEFINE_IL2CPP_ARG_TYPE(Sombrero::FastQuaternion, "UnityEngine", "Quaternion");
++MARK_VAL_T(Sombrero::FastQuaternion);
++DEFINE_IL2CPP_CLASS(Sombrero::FastQuaternion, "UnityEngine", "Quaternion");
+diff --git a/shared/Vector2Utils.hpp b/shared/Vector2Utils.hpp
+--- a/shared/Vector2Utils.hpp
++++ b/shared/Vector2Utils.hpp
+@@ -8 +8 @@
+-#include "beatsaber-hook/shared/utils/typedefs.h"
++#include "beatsaber-hook/shared/types.hpp"
+@@ -190 +190,2 @@
+-DEFINE_IL2CPP_ARG_TYPE(Sombrero::FastVector2, "UnityEngine", "Vector2");
++MARK_VAL_T(Sombrero::FastVector2);
++DEFINE_IL2CPP_CLASS(Sombrero::FastVector2, "UnityEngine", "Vector2");
+diff --git a/shared/Vector3Utils.hpp b/shared/Vector3Utils.hpp
+--- a/shared/Vector3Utils.hpp
++++ b/shared/Vector3Utils.hpp
+@@ -8 +8 @@
+-#include "beatsaber-hook/shared/utils/typedefs.h"
++#include "beatsaber-hook/shared/types.hpp"
+@@ -220 +220,2 @@
+-DEFINE_IL2CPP_ARG_TYPE(Sombrero::FastVector3, "UnityEngine", "Vector3");
++MARK_VAL_T(Sombrero::FastVector3);
++DEFINE_IL2CPP_CLASS(Sombrero::FastVector3, "UnityEngine", "Vector3");
+diff --git a/shared/linq.hpp b/shared/linq.hpp
+--- a/shared/linq.hpp
++++ b/shared/linq.hpp
+@@ -6 +6,2 @@
+-#include "beatsaber-hook/shared/utils/typedefs-array.hpp"
++#include "beatsaber-hook/shared/arrayw.hpp"
++#include "beatsaber-hook/shared/listw.hpp"
+@@ -286,22 +287,4 @@
+-        using ItemT = std::remove_reference_t<decltype(*range.begin())>;
+-        if constexpr (can_get_size<T>) {
+-            auto lst = il2cpp_utils::NewSpecific<List<ItemT>*>(get_size<T>(std::forward<T>(range)));
+-            // Now that we have a list that is big enough, lets copy to it
+-            #ifdef HAS_CODEGEN
+-            std::copy(range.begin(), range.end(), lst->items.begin());
+-            #else
+-            std::copy(range.begin(), range.end(), &lst->items->values[0]);
+-            #endif
+-            return lst;
+-        }
+-        // We can't get the size, so we have to copy into some buffer and then copy to the list
+-        // TODO: We use a vector. vector<bool> will break.
+-        std::vector<ItemT> vec(range.begin(), range.end());
+-        auto lst = il2cpp_utils::NewSpecific<List<ItemT>*>(vec.size());
+-        // Now that we have a list that is big enough, lets copy to it
+-        #ifdef HAS_CODEGEN
+-        std::copy(vec.begin(), vec.end(), lst->items.begin());
+-        #else
+-        std::copy(vec.begin(), vec.end(), &lst->items->values[0]);
+-        #endif
+-        return lst;
++        using ItemT = std::remove_cvref_t<decltype(*range.begin())>;
++        auto list = ListW<ItemT>::New();
++        for (auto&& item : range) list.push_back(item);
++        return list.operator->();

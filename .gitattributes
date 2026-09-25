@@ -1,0 +1,5 @@
+# Preserve exact recipe bytes; patch payloads may include upstream CRLF lines.
+* text=auto eol=lf
+*.patch -text
+*.zip binary
+*.qmod binary

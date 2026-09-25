@@ -1,0 +1,138 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 51c75a0..0073dce 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -59,0 +60,3 @@ include(extern.cmake)
++# Exact target API generated from the local 1.45.1 APK.
++target_include_directories(${COMPILE_ID} BEFORE PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../../toolchain/codegen/include")
++
+@@ -67,0 +71,9 @@ add_custom_command(
++
++# Separate, opt-in-on-device integration module. Never runs from the main mod.
++add_library(metacore-lifecycle-tests SHARED tests/lifecycle.cpp)
++get_target_property(METACORE_INCLUDE_DIRS ${COMPILE_ID} INCLUDE_DIRECTORIES)
++get_target_property(METACORE_LINK_LIBS ${COMPILE_ID} LINK_LIBRARIES)
++target_include_directories(metacore-lifecycle-tests PRIVATE ${METACORE_INCLUDE_DIRS})
++target_link_libraries(metacore-lifecycle-tests PRIVATE ${COMPILE_ID} ${METACORE_LINK_LIBS})
++get_target_property(METACORE_COMPILE_OPTIONS ${COMPILE_ID} COMPILE_OPTIONS)
++target_compile_options(metacore-lifecycle-tests PRIVATE ${METACORE_COMPILE_OPTIONS})
+diff --git a/include/types.hpp b/include/types.hpp
+index ea69dec..3782aeb 100644
+--- a/include/types.hpp
++++ b/include/types.hpp
+@@ -5,0 +6 @@
++#include "UnityEngine/EntityId.hpp"
+@@ -11,0 +13,2 @@ DECLARE_CLASS_CODEGEN(MetaCore, ObjectSignal, UnityEngine::MonoBehaviour) {
++    DECLARE_INSTANCE_METHOD(void, OnDestroy);
++    DECLARE_INSTANCE_FIELD(int, destroyInstanceId);
+@@ -17,0 +21,3 @@ DECLARE_CLASS_CODEGEN(MetaCore, ObjectSignal, UnityEngine::MonoBehaviour) {
++    static void WatchDestroy(int instanceId, UnityEngine::EntityId entityId, std::function<void()> callback, bool inactive);
++    static void DispatchDestroy(int instanceId);
++    static void PollInactiveDestroys();
+diff --git a/shared/unity.hpp b/shared/unity.hpp
+index 8129184..93ea2df 100644
+--- a/shared/unity.hpp
++++ b/shared/unity.hpp
+@@ -157 +157,2 @@ namespace MetaCore::Engine {
+-    /// @brief Sets a function to be run when a given object is destroyed (via Unity's OnDestroy callback)
++    /// @brief Sets a function to run on the next scheduler Update after the GameObject is destroyed.
++    /// Removing only the internal signal component does not fire the callback; monitoring continues.
+diff --git a/src/hooks.cpp b/src/hooks.cpp
+index f061c25..05976b1 100644
+--- a/src/hooks.cpp
++++ b/src/hooks.cpp
+@@ -4,2 +4 @@
+-#include "types.hpp"
+-#include "beatsaber-hook/shared/binary.hpp"
++#include "beatsaber-hook/shared/stringw.hpp"
+@@ -7 +5,0 @@
+-using namespace MetaCore;
+@@ -39,16 +36,0 @@ AUTO_HOOK_FUNCTION(Abort) {
+-// hook unity object destruction (OnDestroy and dtors need to be debugged in CT)
+-MAKE_HOOK(delete_object_internal_step1, (nullptr), void, char* object) {
+-    int instanceId = *(int*) (object + 8);
+-    auto destroy = ObjectSignal::onDestroys.find(instanceId);
+-    if (destroy != ObjectSignal::onDestroys.end() && destroy->second) {
+-        destroy->second();
+-        ObjectSignal::onDestroys.erase(destroy);
+-    }
+-    delete_object_internal_step1(object);
+-}
+-
+-AUTO_HOOK_FUNCTION(delete_object_internal_step1) {
+-    // TODO: fix addr (or just remove hook)
+-    uintptr_t addr = i2c::binary::base_addr("libunity.so") + 0x8d2898;
+-    INSTALL_HOOK(logger, delete_object_internal_step1, (void*) addr);
+-}
+diff --git a/src/types.cpp b/src/types.cpp
+index 2c9e76e..425a6fd 100644
+--- a/src/types.cpp
++++ b/src/types.cpp
+@@ -3,0 +4 @@
++#include "UnityEngine/Object.hpp"
+@@ -9,0 +11,42 @@ std::unordered_map<int, std::function<void()>> MetaCore::ObjectSignal::onDestroy
++// Unity does not send OnDestroy for components that have never been active.
++// Also keep watching if just the signal component is removed from a live object.
++// EntityIds avoid retaining managed pointers outside the GC.
++static std::unordered_map<int, UnityEngine::EntityId> inactiveDestroyChecks;
++
++void MetaCore::ObjectSignal::WatchDestroy(int instanceId, UnityEngine::EntityId entityId, std::function<void()> callback, bool inactive) {
++    if (!callback) {
++        onDestroys.erase(instanceId);
++        inactiveDestroyChecks.erase(instanceId);
++        return;
++    }
++    onDestroys[instanceId] = std::move(callback);
++    if (inactive)
++        inactiveDestroyChecks[instanceId] = entityId;
++    else
++        inactiveDestroyChecks.erase(instanceId);
++}
++
++void MetaCore::ObjectSignal::DispatchDestroy(int instanceId) {
++    // Remove first: callbacks may register another object or trigger destruction.
++    auto callback = onDestroys.extract(instanceId);
++    inactiveDestroyChecks.erase(instanceId);
++    if (!callback.empty() && callback.mapped())
++        callback.mapped()();
++}
++
++void MetaCore::ObjectSignal::PollInactiveDestroys() {
++    std::vector<int> destroyed;
++    for (auto const& [instanceId, entityId] : inactiveDestroyChecks)
++        if (!UnityEngine::Object::DoesObjectWithInstanceIDExist(entityId))
++            destroyed.push_back(instanceId);
++    for (auto instanceId : destroyed)
++        DispatchDestroy(instanceId);
++}
++
++void MetaCore::ObjectSignal::OnDestroy() {
++    // OnDestroy may refer only to this component, not its owning GameObject.
++    // Notify after the native GameObject is gone, checked on the next Update.
++    if (onDestroys.contains(destroyInstanceId))
++        inactiveDestroyChecks[destroyInstanceId] = UnityEngine::EntityId::From(destroyInstanceId);
++}
++
+@@ -10,0 +54 @@ void MetaCore::ObjectSignal::OnEnable() {
++    inactiveDestroyChecks.erase(destroyInstanceId);
+@@ -27,0 +72 @@ void MetaCore::MainThreadScheduler::Update() {
++    ObjectSignal::PollInactiveDestroys();
+diff --git a/src/unity.cpp b/src/unity.cpp
+index dbb9a84..878ad80 100644
+--- a/src/unity.cpp
++++ b/src/unity.cpp
+@@ -189 +189,5 @@ void MetaCore::Engine::SetOnDestroy(TransformWrapper object, std::function<void(
+-    ObjectSignal::onDestroys[object->gameObject->GetInstanceID()] = callback;
++    auto gameObject = object->gameObject;
++    auto signal = GetOrAddComponent<ObjectSignal*>(object);
++    auto instanceId = gameObject->GetInstanceID();
++    signal->destroyInstanceId = instanceId;
++    ObjectSignal::WatchDestroy(instanceId, gameObject->GetEntityId(), std::move(callback), !gameObject->activeInHierarchy);
+@@ -201 +205,2 @@ void MetaCore::Engine::QuaternionAverage::AddRotation(Quaternion rot) {
+-        auto yRot = Quaternion::Normalize({0, rot.y, 0, rot.w});
++        Quaternion yRotation{0, rot.y, 0, rot.w};
++        auto yRot = Quaternion::Normalize(yRotation);
+@@ -208 +213,2 @@ void MetaCore::Engine::QuaternionAverage::AddRotation(Quaternion rot) {
+-    if (Quaternion::Dot(rot, baseRotation) < 0)
++    auto referenceRotation = baseRotation;
++    if (Quaternion::Dot(rot, referenceRotation) < 0)

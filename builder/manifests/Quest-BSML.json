@@ -1,0 +1,42 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Lauriethefish/QuestPatcher.QMod/refs/heads/main/QuestPatcher.QMod/Resources/qmod.schema.json",
+  "_QPVersion": "1.1.0",
+  "name": "BSML",
+  "id": "bsml",
+  "modloader": "Scotland2",
+  "author": "RedBrumbler",
+  "version": "0.5.8+local.1451",
+  "packageId": "com.beatgames.beatsaber",
+  "packageVersion": "1.45.1_27839",
+  "description": "Library that parses BeatSaber Markup Language to create UI elements Local experimental 1.45.1 port; see PORT-PROVENANCE.json for verification limits.",
+  "isLibrary": true,
+  "dependencies": [
+    {
+      "version": "^8.0.1",
+      "id": "beatsaber-hook"
+    },
+    {
+      "version": "^0.20.0",
+      "id": "custom-types"
+    },
+    {
+      "version": "^4.8.0",
+      "id": "paper2_scotland2"
+    },
+    {
+      "version": "^10.0.0",
+      "id": "tinyxml2"
+    },
+    {
+      "version": "^1.2.1",
+      "id": "flamingo"
+    }
+  ],
+  "modFiles": [
+    "libbsml.so"
+  ],
+  "lateModFiles": [],
+  "libraryFiles": [],
+  "fileCopies": [],
+  "copyExtensions": []
+}

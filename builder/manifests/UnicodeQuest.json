@@ -1,0 +1,38 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Lauriethefish/QuestPatcher.QMod/main/QuestPatcher.QMod/Resources/qmod.schema.json",
+  "_QPVersion": "0.1.1",
+  "name": "Unicode",
+  "id": "unicode",
+  "author": "Metalit",
+  "version": "0.1.8+local.1451",
+  "packageId": "com.beatgames.beatsaber",
+  "packageVersion": "1.45.1_27839",
+  "description": "Local experimental build for Beat Saber 1.45.1. Adds font fallback and Unicode emoji rendering. Local experimental 1.45.1 port; see PORT-PROVENANCE.json for verification limits.",
+  "dependencies": [
+    {
+      "id": "paper2_scotland2",
+      "version": "^4.8.0"
+    },
+    {
+      "id": "flamingo",
+      "version": "^1.2.1"
+    },
+    {
+      "id": "beatsaber-hook",
+      "version": "^8.2.1"
+    },
+    {
+      "id": "metacore",
+      "version": "^2.0.3"
+    }
+  ],
+  "modFiles": [],
+  "libraryFiles": [
+    "libunicode.so"
+  ],
+  "fileCopies": [],
+  "modloader": "Scotland2",
+  "lateModFiles": [
+    "libunicode.so"
+  ]
+}

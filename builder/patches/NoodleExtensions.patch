@@ -1,0 +1,1336 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index e119931..76e4df2 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -9,2 +9,2 @@ project(${COMPILE_ID})
+-set(CMAKE_CXX_STANDARD 20)
+-set(CMAKE_CXX_STANDARD_REQUIRED 20)
++set(CMAKE_CXX_STANDARD 23)
++set(CMAKE_CXX_STANDARD_REQUIRED ON)
+@@ -17,2 +17,2 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebI
+-        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+-        add_compile_options(-O3 -flto)
++        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION FALSE)
++        add_compile_options(-O3)
+@@ -71,0 +72,15 @@ include(extern.cmake)
++# QPM also globs debugging copies whose SONAME can hide the local exact build.
++get_target_property(port_link_libraries ${COMPILE_ID} LINK_LIBRARIES)
++list(FILTER port_link_libraries EXCLUDE REGEX "(^|/)(debug_[^/]*|[^/]*\\.debug)\\.so$")
++set_property(TARGET ${COMPILE_ID} PROPERTY LINK_LIBRARIES "")
++foreach(port_library IN LISTS port_link_libraries)
++    get_filename_component(port_name "${port_library}" NAME)
++    if(port_name STREQUAL "libbeatsaber-hook.so")
++        set(port_library "${CMAKE_CURRENT_SOURCE_DIR}/../../core-qmods/native/beatsaber-hook-1451/${port_name}")
++    elseif(port_name STREQUAL "libbsml.so")
++        set(port_library "${CMAKE_CURRENT_SOURCE_DIR}/../../core-qmods/native/bsml-1451/${port_name}")
++    elseif(port_name STREQUAL "libsongcore.so")
++        set(port_library "${CMAKE_CURRENT_SOURCE_DIR}/../../core-qmods/native/songcore-1451/${port_name}")
++    endif()
++    target_link_libraries(${COMPILE_ID} PRIVATE "${port_library}")
++endforeach()
+@@ -91 +106,37 @@ add_custom_command(TARGET ${COMPILE_ID} POST_BUILD
+-)
+\ No newline at end of file
++)
++# Local exact-game ports have not been published to QPackages.
++if(NOT DEFINED BEAT_SABER_CODEGEN_INCLUDE)
++    message(FATAL_ERROR "Use build-port.py with exact 1.45.1 generated headers")
++endif()
++foreach(local_mod IN ITEMS custom-json-data tracks)
++    if(local_mod STREQUAL "custom-json-data")
++        set(local_source "${CMAKE_CURRENT_SOURCE_DIR}/../CustomJSONData")
++        set(local_library "${CMAKE_CURRENT_SOURCE_DIR}/../../core-qmods/native/custom-json-data-1451/libcustom-json-data.so")
++    else()
++        set(local_source "${CMAKE_CURRENT_SOURCE_DIR}/../Tracks")
++        set(local_library "${CMAKE_CURRENT_SOURCE_DIR}/../../core-qmods/native/tracks-1451/libtracks.so")
++    endif()
++    file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/local-includes/${local_mod}")
++    file(CREATE_LINK "${local_source}/shared" "${CMAKE_CURRENT_BINARY_DIR}/local-includes/${local_mod}/shared" SYMBOLIC)
++    target_link_libraries(${COMPILE_ID} PRIVATE "${local_library}")
++endforeach()
++target_include_directories(${COMPILE_ID} BEFORE PRIVATE "${BEAT_SABER_CODEGEN_INCLUDE}" "${CMAKE_CURRENT_BINARY_DIR}/local-includes")
++target_link_options(${COMPILE_ID} PRIVATE -Wl,--no-undefined)
++
++# Reuse the common generated type graph while retaining one compiler worker.
++target_precompile_headers(${COMPILE_ID} PRIVATE "${INCLUDE_DIR}/NELogger.h" "${INCLUDE_DIR}/NECaches.h")
++
++# config-utils 3 uses reflectcpp's compiled JSON backend; QPM exports its headers only.
++get_filename_component(REFLECTCPP_INCLUDE_DIR "${EXTERN_DIR}/includes/reflectcpp/include" REALPATH)
++if(NOT DEFINED REFLECTCPP_SOURCE_ROOT)
++    get_filename_component(REFLECTCPP_SOURCE_ROOT "${REFLECTCPP_INCLUDE_DIR}" DIRECTORY)
++endif()
++add_library(noodle_reflectcpp STATIC
++    "${REFLECTCPP_SOURCE_ROOT}/src/rfl/internal/strings/strings.cpp"
++    "${REFLECTCPP_SOURCE_ROOT}/src/rfl/json/Writer.cpp"
++    "${REFLECTCPP_SOURCE_ROOT}/src/yyjson.c")
++set_source_files_properties("${REFLECTCPP_SOURCE_ROOT}/src/yyjson.c" PROPERTIES LANGUAGE CXX)
++set_target_properties(noodle_reflectcpp PROPERTIES POSITION_INDEPENDENT_CODE ON)
++target_include_directories(noodle_reflectcpp PRIVATE "${REFLECTCPP_INCLUDE_DIR}" "${REFLECTCPP_INCLUDE_DIR}/rfl/thirdparty")
++target_compile_options(noodle_reflectcpp PRIVATE -fvisibility=hidden)
++target_link_libraries(${COMPILE_ID} PRIVATE noodle_reflectcpp)
+diff --git a/include/Animation/AnimationHelper.h b/include/Animation/AnimationHelper.h
+index 862f00d..43e7ba5 100644
+--- a/include/Animation/AnimationHelper.h
++++ b/include/Animation/AnimationHelper.h
+@@ -2 +2 @@
+-#include "beatsaber-hook/shared/config/rapidjson-utils.hpp"
++#include "beatsaber-hook/shared/rapidjson.hpp"
+diff --git a/include/Animation/NoodleMovementDataProvider.hpp b/include/Animation/NoodleMovementDataProvider.hpp
+index 8aaae24..012bb1c 100644
+--- a/include/Animation/NoodleMovementDataProvider.hpp
++++ b/include/Animation/NoodleMovementDataProvider.hpp
+@@ -51,2 +51,2 @@ public:
+-  SafePtr<GlobalNamespace::VariableMovementDataProvider> original;
+-  SafePtr<GlobalNamespace::BeatmapObjectSpawnMovementData> beatmapObjectSpawnMovementData;
++  safe_ptr<GlobalNamespace::VariableMovementDataProvider*> original;
++  safe_ptr<GlobalNamespace::BeatmapObjectSpawnMovementData*> beatmapObjectSpawnMovementData;
+diff --git a/include/Animation/PlayerTrack.h b/include/Animation/PlayerTrack.h
+index 235a2ef..3b7b88f 100644
+--- a/include/Animation/PlayerTrack.h
++++ b/include/Animation/PlayerTrack.h
+@@ -8 +8 @@
+-#include "beatsaber-hook/shared/utils/typedefs-wrappers.hpp"
++#include "beatsaber-hook/shared/types.hpp"
+@@ -29 +29 @@ public:
+-  static std::unordered_map<PlayerTrackObject, SafePtrUnity<PlayerTrack>> const& GetPlayerTracks() {
++  static std::unordered_map<PlayerTrackObject, safe_ptr<PlayerTrack*, true>> const& GetPlayerTracks() {
+@@ -34 +34 @@ private:
+-  static std::unordered_map<PlayerTrackObject, SafePtrUnity<PlayerTrack>> playerTracks;
++  static std::unordered_map<PlayerTrackObject, safe_ptr<PlayerTrack*, true>> playerTracks;
+@@ -44 +44 @@ private:
+-  SafePtrUnity<GlobalNamespace::PauseController> pauseController;
++  safe_ptr<GlobalNamespace::PauseController*, true> pauseController;
+diff --git a/include/NECaches.h b/include/NECaches.h
+index ef34486..0fdf05d 100644
+--- a/include/NECaches.h
++++ b/include/NECaches.h
+@@ -1,0 +2 @@
++#include "Zenject/DiContainer.hpp"
+@@ -39,6 +40,6 @@ public:
+-  static SafePtr<Zenject::DiContainer> GameplayCoreContainer;
+-  static SafePtr<GlobalNamespace::IJumpOffsetYProvider> JumpOffsetYProvider;
+-  static SafePtr<GlobalNamespace::VariableMovementDataProvider> VariableMovementDataProvider;
+-  static SafePtr<GlobalNamespace::BeatmapObjectSpawnController::InitData> InitData;
+-  static SafePtr<GlobalNamespace::BeatmapObjectSpawnController> beatmapObjectSpawnController;
+-  static SafePtr<CustomJSONData::CustomBeatmapData> customBeatmapData;
++  static safe_ptr<Zenject::DiContainer*> GameplayCoreContainer;
++  static safe_ptr<GlobalNamespace::IJumpOffsetYProvider*> JumpOffsetYProvider;
++  static safe_ptr<GlobalNamespace::VariableMovementDataProvider*> VariableMovementDataProvider;
++  static safe_ptr<GlobalNamespace::BeatmapObjectSpawnController::InitData*> InitData;
++  static safe_ptr<GlobalNamespace::BeatmapObjectSpawnController*> beatmapObjectSpawnController;
++  static safe_ptr<CustomJSONData::CustomBeatmapData*> customBeatmapData;
+@@ -106,0 +108,3 @@ public:
++  static void ClearGameplayReferences();
++  static void ClearSaberMovementCaches();
++
+diff --git a/include/NEConfig.h b/include/NEConfig.h
+index cc25560..4ad0108 100644
+--- a/include/NEConfig.h
++++ b/include/NEConfig.h
+@@ -4 +4 @@
+-#include "beatsaber-hook/shared/utils/typedefs-string.hpp"
++#include "beatsaber-hook/shared/stringw.hpp"
+diff --git a/include/NEJSON.h b/include/NEJSON.h
+index 32be3c2..5994f60 100644
+--- a/include/NEJSON.h
++++ b/include/NEJSON.h
+@@ -1 +1 @@
+-#include "beatsaber-hook/shared/config/rapidjson-utils.hpp"
++#include "beatsaber-hook/shared/rapidjson.hpp"
+diff --git a/include/NELogger.h b/include/NELogger.h
+index 5b1c157..b858434 100644
+--- a/include/NELogger.h
++++ b/include/NELogger.h
+@@ -3,2 +3,3 @@
+-#include "beatsaber-hook/shared/utils/logging.hpp"
+-#include "beatsaber-hook/shared/config/rapidjson-utils.hpp"
++#include "custom-json-data/shared/CJDLogger.h"
++#include "beatsaber-hook/shared/utils.hpp"
++#include "beatsaber-hook/shared/rapidjson.hpp"
+diff --git a/include/NEObjectPool.hpp b/include/NEObjectPool.hpp
+index 53ab653..3190257 100644
+--- a/include/NEObjectPool.hpp
++++ b/include/NEObjectPool.hpp
+@@ -14 +14 @@ private:
+-  std::deque<SafePtr<NoodleMovementDataProvider>> free = {};
++  std::deque<safe_ptr<NoodleMovementDataProvider*>> free = {};
+@@ -23,2 +23,2 @@ public:
+-  SafePtr<NoodleMovementDataProvider> get(GlobalNamespace::BeatmapObjectData* beatmapObjectData) {
+-    SafePtr<NoodleMovementDataProvider> obj;
++  safe_ptr<NoodleMovementDataProvider*> get(GlobalNamespace::BeatmapObjectData* beatmapObjectData) {
++    safe_ptr<NoodleMovementDataProvider*> obj;
+@@ -37 +37 @@ public:
+-  void put(SafePtr<NoodleMovementDataProvider> obj) {
++  void put(safe_ptr<NoodleMovementDataProvider*> obj) {
+diff --git a/include/NEUtils.hpp b/include/NEUtils.hpp
+index 28f061c..b39ee8b 100644
+--- a/include/NEUtils.hpp
++++ b/include/NEUtils.hpp
+@@ -31 +31 @@ template <typename ToCast, typename It> inline std::vector<ToCast> of_type(It be
+-    if (il2cpp_utils::AssignableFrom<ToCast>((*it)->klass)) result.emplace_back(static_cast<ToCast>(*it));
++    if (i2c::functions::class_is_assignable_from(i2c::class_of<ToCast>(), (*it)->klass)) result.emplace_back(static_cast<ToCast>(*it));
+diff --git a/include/chroma/shared/ObstacleAPI.hpp b/include/chroma/shared/ObstacleAPI.hpp
+index a5396b7..d6c9ce5 100644
+--- a/include/chroma/shared/ObstacleAPI.hpp
++++ b/include/chroma/shared/ObstacleAPI.hpp
+@@ -81 +81 @@ public:
+-  using ObstacleCallback = UnorderedEventCallback<GlobalNamespace::ObstacleControllerBase*, Sombrero::FastColor const&>;
++  using ObstacleCallback = unordered_event_callback<GlobalNamespace::ObstacleControllerBase*, Sombrero::FastColor const&>;
+diff --git a/src/Animation/Events.cpp b/src/Animation/Events.cpp
+index 763c586..38b42af 100644
+--- a/src/Animation/Events.cpp
++++ b/src/Animation/Events.cpp
+@@ -8 +8 @@
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+@@ -51 +51 @@ void CustomEventCallback(BeatmapCallbacksController* callbackController,
+-        auto* customBeatmapData = il2cpp_utils::cast<CustomJSONData::CustomBeatmapData>(callbackController->_beatmapData);
++        auto* customBeatmapData = i2c::cast<CustomJSONData::CustomBeatmapData*>(callbackController->_beatmapData);
+diff --git a/src/Animation/ParentObject.cpp b/src/Animation/ParentObject.cpp
+index 9195e94..d04673b 100644
+--- a/src/Animation/ParentObject.cpp
++++ b/src/Animation/ParentObject.cpp
+@@ -5 +5 @@
+-#include "beatsaber-hook/shared/utils/il2cpp-type-check.hpp"
++#include "beatsaber-hook/shared/types.hpp"
+@@ -14 +14 @@
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
++#include "beatsaber-hook/shared/members.hpp"
+@@ -132 +132 @@ void ParentObject::AssignTrack(ParentTrackEventData const& parentTrackEventData)
+-      il2cpp_utils::il2cpp_type_check::FPtrWrapper<&UnityEngine::GameObject::get_transform>::get();
++      [](UnityEngine::GameObject* go) { return go->get_transform(); };
+@@ -224,2 +224 @@ void ParentObject::ParentToObject(Transform* childTransform) {
+-      il2cpp_utils::il2cpp_type_check::FPtrWrapper<static_cast<void (Transform::*)(UnityEngine::Transform*, bool)>(
+-          &UnityEngine::Transform::SetParent)>::get();
++      [](Transform* child, Transform* parent, bool keepWorldPosition) { child->SetParent(parent, keepWorldPosition); };
+@@ -233,2 +232 @@ void ParentObject::ResetTransformParent(Transform* transform) {
+-      il2cpp_utils::il2cpp_type_check::FPtrWrapper<static_cast<void (Transform::*)(UnityEngine::Transform*, bool)>(
+-          &UnityEngine::Transform::SetParent)>::get();
++      [](Transform* child, Transform* parent, bool keepWorldPosition) { child->SetParent(parent, keepWorldPosition); };
+@@ -241 +239 @@ void ParentObject::HandleGameObject(TrackW track, UnityEngine::GameObject* go, b
+-      il2cpp_utils::il2cpp_type_check::FPtrWrapper<&UnityEngine::GameObject::get_transform>::get();
++      [](UnityEngine::GameObject* go) { return go->get_transform(); };
+diff --git a/src/Animation/PlayerTrack.cpp b/src/Animation/PlayerTrack.cpp
+index c12975e..3a83d86 100644
+--- a/src/Animation/PlayerTrack.cpp
++++ b/src/Animation/PlayerTrack.cpp
+@@ -32 +32 @@ extern BeatmapObjectSpawnController* spawnController;
+-std::unordered_map<PlayerTrackObject, SafePtrUnity<PlayerTrack>> PlayerTrack::playerTracks;
++std::unordered_map<PlayerTrackObject, safe_ptr<PlayerTrack*, true>> PlayerTrack::playerTracks;
+@@ -48 +48,2 @@ PlayerTrack* PlayerTrack::Create(PlayerTrackObject object) {
+-  auto playerTransforms = Resources::FindObjectsOfTypeAll<PlayerTransforms*>()->FirstOrDefault();
++  auto playerTransformsObjects = Resources::FindObjectsOfTypeAll<PlayerTransforms*>();
++  auto playerTransforms = playerTransformsObjects && !playerTransformsObjects.empty() ? playerTransformsObjects[0] : nullptr;
+@@ -55 +56,2 @@ PlayerTrack* PlayerTrack::Create(PlayerTrackObject object) {
+-  auto playerVRControllersManager = Resources::FindObjectsOfTypeAll<PlayerVRControllersManager*>()->FirstOrDefault();
++  auto playerVRControllersManagerObjects = Resources::FindObjectsOfTypeAll<PlayerVRControllersManager*>();
++  auto playerVRControllersManager = playerVRControllersManagerObjects && !playerVRControllersManagerObjects.empty() ? playerVRControllersManagerObjects[0] : nullptr;
+diff --git a/src/Hooks/BeatmapDataLoader.cpp b/src/Hooks/BeatmapDataLoader.cpp
+index 7ace7e4..56cd5c4 100644
+--- a/src/Hooks/BeatmapDataLoader.cpp
++++ b/src/Hooks/BeatmapDataLoader.cpp
+@@ -2,2 +2,2 @@
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
++#include "beatsaber-hook/shared/members.hpp"
+diff --git a/src/Hooks/BeatmapDataTransformHelper.cpp b/src/Hooks/BeatmapDataTransformHelper.cpp
+index afd736c..3420b1e 100644
+--- a/src/Hooks/BeatmapDataTransformHelper.cpp
++++ b/src/Hooks/BeatmapDataTransformHelper.cpp
+@@ -2,2 +2,2 @@
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
++#include "beatsaber-hook/shared/members.hpp"
+@@ -98 +98 @@ void LoadNoodleObjects(CustomJSONData::CustomBeatmapData* beatmap) {
+-        il2cpp_utils::try_cast<CustomJSONData::CustomNoteData>(beatmapObjectData).value_or(nullptr);
++        i2c::cast<i2c::result<CustomJSONData::CustomNoteData*>>(beatmapObjectData).value_or(nullptr);
+@@ -100 +100 @@ void LoadNoodleObjects(CustomJSONData::CustomBeatmapData* beatmap) {
+-        il2cpp_utils::try_cast<CustomJSONData::CustomObstacleData>(beatmapObjectData).value_or(nullptr);
++        i2c::cast<i2c::result<CustomJSONData::CustomObstacleData*>>(beatmapObjectData).value_or(nullptr);
+@@ -102 +102 @@ void LoadNoodleObjects(CustomJSONData::CustomBeatmapData* beatmap) {
+-        il2cpp_utils::try_cast<CustomJSONData::CustomSliderData>(beatmapObjectData).value_or(nullptr);
++        i2c::cast<i2c::result<CustomJSONData::CustomSliderData*>>(beatmapObjectData).value_or(nullptr);
+@@ -206,8 +206,6 @@ MAKE_HOOK_MATCH(BeatmapDataTransformHelper_CreateTransformedBeatmapData,
+-                ::GlobalNamespace::IReadonlyBeatmapData* beatmapData, ::GlobalNamespace::BeatmapLevel* beatmapLevel,
+-                ::GlobalNamespace::GameplayModifiers* gameplayModifiers, bool leftHanded,
+-                ::GlobalNamespace::EnvironmentEffectsFilterPreset environmentEffectsFilterPreset,
+-                ::GlobalNamespace::EnvironmentIntensityReductionOptions* environmentIntensityReductionOptions,
+-                ::ByRef<::BeatSaber::Settings::Settings> settings) {
+-  auto result = BeatmapDataTransformHelper_CreateTransformedBeatmapData(beatmapData, beatmapLevel, gameplayModifiers,
+-                                                                        leftHanded, environmentEffectsFilterPreset,
+-                                                                        environmentIntensityReductionOptions, settings);
++                IReadonlyBeatmapData* beatmapData, BeatmapKey beatmapKey, BeatmapLevel* beatmapLevel,
++                GameplayModifiers* gameplayModifiers, PlayerSpecificSettings* playerSpecificSettings,
++                EnvironmentInfoSO* originalEnvironmentInfo, bool screenDisplacementEffects) {
++  auto result = BeatmapDataTransformHelper_CreateTransformedBeatmapData(
++      beatmapData, beatmapKey, beatmapLevel, gameplayModifiers, playerSpecificSettings,
++      originalEnvironmentInfo, screenDisplacementEffects);
+@@ -217 +215 @@ MAKE_HOOK_MATCH(BeatmapDataTransformHelper_CreateTransformedBeatmapData,
+-  if (auto customBeatmap = il2cpp_utils::try_cast<CustomJSONData::CustomBeatmapData>(result)) {
++  if (auto customBeatmap = i2c::cast<i2c::result<CustomJSONData::CustomBeatmapData*>>(result)) {
+diff --git a/src/Hooks/BeatmapObjectCallBackController.cpp b/src/Hooks/BeatmapObjectCallBackController.cpp
+index 9650f65..bdf537f 100644
+--- a/src/Hooks/BeatmapObjectCallBackController.cpp
++++ b/src/Hooks/BeatmapObjectCallBackController.cpp
+@@ -1,2 +1,2 @@
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "beatsaber-hook/shared/members.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+@@ -95 +95 @@ SortAndOrderList(CustomJSONData::CustomBeatmapData* beatmapData) {
+-  auto newList = SafePtr(System::Collections::Generic::LinkedList_1<BeatmapDataItem*>::New_ctor());
++  auto newList = safe_ptr(System::Collections::Generic::LinkedList_1<BeatmapDataItem*>::New_ctor());
+@@ -122 +122 @@ MAKE_HOOK_MATCH(BeatmapCallbacksUpdater_LateUpdate, &BeatmapCallbacksUpdater::La
+-  auto beatmapOpt = il2cpp_utils::try_cast<CustomJSONData::CustomBeatmapData>(selfController->_beatmapData);
++  auto beatmapOpt = i2c::cast<i2c::result<CustomJSONData::CustomBeatmapData*>>(selfController->_beatmapData);
+diff --git a/src/Hooks/BeatmapObjectManager.cpp b/src/Hooks/BeatmapObjectManager.cpp
+index f6bc231..cbd8d35 100644
+--- a/src/Hooks/BeatmapObjectManager.cpp
++++ b/src/Hooks/BeatmapObjectManager.cpp
+@@ -5,2 +5,2 @@
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "beatsaber-hook/shared/members.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+@@ -24 +24 @@ MAKE_HOOK_MATCH(BeatmapObjectManager_Note_Despawn,
+-  auto customNoteData = il2cpp_utils::try_cast<CustomJSONData::CustomNoteData>(noteController->_noteData);
++  auto customNoteData = i2c::cast<i2c::result<CustomJSONData::CustomNoteData*>>(noteController->_noteData);
+@@ -45 +45 @@ MAKE_HOOK_MATCH(BeatmapObjectManager_Obstacle_Despawn,
+-      il2cpp_utils::try_cast<CustomJSONData::CustomObstacleData>(obstacleController->_obstacleData);
++      i2c::cast<i2c::result<CustomJSONData::CustomObstacleData*>>(obstacleController->_obstacleData);
+@@ -66 +66 @@ MAKE_HOOK_MATCH(BeatmapObjectManager_Slider_Despawn,
+-      il2cpp_utils::try_cast<CustomJSONData::CustomSliderData>(sliderController->_sliderData);
++      i2c::cast<i2c::result<CustomJSONData::CustomSliderData*>>(sliderController->_sliderData);
+@@ -86 +86 @@ MAKE_HOOK_MATCH(BeatmapObjectManager_Note_Spawn, &GlobalNamespace::BeatmapObject
+-  auto customNoteData = il2cpp_utils::try_cast<CustomJSONData::CustomNoteData>(noteController->_noteData);
++  auto customNoteData = i2c::cast<i2c::result<CustomJSONData::CustomNoteData*>>(noteController->_noteData);
+@@ -107 +107 @@ MAKE_HOOK_MATCH(BeatmapObjectManager_Obstacle_Spawn,
+-      il2cpp_utils::try_cast<CustomJSONData::CustomObstacleData>(obstacleController->_obstacleData);
++      i2c::cast<i2c::result<CustomJSONData::CustomObstacleData*>>(obstacleController->_obstacleData);
+@@ -127 +127 @@ MAKE_HOOK_MATCH(BeatmapObjectManager_Slider_Spawn,
+-      il2cpp_utils::try_cast<CustomJSONData::CustomSliderData>(sliderController->_sliderData);
++      i2c::cast<i2c::result<CustomJSONData::CustomSliderData*>>(sliderController->_sliderData);
+diff --git a/src/Hooks/BeatmapObjectSpawnMovementData.cpp b/src/Hooks/BeatmapObjectSpawnMovementData.cpp
+index c1e535d..87a6e72 100644
+--- a/src/Hooks/BeatmapObjectSpawnMovementData.cpp
++++ b/src/Hooks/BeatmapObjectSpawnMovementData.cpp
+@@ -2,2 +2,2 @@
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
++#include "beatsaber-hook/shared/members.hpp"
+@@ -39 +39 @@ MAKE_HOOK_MATCH(GetSliderSpawnData, &BeatmapObjectSpawnMovementData::GetSliderSp
+-  if (!il2cpp_utils::AssignableFrom<CustomJSONData::CustomSliderData*>(normalSliderData->klass))
++  if (!i2c::functions::class_is_assignable_from(i2c::class_of<CustomJSONData::CustomSliderData*>(), normalSliderData->klass))
+@@ -80 +80 @@ MAKE_HOOK_MATCH(GetObstacleSpawnData, &BeatmapObjectSpawnMovementData::GetObstac
+-  if (!il2cpp_utils::AssignableFrom<CustomJSONData::CustomObstacleData*>(normalObstacleData->klass))
++  if (!i2c::functions::class_is_assignable_from(i2c::class_of<CustomJSONData::CustomObstacleData*>(), normalObstacleData->klass))
+@@ -101,0 +102,2 @@ MAKE_HOOK_MATCH(GetObstacleSpawnData, &BeatmapObjectSpawnMovementData::GetObstac
++  const float layerHeight = StaticBeatmapObjectSpawnMovementData::LineYPosForLineLayer(NoteLineLayer::Upper)
++                          - StaticBeatmapObjectSpawnMovementData::LineYPosForLineLayer(NoteLineLayer::Base);
+@@ -104 +106 @@ MAKE_HOOK_MATCH(GetObstacleSpawnData, &BeatmapObjectSpawnMovementData::GetObstac
+-    obstacleHeight = height.value() * GlobalNamespace::StaticBeatmapObjectSpawnMovementData::get_layerHeight();
++    obstacleHeight = height.value() * layerHeight;
+@@ -108 +110 @@ MAKE_HOOK_MATCH(GetObstacleSpawnData, &BeatmapObjectSpawnMovementData::GetObstac
+-        std::min(obstacleData->height * GlobalNamespace::StaticBeatmapObjectSpawnMovementData::get_layerHeight(),
++        std::min(obstacleData->height * layerHeight,
+@@ -127 +129 @@ MAKE_HOOK_MATCH(GetJumpingNoteSpawnData, &BeatmapObjectSpawnMovementData::GetJum
+-  auto noteDataCast = il2cpp_utils::try_cast<CustomJSONData::CustomNoteData>(normalNoteData);
++  auto noteDataCast = i2c::cast<i2c::result<CustomJSONData::CustomNoteData*>>(normalNoteData);
+diff --git a/src/Hooks/BeatmapObjectsInTimeRowProcessor.cpp b/src/Hooks/BeatmapObjectsInTimeRowProcessor.cpp
+index 05155d9..f3ea0c7 100644
+--- a/src/Hooks/BeatmapObjectsInTimeRowProcessor.cpp
++++ b/src/Hooks/BeatmapObjectsInTimeRowProcessor.cpp
+@@ -1 +1 @@
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+diff --git a/src/Hooks/EnvironmentSceneSetup.cpp b/src/Hooks/EnvironmentSceneSetup.cpp
+index 41fbaca..3772839 100644
+--- a/src/Hooks/EnvironmentSceneSetup.cpp
++++ b/src/Hooks/EnvironmentSceneSetup.cpp
+@@ -1,2 +1,2 @@
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "beatsaber-hook/shared/members.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+diff --git a/src/Hooks/FakeNotes/BadNoteCutEffectSpawner.cpp b/src/Hooks/FakeNotes/BadNoteCutEffectSpawner.cpp
+index c648002..8653844 100644
+--- a/src/Hooks/FakeNotes/BadNoteCutEffectSpawner.cpp
++++ b/src/Hooks/FakeNotes/BadNoteCutEffectSpawner.cpp
+@@ -1,2 +1,2 @@
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "beatsaber-hook/shared/members.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+@@ -16 +16 @@ MAKE_HOOK_MATCH(BadNoteCutEffectSpawner_HandleNoteWasCut, &BadNoteCutEffectSpawn
+-                ByRef<GlobalNamespace::NoteCutInfo> noteCutInfo) {
++                by_ref<GlobalNamespace::NoteCutInfo> noteCutInfo) {
+@@ -26 +26 @@ MAKE_HOOK_MATCH(BombCutSoundEffectManager_HandleNoteWasCut, &BombCutSoundEffectM
+-                ByRef<GlobalNamespace::NoteCutInfo> noteCutInfo) {
++                by_ref<GlobalNamespace::NoteCutInfo> noteCutInfo) {
+diff --git a/src/Hooks/FakeNotes/BeatmapData.cpp b/src/Hooks/FakeNotes/BeatmapData.cpp
+index ead1cac..e1b0eae 100644
+--- a/src/Hooks/FakeNotes/BeatmapData.cpp
++++ b/src/Hooks/FakeNotes/BeatmapData.cpp
+@@ -5 +5 @@
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+@@ -53 +53 @@ template <typename U, typename T> auto FakeCount(ArrayW<T> list, bool v2) {
+-    auto note = il2cpp_utils::try_cast<U>(o);
++    auto note = i2c::cast<i2c::result<U*>>(o);
+@@ -118 +118 @@ MAKE_HOOK_MATCH(V3_BeatmapDataLoader_GetBeatmapDataFromSaveData,
+-  auto customBeatmap = il2cpp_utils::try_cast<CustomBeatmapData>(beatmap).value_or(nullptr);
++  auto customBeatmap = i2c::cast<i2c::result<CustomBeatmapData*>>(beatmap).value_or(nullptr);
+diff --git a/src/Hooks/FakeNotes/BeatmapObjectManager.cpp b/src/Hooks/FakeNotes/BeatmapObjectManager.cpp
+index 1061fbb..2b6fead 100644
+--- a/src/Hooks/FakeNotes/BeatmapObjectManager.cpp
++++ b/src/Hooks/FakeNotes/BeatmapObjectManager.cpp
+@@ -1,3 +1,3 @@
+-#include "beatsaber-hook/shared/utils/byref.hpp"
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "beatsaber-hook/shared/byref.hpp"
++#include "beatsaber-hook/shared/members.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+@@ -29,3 +29,3 @@ MAKE_HOOK_MATCH(HandleNoteControllerNoteWasMissed, &BeatmapObjectManager::Handle
+-// static Il2CppType const* NoteCutInfoT(ByRef<NoteCutInfo> info) {
+-//   return il2cpp_utils::il2cpp_type_check::il2cpp_no_arg_type<ByRef<NoteCutInfo>>::get();
+-//   //    return il2cpp_utils::il2cpp_type_check::il2cpp_arg_type<ByRef<NoteCutInfo>>::get(info);
++// static Il2CppType const* NoteCutInfoT(by_ref<NoteCutInfo> info) {
++//   return il2cpp_utils::il2cpp_type_check::il2cpp_no_arg_type<by_ref<NoteCutInfo>>::get();
++//   //    return il2cpp_utils::il2cpp_type_check::il2cpp_arg_type<by_ref<NoteCutInfo>>::get(info);
+@@ -36 +36 @@ MAKE_HOOK_MATCH(HandleNoteControllerNoteWasMissed, &BeatmapObjectManager::Handle
+-//                       ByRef<GlobalNamespace::NoteCutInfo> noteCutInfo) {
++//                       by_ref<GlobalNamespace::NoteCutInfo> noteCutInfo) {
+@@ -42 +42 @@ MAKE_HOOK_MATCH(HandleNoteControllerNoteWasMissed, &BeatmapObjectManager::Handle
+-//   ::il2cpp_utils::RunMethodRethrow<void, false>(self, ___internal__method, noteController, byref(noteCutInfo));
++//   ::il2cpp_utils::RunMethodRethrow<void, false>(self, ___internal__method, noteController, by_ref(noteCutInfo));
+@@ -47 +47 @@ MAKE_HOOK_MATCH(BeatmapObjectManager_HandleNoteControllerNoteWasCut,
+-                GlobalNamespace::NoteController* noteController, ByRef<GlobalNamespace::NoteCutInfo> noteCutInfo) {
++                GlobalNamespace::NoteController* noteController, by_ref<GlobalNamespace::NoteCutInfo> noteCutInfo) {
+@@ -68,2 +68,2 @@ MAKE_HOOK_MATCH(BeatmapObjectManager_HandleNoteControllerNoteWasCut,
+-  //        il2cpp_utils::il2cpp_type_check::il2cpp_no_arg_type<ByRef<NoteCutInfo>>::get(),
+-  //        il2cpp_utils::il2cpp_type_check::il2cpp_arg_type<ByRef<NoteCutInfo>>::get(noteCutInfo));
++  //        il2cpp_utils::il2cpp_type_check::il2cpp_no_arg_type<by_ref<NoteCutInfo>>::get(),
++  //        il2cpp_utils::il2cpp_type_check::il2cpp_arg_type<by_ref<NoteCutInfo>>::get(noteCutInfo));
+diff --git a/src/Hooks/FakeNotes/BombNoteController.cpp b/src/Hooks/FakeNotes/BombNoteController.cpp
+index 46ee90e..dcf9d5e 100644
+--- a/src/Hooks/FakeNotes/BombNoteController.cpp
++++ b/src/Hooks/FakeNotes/BombNoteController.cpp
+@@ -1,2 +1,2 @@
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "beatsaber-hook/shared/members.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+@@ -13 +13 @@ using namespace GlobalNamespace;
+-MAKE_HOOK_MATCH(BombNoteController_Init, &BombNoteController::Init, void, BombNoteController* self, NoteData* noteData, ByRef<GlobalNamespace::NoteSpawnData> noteSpawnData) {
++MAKE_HOOK_MATCH(BombNoteController_Init, &BombNoteController::Init, void, BombNoteController* self, NoteData* noteData, by_ref<GlobalNamespace::NoteSpawnData> noteSpawnData) {
+diff --git a/src/Hooks/FakeNotes/FakeNoteHelper.cpp b/src/Hooks/FakeNotes/FakeNoteHelper.cpp
+index 1a4796b..94bb7f6 100644
+--- a/src/Hooks/FakeNotes/FakeNoteHelper.cpp
++++ b/src/Hooks/FakeNotes/FakeNoteHelper.cpp
+@@ -24 +24 @@ bool FakeNoteHelper::GetFakeNote(NoteData* noteData) {
+-  auto customNoteData = il2cpp_utils::try_cast<CustomJSONData::CustomNoteData>(noteData);
++  auto customNoteData = i2c::cast<i2c::result<CustomJSONData::CustomNoteData*>>(noteData);
+@@ -33 +33 @@ bool FakeNoteHelper::GetCuttable(NoteData* noteData) {
+-  auto customNoteData = il2cpp_utils::try_cast<CustomJSONData::CustomNoteData>(noteData);
++  auto customNoteData = i2c::cast<i2c::result<CustomJSONData::CustomNoteData*>>(noteData);
+@@ -42 +42 @@ bool FakeNoteHelper::GetAttractableArc(SliderData* arcData) {
+-  auto customArcData = il2cpp_utils::try_cast<CustomJSONData::CustomSliderData>(arcData);
++  auto customArcData = i2c::cast<i2c::result<CustomJSONData::CustomSliderData*>>(arcData);
+@@ -56 +56 @@ FakeNoteHelper::ObstacleFakeCheck(VList<GlobalNamespace::ObstacleController*> in
+-        il2cpp_utils::AssignableFrom<CustomJSONData::CustomObstacleData*>(obstacle->_obstacleData->klass))
++        i2c::functions::class_is_assignable_from(i2c::class_of<CustomJSONData::CustomObstacleData*>(), obstacle->_obstacleData->klass))
+diff --git a/src/Hooks/FakeNotes/GameNoteController.cpp b/src/Hooks/FakeNotes/GameNoteController.cpp
+index 40f7c2a..bc82769 100644
+--- a/src/Hooks/FakeNotes/GameNoteController.cpp
++++ b/src/Hooks/FakeNotes/GameNoteController.cpp
+@@ -1,2 +1,2 @@
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "beatsaber-hook/shared/members.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+diff --git a/src/Hooks/FakeNotes/NoteCutCoreEffectsSpawner.cpp b/src/Hooks/FakeNotes/NoteCutCoreEffectsSpawner.cpp
+index 38173b9..98029ea 100644
+--- a/src/Hooks/FakeNotes/NoteCutCoreEffectsSpawner.cpp
++++ b/src/Hooks/FakeNotes/NoteCutCoreEffectsSpawner.cpp
+@@ -1,2 +1,2 @@
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "beatsaber-hook/shared/members.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+diff --git a/src/Hooks/FakeNotes/NoteCutSoundEffectManager.cpp b/src/Hooks/FakeNotes/NoteCutSoundEffectManager.cpp
+index 62fcfcf..d4c3b25 100644
+--- a/src/Hooks/FakeNotes/NoteCutSoundEffectManager.cpp
++++ b/src/Hooks/FakeNotes/NoteCutSoundEffectManager.cpp
+@@ -1,2 +1,2 @@
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
++#include "beatsaber-hook/shared/members.hpp"
+diff --git a/src/Hooks/FakeNotes/ObstacleSaberSparklerEffectManager.cpp b/src/Hooks/FakeNotes/ObstacleSaberSparklerEffectManager.cpp
+index 65e5399..ce83730 100644
+--- a/src/Hooks/FakeNotes/ObstacleSaberSparklerEffectManager.cpp
++++ b/src/Hooks/FakeNotes/ObstacleSaberSparklerEffectManager.cpp
+@@ -6,2 +6,2 @@
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
++#include "beatsaber-hook/shared/members.hpp"
+@@ -28 +28 @@ using namespace NoodleExtensions;
+-                UnityEngine::Vector3 bladeTopPos, ByRef<UnityEngine::Vector3> burnMarkPos) {
++                UnityEngine::Vector3 bladeTopPos, by_ref<UnityEngine::Vector3> burnMarkPos) {
+@@ -35 +35 @@ using namespace NoodleExtensions;
+-    burnMarkPos.heldRef = NEVector::Vector3::zero();
++    *burnMarkPos = NEVector::Vector3::zero();
+diff --git a/src/Hooks/FakeNotes/PlayerHeadAndObstacleInteration.cpp b/src/Hooks/FakeNotes/PlayerHeadAndObstacleInteration.cpp
+index 51fc641..7013047 100644
+--- a/src/Hooks/FakeNotes/PlayerHeadAndObstacleInteration.cpp
++++ b/src/Hooks/FakeNotes/PlayerHeadAndObstacleInteration.cpp
+@@ -2,2 +2,2 @@
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "beatsaber-hook/shared/members.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+@@ -31 +31 @@ static bool BoundsNullCheck(ObstacleController* obstacleController) {
+-  auto customObstacleData = il2cpp_utils::try_cast<CustomJSONData::CustomObstacleData>(obstacleController->_obstacleData);
++  auto customObstacleData = i2c::cast<i2c::result<CustomJSONData::CustomObstacleData*>>(obstacleController->_obstacleData);
+diff --git a/src/Hooks/FakeNotes/SliderController.cpp b/src/Hooks/FakeNotes/SliderController.cpp
+index 68df76e..bd63e30 100644
+--- a/src/Hooks/FakeNotes/SliderController.cpp
++++ b/src/Hooks/FakeNotes/SliderController.cpp
+@@ -2,2 +2,2 @@
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "beatsaber-hook/shared/members.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+diff --git a/src/Hooks/GameNoteController.cpp b/src/Hooks/GameNoteController.cpp
+index cd8e063..30eeffd 100644
+--- a/src/Hooks/GameNoteController.cpp
++++ b/src/Hooks/GameNoteController.cpp
+@@ -3,3 +3,3 @@
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
+-#include "beatsaber-hook/shared/utils/typedefs-wrappers.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
++#include "beatsaber-hook/shared/members.hpp"
++#include "beatsaber-hook/shared/types.hpp"
+@@ -29 +29 @@ MAKE_HOOK_MATCH(GameNoteController_HandleCut, &GameNoteController::HandleCut, vo
+-  auto customNoteData = il2cpp_utils::try_cast<CustomJSONData::CustomNoteData>(self->_noteData);
++  auto customNoteData = i2c::cast<i2c::result<CustomJSONData::CustomNoteData*>>(self->_noteData);
+diff --git a/src/Hooks/GameplayCoreInstaller.cpp b/src/Hooks/GameplayCoreInstaller.cpp
+index 1c0a45a..fa2ac6e 100644
+--- a/src/Hooks/GameplayCoreInstaller.cpp
++++ b/src/Hooks/GameplayCoreInstaller.cpp
+@@ -1,2 +1,2 @@
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "beatsaber-hook/shared/members.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+@@ -33 +33 @@ MAKE_HOOK_MATCH(InstallBindings, &GameplayCoreInstaller::InstallBindings, void,
+-      ByRef(NECaches::noteJumpValueType), ByRef(NECaches::noteJumpValue));
++      by_ref(NECaches::noteJumpValueType), by_ref(NECaches::noteJumpValue));
+@@ -44 +44 @@ MAKE_HOOK_MATCH(InstallBindings, &GameplayCoreInstaller::InstallBindings, void,
+-  //     il2cpp_utils::cast<CustomJSONData::CustomBeatmapData>(self->_sceneSetupData->get_transformedBeatmapData());
++  //     i2c::cast<CustomJSONData::CustomBeatmapData*>(self->_sceneSetupData->get_transformedBeatmapData());
+diff --git a/src/Hooks/LeftHanded/BeatmapDataMirrorTransform.cpp b/src/Hooks/LeftHanded/BeatmapDataMirrorTransform.cpp
+index 3c36d85..76dc225 100644
+--- a/src/Hooks/LeftHanded/BeatmapDataMirrorTransform.cpp
++++ b/src/Hooks/LeftHanded/BeatmapDataMirrorTransform.cpp
+@@ -1,2 +1,2 @@
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "beatsaber-hook/shared/members.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+diff --git a/src/Hooks/LeftHanded/NoteData.cpp b/src/Hooks/LeftHanded/NoteData.cpp
+index 0648bc4..02214ee 100644
+--- a/src/Hooks/LeftHanded/NoteData.cpp
++++ b/src/Hooks/LeftHanded/NoteData.cpp
+@@ -1,2 +1,2 @@
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "beatsaber-hook/shared/members.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+diff --git a/src/Hooks/LeftHanded/ObstacleData.cpp b/src/Hooks/LeftHanded/ObstacleData.cpp
+index ed078ed..18581e3 100644
+--- a/src/Hooks/LeftHanded/ObstacleData.cpp
++++ b/src/Hooks/LeftHanded/ObstacleData.cpp
+@@ -1,2 +1,2 @@
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "beatsaber-hook/shared/members.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+diff --git a/src/Hooks/Mirror/MirroredNoteController.cpp b/src/Hooks/Mirror/MirroredNoteController.cpp
+index f833072..48c7688 100644
+--- a/src/Hooks/Mirror/MirroredNoteController.cpp
++++ b/src/Hooks/Mirror/MirroredNoteController.cpp
+@@ -1,2 +1,2 @@
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
++#include "beatsaber-hook/shared/members.hpp"
+@@ -33,8 +32,0 @@ using MirroredGameNote = MirroredNoteController_1<IGameNoteMirrorable*>;
+-template <>
+-struct ::il2cpp_utils::il2cpp_type_check::MetadataGetter<
+-    &MirroredNoteController_1<Il2CppObject*>::UpdatePositionAndRotation> {
+-  static MethodInfo const* get() {
+-    return il2cpp_utils::FindMethodUnsafe(classof(MirroredNoteController_1<Il2CppObject*>*),
+-                                          "UpdatePositionAndRotation", 0);
+-  }
+-};
+@@ -129,2 +121,2 @@ static void UpdateMirror(Transform* mirroredNoteTransform, Transform* followedOb
+-  if (il2cpp_functions::class_is_assignable_from(GameKlass, followedNote->klass) &&
+-      il2cpp_functions::class_is_assignable_from(MirrorKlass, mirroredNoteController->klass)) {
++  if (i2c::functions::class_is_assignable_from(GameKlass, followedNote->klass) &&
++      i2c::functions::class_is_assignable_from(MirrorKlass, mirroredNoteController->klass)) {
+@@ -145,2 +137,2 @@ static void UpdateMirror(Transform* mirroredNoteTransform, Transform* followedOb
+-  MAKE_HOOK_FIND_INSTANCE(name##_Mirror, classof(MirroredNoteController_1<generic*>*), "Mirror", void,                 \
+-                          MirroredNoteController_1<generic*>* self, generic* noteController) {                         \
++  MAKE_HOOK(name##_Mirror, (classof(MirroredNoteController_1<generic*>*), "Mirror"), void,                 \
++                          MirroredNoteController_1<generic*>* self, generic* noteController, MethodInfo* methodInfo) {                         \
+@@ -148 +140 @@ static void UpdateMirror(Transform* mirroredNoteTransform, Transform* followedOb
+-    name##_Mirror(self, noteController);                                                                               \
++    name##_Mirror(self, noteController, methodInfo);                                                                               \
+@@ -152 +144 @@ static void UpdateMirror(Transform* mirroredNoteTransform, Transform* followedOb
+-    auto customNoteData = il2cpp_utils::try_cast<CustomJSONData::CustomNoteData>(followedNote->_noteData);              \
++    auto customNoteData = i2c::cast<i2c::result<CustomJSONData::CustomNoteData*>>(followedNote->_noteData);              \
+@@ -169 +161 @@ MIRROR_HOOK(MirroredGameNote, IGameNoteMirrorable)
+-MAKE_HOOK(Mirror_UpdatePositionAndRotation, nullptr, void, MirroredNoteController_1<Il2CppObject*>* self,
++MAKE_HOOK(Mirror_UpdatePositionAndRotation, (nullptr), void, MirroredNoteController_1<Il2CppObject*>* self,
+@@ -177 +169 @@ MAKE_HOOK(Mirror_UpdatePositionAndRotation, nullptr, void, MirroredNoteControlle
+-               il2cpp_utils::cast<NoteControllerBase>(self->followedNote), [self](bool hide) { self->Hide(hide); });
++               i2c::cast<NoteControllerBase*>(self->followedNote), [self](bool hide) { self->Hide(hide); });
+@@ -184,3 +176,2 @@ void InstallMirroredNoteControllerHooks() {
+-  auto mInfo = il2cpp_utils::il2cpp_type_check::MetadataGetter<
+-      &MirroredNoteController_1<Il2CppObject*>::UpdatePositionAndRotation>::get();
+-  INSTALL_HOOK_DIRECT(NELogger::Logger, Mirror_UpdatePositionAndRotation, (void*)(mInfo->methodPointer));
++  auto mInfo = i2c::find_method(classof(MirroredNoteController_1<Il2CppObject*>*), {"UpdatePositionAndRotation", 0});
++  INSTALL_HOOK(NELogger::Logger, Mirror_UpdatePositionAndRotation, (void*)(mInfo->methodPointer));
+diff --git a/src/Hooks/Mirror/MirroredObstacleController.cpp b/src/Hooks/Mirror/MirroredObstacleController.cpp
+index 756fac7..7a6c167 100644
+--- a/src/Hooks/Mirror/MirroredObstacleController.cpp
++++ b/src/Hooks/Mirror/MirroredObstacleController.cpp
+@@ -1,2 +1,2 @@
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "beatsaber-hook/shared/members.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+diff --git a/src/Hooks/NoteController.cpp b/src/Hooks/NoteController.cpp
+index 8c7a372..77d11bc 100644
+--- a/src/Hooks/NoteController.cpp
++++ b/src/Hooks/NoteController.cpp
+@@ -3,3 +3,3 @@
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
+-#include "beatsaber-hook/shared/utils/typedefs-wrappers.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
++#include "beatsaber-hook/shared/members.hpp"
++#include "beatsaber-hook/shared/types.hpp"
+@@ -113 +113 @@ MAKE_HOOK_MATCH(NoteController_Init, &NoteController::Init, void, NoteController
+-                GlobalNamespace::NoteData* noteData, ByRef<GlobalNamespace::NoteSpawnData> noteSpawnData,
++                GlobalNamespace::NoteData* noteData, by_ref<GlobalNamespace::NoteSpawnData> noteSpawnData,
+@@ -340 +340 @@ MAKE_HOOK_MATCH(NoteController_ManualUpdate, &NoteController::ManualUpdate, void
+-  if (il2cpp_functions::class_is_assignable_from(gameNoteControllerClass, self->klass)) {
++  if (i2c::functions::class_is_assignable_from(gameNoteControllerClass, self->klass)) {
+@@ -351,2 +351,2 @@ MAKE_HOOK_MATCH(NoteController_ManualUpdate, &NoteController::ManualUpdate, void
+-  if (il2cpp_functions::class_is_assignable_from(gameNoteControllerClass, self->klass) ||
+-      il2cpp_functions::class_is_assignable_from(bombNoteControllerClass, self->klass)) {
++  if (i2c::functions::class_is_assignable_from(gameNoteControllerClass, self->klass) ||
++      i2c::functions::class_is_assignable_from(bombNoteControllerClass, self->klass)) {
+@@ -390 +390 @@ MAKE_HOOK_MATCH(NoteController_SendNoteWasCutEvent_LinkedNotes, &NoteController:
+-                NoteController* self, ByRef<::GlobalNamespace::NoteCutInfo> noteCutInfo) {
++                NoteController* self, by_ref<::GlobalNamespace::NoteCutInfo> noteCutInfo) {
+@@ -396 +396 @@ MAKE_HOOK_MATCH(NoteController_SendNoteWasCutEvent_LinkedNotes, &NoteController:
+-  auto* customNoteData = il2cpp_utils::try_cast<CustomJSONData::CustomNoteData>(self->_noteData).value_or(nullptr);
++  auto* customNoteData = i2c::cast<i2c::result<CustomJSONData::CustomNoteData*>>(self->_noteData).value_or(nullptr);
+@@ -430 +430 @@ MAKE_HOOK_MATCH(NoteController_SendNoteWasCutEvent_LinkedNotes, &NoteController:
+-    auto ref = ByRef<NoteCutInfo>(cutInfo);
++    auto ref = by_ref<NoteCutInfo>(cutInfo);
+@@ -452,2 +452,2 @@ MAKE_HOOK_MATCH(BurstSliderGameNoteController_ManualUpdate, &BurstSliderGameNote
+-  static auto const* ManualUpdate = il2cpp_utils::il2cpp_type_check::MetadataGetter<&NoteController::ManualUpdate>::methodInfo();
+-  il2cpp_utils::RunMethodRethrow<void, false>(self, ManualUpdate);
++  static auto const* ManualUpdate = i2c::metadata_getter<&NoteController::ManualUpdate>::method_info();
++  i2c::run_method<void>(self, ManualUpdate);
+diff --git a/src/Hooks/NoteFloorMovement.cpp b/src/Hooks/NoteFloorMovement.cpp
+index bee7a4a..43f3684 100644
+--- a/src/Hooks/NoteFloorMovement.cpp
++++ b/src/Hooks/NoteFloorMovement.cpp
+@@ -2,2 +2,2 @@
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "beatsaber-hook/shared/members.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+@@ -64,2 +64 @@ MAKE_HOOK_MATCH(NoteFloorMovement_SetToStart, &NoteFloorMovement::SetToStart, Un
+-      il2cpp_utils::il2cpp_type_check::FPtrWrapper<static_cast<UnityEngine::Quaternion (*)(UnityEngine::Vector3)>(
+-          &UnityEngine::Quaternion::Euler)>::get();
++      [](UnityEngine::Vector3 value) { return UnityEngine::Quaternion::Euler(value); };
+diff --git a/src/Hooks/NoteJump.cpp b/src/Hooks/NoteJump.cpp
+index 92cacfa..9f96d48 100644
+--- a/src/Hooks/NoteJump.cpp
++++ b/src/Hooks/NoteJump.cpp
+@@ -2,2 +2,2 @@
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
++#include "beatsaber-hook/shared/members.hpp"
+diff --git a/src/Hooks/ObstacleController.cpp b/src/Hooks/ObstacleController.cpp
+index 258f203..f4bc0c2 100644
+--- a/src/Hooks/ObstacleController.cpp
++++ b/src/Hooks/ObstacleController.cpp
+@@ -2,2 +2,2 @@
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
++#include "beatsaber-hook/shared/members.hpp"
+@@ -43,2 +43,2 @@ using namespace TrackParenting;
+-static SafePtr<System::Collections::Generic::List_1<UnityW<ObstacleController>>> activeObstacles;
+-SafePtr<System::Collections::Generic::List_1<UnityW<ObstacleController>>>& getActiveObstacles() {
++static safe_ptr<System::Collections::Generic::List_1<UnityW<ObstacleController>>*> activeObstacles;
++safe_ptr<System::Collections::Generic::List_1<UnityW<ObstacleController>>*>& getActiveObstacles() {
+@@ -74 +74 @@ MAKE_HOOK_MATCH(ObstacleController_Init, &ObstacleController::Init, void, Obstac
+-                ObstacleData* normalObstacleData, ByRef<GlobalNamespace::ObstacleSpawnData> obstacleSpawnData) {
++                ObstacleData* normalObstacleData, by_ref<GlobalNamespace::ObstacleSpawnData> obstacleSpawnData) {
+@@ -146,2 +146 @@ MAKE_HOOK_MATCH(ObstacleController_Init, &ObstacleController::Init, void, Obstac
+-      il2cpp_utils::il2cpp_type_check::FPtrWrapper<static_cast<UnityEngine::Quaternion (*)(UnityEngine::Quaternion)>(
+-          &UnityEngine::Quaternion::Inverse)>::get();
++      [](UnityEngine::Quaternion value) { return UnityEngine::Quaternion::Inverse(value); };
+@@ -218 +217 @@ static void ObstacleController_ManualUpdateTranspile(ObstacleController* self, f
+-    self->_stretchableObstacle->SetSizeAndOffset(self->_width, self->_height, self->_length,
++    self->_stretchableObstacle->SetSizeAndOffset(self->_width * 0.98f, self->_height, self->_length,
+@@ -534 +533 @@ void InstallObstacleControllerHooks() {
+-  // Instruction on((const int32_t*) HookTracker::GetOrig(il2cpp_functions::object_new));
++  // Instruction on((const int32_t*) HookTracker::GetOrig(i2c::functions::object_new));
+@@ -541 +540 @@ void InstallObstacleControllerHooks() {
+-NEInstallHooks(InstallObstacleControllerHooks);
+\ No newline at end of file
++NEInstallHooks(InstallObstacleControllerHooks);
+diff --git a/src/Hooks/OutdatedMods.cpp b/src/Hooks/OutdatedMods.cpp
+index e7d64a3..82bdcf8 100644
+--- a/src/Hooks/OutdatedMods.cpp
++++ b/src/Hooks/OutdatedMods.cpp
+@@ -1,2 +1,2 @@
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
++#include "beatsaber-hook/shared/members.hpp"
+diff --git a/src/Hooks/ReplaceMovementDataProvider.cpp b/src/Hooks/ReplaceMovementDataProvider.cpp
+index a5fbcc5..b55255c 100644
+--- a/src/Hooks/ReplaceMovementDataProvider.cpp
++++ b/src/Hooks/ReplaceMovementDataProvider.cpp
+@@ -3,2 +3,2 @@
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
++#include "beatsaber-hook/shared/members.hpp"
+@@ -34 +34 @@ MAKE_HOOK_MATCH(ReplaceObstacleMovement, &ObstacleController::Init, void,
+-                ByRef<ObstacleSpawnData> obstacleSpawnData) {
++                by_ref<ObstacleSpawnData> obstacleSpawnData) {
+@@ -48 +48 @@ MAKE_HOOK_MATCH(ReplaceNoteMovement, &NoteController::Init, void,
+-                ByRef<NoteSpawnData> noteSpawnData, float endRotation,
++                by_ref<NoteSpawnData> noteSpawnData, float endRotation,
+@@ -67 +67 @@ MAKE_HOOK_MATCH(ReplaceNoteMovement, &NoteController::Init, void,
+-  if (il2cpp_utils::AssignableFrom<BurstSliderGameNoteController*>(self->klass))
++  if (i2c::functions::class_is_assignable_from(i2c::class_of<BurstSliderGameNoteController*>(), self->klass))
+@@ -78 +78 @@ MAKE_HOOK_MATCH(ReplaceSliderMovement, &SliderController::Init, void,
+-                SliderData* sliderData, ByRef<SliderSpawnData> sliderSpawnData,
++                SliderData* sliderData, by_ref<SliderSpawnData> sliderSpawnData,
+diff --git a/src/Hooks/SceneTransition/MissionLevelScenesTransitionSetupDataSO.cpp b/src/Hooks/SceneTransition/MissionLevelScenesTransitionSetupDataSO.cpp
+index 4946e8e..0b84079 100644
+--- a/src/Hooks/SceneTransition/MissionLevelScenesTransitionSetupDataSO.cpp
++++ b/src/Hooks/SceneTransition/MissionLevelScenesTransitionSetupDataSO.cpp
+@@ -1 +1 @@
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
++#include "beatsaber-hook/shared/members.hpp"
+@@ -3 +3 @@
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+@@ -5 +5 @@
+-#include "GlobalNamespace/MissionLevelScenesTransitionSetupDataSO.hpp"
++#include "GlobalNamespace/MissionLevelScenesTransitionSetupData.hpp"
+@@ -18,39 +18,24 @@ using namespace NoodleExtensions;
+-MAKE_HOOK_MATCH(
+-    MissionLevelScenesTransitionSetupDataSO_Init,
+-    static_cast<void (::GlobalNamespace::MissionLevelScenesTransitionSetupDataSO::*)(
+-        ::StringW, ByRef<::GlobalNamespace::BeatmapKey>, ::GlobalNamespace::BeatmapLevel*,
+-        ::ArrayW<::GlobalNamespace::MissionObjective*, ::Array<::GlobalNamespace::MissionObjective*>*>,
+-        ::GlobalNamespace::ColorScheme*, ::GlobalNamespace::GameplayModifiers*,
+-        ::GlobalNamespace::PlayerSpecificSettings*, ::GlobalNamespace::EnvironmentsListModel*,
+-        ::GlobalNamespace::BeatmapLevelsModel*, ::GlobalNamespace::AudioClipAsyncLoader*,
+-        ::GlobalNamespace::SettingsManager*, ::GlobalNamespace::BeatmapDataLoader*, ::StringW)>(
+-        &::GlobalNamespace::MissionLevelScenesTransitionSetupDataSO::Init),
+-    void, MissionLevelScenesTransitionSetupDataSO* self, ::StringW missionId,
+-    ByRef<::GlobalNamespace::BeatmapKey> beatmapKey, ::GlobalNamespace::BeatmapLevel* beatmapLevel,
+-    ::ArrayW<::GlobalNamespace::MissionObjective*, ::Array<::GlobalNamespace::MissionObjective*>*> missionObjectives,
+-    ::GlobalNamespace::ColorScheme* overrideColorScheme, ::GlobalNamespace::GameplayModifiers* gameplayModifiers,
+-    ::GlobalNamespace::PlayerSpecificSettings* playerSpecificSettings,
+-    ::GlobalNamespace::EnvironmentsListModel* environmentsListModel,
+-    ::GlobalNamespace::BeatmapLevelsModel* beatmapLevelsModel,
+-    ::GlobalNamespace::AudioClipAsyncLoader* audioClipAsyncLoader,
+-    ::GlobalNamespace::SettingsManager* SettingsManager,
+-    ::GlobalNamespace::BeatmapDataLoader* beatmapDataLoader, ::StringW backButtonText) {
+-  auto customBeatmapLevel = il2cpp_utils::try_cast<SongCore::SongLoader::CustomBeatmapLevel>(beatmapLevel);
+-  if (!customBeatmapLevel) {
+-    MissionLevelScenesTransitionSetupDataSO_Init(self, missionId, beatmapKey, beatmapLevel, missionObjectives,
+-                                                 overrideColorScheme, gameplayModifiers, playerSpecificSettings,
+-                                                 environmentsListModel, beatmapLevelsModel, audioClipAsyncLoader,
+-                                                 SettingsManager, beatmapDataLoader, backButtonText);
+-    return;
+-  }
+-
+-  auto environmentInfoBySerializedNameSafe = environmentsListModel->GetEnvironmentInfoBySerializedNameSafe(
+-      beatmapLevel->GetEnvironmentName(beatmapKey->beatmapCharacteristic, beatmapKey->difficulty)._environmentName);
+-
+-  // TODO: Fix environment override
+-  SceneTransitionHelper::Patch(customBeatmapLevel.value(), beatmapKey.heldRef, environmentInfoBySerializedNameSafe, playerSpecificSettings);
+-
+-  MissionLevelScenesTransitionSetupDataSO_Init(self, missionId, beatmapKey, beatmapLevel, missionObjectives,
+-                                               overrideColorScheme, gameplayModifiers, playerSpecificSettings,
+-                                               environmentsListModel, beatmapLevelsModel, audioClipAsyncLoader,
+-                                               SettingsManager, beatmapDataLoader, backButtonText);
++// The 1.45.1 scene data classes use Init; initialize Noodle state before native loading/transforms.
++MAKE_HOOK_MATCH(MissionLevelScenesTransitionSetupData_Init, &MissionLevelScenesTransitionSetupData::Init, void,
++                MissionLevelScenesTransitionSetupData* self,
++                ::StringW  missionId,
++                ::by_ref<::GlobalNamespace::BeatmapKey>  beatmapKey,
++                ::GlobalNamespace::BeatmapLevel*  beatmapLevel,
++                ::GlobalNamespace::OverrideEnvironmentSettings*  overrideEnvironmentSettings,
++                ::ArrayW<::GlobalNamespace::MissionObjective*>  missionObjectives,
++                ::GlobalNamespace::ColorScheme*  playerOverrideColorScheme,
++                bool  playerOverrideLightshowColors,
++                ::GlobalNamespace::GameplayModifiers*  gameplayModifiers,
++                ::GlobalNamespace::PlayerSpecificSettings*  playerSpecificSettings,
++                ::GlobalNamespace::EnvironmentsListModel*  environmentsListModel,
++                ::GlobalNamespace::AudioClipAsyncLoader*  audioClipAsyncLoader,
++                ::GlobalNamespace::SettingsManager*  settingsManager,
++                ::GlobalNamespace::GameplayAdditionalInformation*  gameplayAdditionalInformation,
++                ::GlobalNamespace::BeatmapDataLoader*  beatmapDataLoader,
++                ::StringW  backButtonText,
++                ::GlobalNamespace::BeatmapLevelsModel*  beatmapLevelsModel,
++                ::GlobalNamespace::IBeatmapLevelData*  beatmapLevelData) {
++  auto customBeatmapLevel = i2c::cast<i2c::result<SongCore::SongLoader::CustomBeatmapLevel*>>(beatmapLevel);
++  // Environment is currently unused by Noodle's patch; the game resolves its override during Init.
++  SceneTransitionHelper::Patch(customBeatmapLevel.value_or(nullptr), *beatmapKey, nullptr, playerSpecificSettings);
++  MissionLevelScenesTransitionSetupData_Init(self, missionId, beatmapKey, beatmapLevel, overrideEnvironmentSettings, missionObjectives, playerOverrideColorScheme, playerOverrideLightshowColors, gameplayModifiers, playerSpecificSettings, environmentsListModel, audioClipAsyncLoader, settingsManager, gameplayAdditionalInformation, beatmapDataLoader, backButtonText, beatmapLevelsModel, beatmapLevelData);
+@@ -59,2 +44,2 @@ MAKE_HOOK_MATCH(
+-void InstallMissionLevelScenesTransitionSetupDataSOHooks() {
+-  INSTALL_HOOK(NELogger::Logger, MissionLevelScenesTransitionSetupDataSO_Init);
++void InstallMissionLevelScenesTransitionSetupDataHooks() {
++  INSTALL_HOOK(NELogger::Logger, MissionLevelScenesTransitionSetupData_Init);
+@@ -62 +47 @@ void InstallMissionLevelScenesTransitionSetupDataSOHooks() {
+-NEInstallHooks(InstallMissionLevelScenesTransitionSetupDataSOHooks);
+\ No newline at end of file
++NEInstallHooks(InstallMissionLevelScenesTransitionSetupDataHooks);
+\ No newline at end of file
+diff --git a/src/Hooks/SceneTransition/MultiplayerLevelScenesTransitionSetupDataSO.cpp b/src/Hooks/SceneTransition/MultiplayerLevelScenesTransitionSetupDataSO.cpp
+index b11047e..a8a2d4e 100644
+--- a/src/Hooks/SceneTransition/MultiplayerLevelScenesTransitionSetupDataSO.cpp
++++ b/src/Hooks/SceneTransition/MultiplayerLevelScenesTransitionSetupDataSO.cpp
+@@ -1 +1 @@
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
++#include "beatsaber-hook/shared/members.hpp"
+@@ -3 +3 @@
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+@@ -5 +5 @@
+-#include "GlobalNamespace/MultiplayerLevelScenesTransitionSetupDataSO.hpp"
++#include "GlobalNamespace/MultiplayerLevelScenesTransitionSetupData.hpp"
+@@ -18,9 +18,3 @@ using namespace NoodleExtensions;
+-MAKE_HOOK_MATCH(MultiplayerLevelScenesTransitionSetupDataSO_Init,
+-                &MultiplayerLevelScenesTransitionSetupDataSO::InitAndSetupScenes, void,
+-                MultiplayerLevelScenesTransitionSetupDataSO* self) {
+-
+-  auto customBeatmapLevel = il2cpp_utils::try_cast<SongCore::SongLoader::CustomBeatmapLevel>(self->get_beatmapLevel());
+-  if (!customBeatmapLevel) {
+-    MultiplayerLevelScenesTransitionSetupDataSO_Init(self);
+-    return;
+-  }
++MAKE_HOOK_MATCH(MultiplayerLevelScenesTransitionSetupData_Init,
++                &MultiplayerLevelScenesTransitionSetupData::InitAndSetupScenes, void,
++                MultiplayerLevelScenesTransitionSetupData* self) {
+@@ -27,0 +22 @@ MAKE_HOOK_MATCH(MultiplayerLevelScenesTransitionSetupDataSO_Init,
++  auto customBeatmapLevel = i2c::cast<i2c::result<SongCore::SongLoader::CustomBeatmapLevel*>>(self->get_beatmapLevel());
+@@ -29,2 +24,2 @@ MAKE_HOOK_MATCH(MultiplayerLevelScenesTransitionSetupDataSO_Init,
+-  SceneTransitionHelper::Patch(customBeatmapLevel.value(), self->beatmapKey,
+-                               self->GetOrLoadMultiplayerEnvironmentInfo(),
++  SceneTransitionHelper::Patch(customBeatmapLevel.value_or(nullptr), self->beatmapKey,
++                               self->_environmentInfo,
+@@ -33 +28 @@ MAKE_HOOK_MATCH(MultiplayerLevelScenesTransitionSetupDataSO_Init,
+-  MultiplayerLevelScenesTransitionSetupDataSO_Init(self);
++  MultiplayerLevelScenesTransitionSetupData_Init(self);
+@@ -36,2 +31,2 @@ MAKE_HOOK_MATCH(MultiplayerLevelScenesTransitionSetupDataSO_Init,
+-void InstallMultiplayerLevelScenesTransitionSetupDataSOHooks() {
+-  INSTALL_HOOK(NELogger::Logger, MultiplayerLevelScenesTransitionSetupDataSO_Init);
++void InstallMultiplayerLevelScenesTransitionSetupDataHooks() {
++  INSTALL_HOOK(NELogger::Logger, MultiplayerLevelScenesTransitionSetupData_Init);
+@@ -39 +34 @@ void InstallMultiplayerLevelScenesTransitionSetupDataSOHooks() {
+-NEInstallHooks(InstallMultiplayerLevelScenesTransitionSetupDataSOHooks);
+\ No newline at end of file
++NEInstallHooks(InstallMultiplayerLevelScenesTransitionSetupDataHooks);
+\ No newline at end of file
+diff --git a/src/Hooks/SceneTransition/SceneTransitionHelper.cpp b/src/Hooks/SceneTransition/SceneTransitionHelper.cpp
+index 1ea3fe0..87377e5 100644
+--- a/src/Hooks/SceneTransition/SceneTransitionHelper.cpp
++++ b/src/Hooks/SceneTransition/SceneTransitionHelper.cpp
+@@ -1 +1 @@
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
++#include "beatsaber-hook/shared/members.hpp"
+@@ -3 +3 @@
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+@@ -5 +5 @@
+-#include "GlobalNamespace/StandardLevelScenesTransitionSetupDataSO.hpp"
++#include "GlobalNamespace/StandardLevelScenesTransitionSetupData.hpp"
+@@ -6,0 +7 @@
++#include "GlobalNamespace/BeatmapCharacteristicExtensions.hpp"
+@@ -38,0 +40 @@ void SceneTransitionHelper::Patch(SongCore::SongLoader::CustomBeatmapLevel* beat
++  Hooks::setNoodleHookEnabled(false);
+@@ -51,2 +53,4 @@ void SceneTransitionHelper::Patch(SongCore::SongLoader::CustomBeatmapLevel* beat
+-  auto diff = customSaveInfo.value().get().TryGetCharacteristicAndDifficulty(key.beatmapCharacteristic->serializedName,
+-                                                                             key.difficulty);
++  auto characteristic = SongCore::API::Characteristics::GetCharacteristic(key.characteristic);
++  const std::string characteristicName = characteristic ? characteristic->serializedName :
++      std::string(BeatmapCharacteristicExtensions::SerializedName(key.characteristic));
++  auto diff = customSaveInfo.value().get().TryGetCharacteristicAndDifficulty(characteristicName, key.difficulty);
+diff --git a/src/Hooks/SceneTransition/StandardLevelScenesTransitionSetupDataSO.cpp b/src/Hooks/SceneTransition/StandardLevelScenesTransitionSetupDataSO.cpp
+index d787e5a..e0fd6d1 100644
+--- a/src/Hooks/SceneTransition/StandardLevelScenesTransitionSetupDataSO.cpp
++++ b/src/Hooks/SceneTransition/StandardLevelScenesTransitionSetupDataSO.cpp
+@@ -1 +1 @@
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
++#include "beatsaber-hook/shared/members.hpp"
+@@ -3 +3 @@
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+@@ -5 +5 @@
+-#include "GlobalNamespace/StandardLevelScenesTransitionSetupDataSO.hpp"
++#include "GlobalNamespace/StandardLevelScenesTransitionSetupData.hpp"
+@@ -19,16 +19,24 @@ using namespace NoodleExtensions;
+-MAKE_HOOK_MATCH(StandardLevelScenesTransitionSetupDataSO_Init,
+-                &StandardLevelScenesTransitionSetupDataSO::InitAndSetupScenes, void,
+-                StandardLevelScenesTransitionSetupDataSO* self,
+-                ::GlobalNamespace::PlayerSpecificSettings* playerSpecificSettings, ::StringW backButtonText,
+-                bool startPaused) {
+-  auto customBeatmapLevel = il2cpp_utils::try_cast<SongCore::SongLoader::CustomBeatmapLevel>(self->get_beatmapLevel());
+-  if (!customBeatmapLevel) {
+-    StandardLevelScenesTransitionSetupDataSO_Init(self, playerSpecificSettings, backButtonText, startPaused);
+-    return;
+-  }
+-
+-  // TODO: Fix environment override
+-  SceneTransitionHelper::Patch(customBeatmapLevel.value(), self->beatmapKey, self->targetEnvironmentInfo,
+-                               playerSpecificSettings);
+-
+-  StandardLevelScenesTransitionSetupDataSO_Init(self, playerSpecificSettings, backButtonText, startPaused);
++// The 1.45.1 scene data classes use Init; initialize Noodle state before native loading/transforms.
++MAKE_HOOK_MATCH(StandardLevelScenesTransitionSetupData_Init, &StandardLevelScenesTransitionSetupData::Init, void,
++                StandardLevelScenesTransitionSetupData* self,
++                ::StringW  gameMode,
++                ::by_ref<::GlobalNamespace::BeatmapKey>  beatmapKey,
++                ::GlobalNamespace::BeatmapLevel*  beatmapLevel,
++                ::GlobalNamespace::OverrideEnvironmentSettings*  overrideEnvironmentSettings,
++                ::GlobalNamespace::ColorScheme*  playerOverrideColorScheme,
++                bool  playerOverrideLightshowColors,
++                ::GlobalNamespace::GameplayModifiers*  gameplayModifiers,
++                ::GlobalNamespace::PlayerSpecificSettings*  playerSpecificSettings,
++                ::GlobalNamespace::PracticeSettings*  practiceSettings,
++                ::GlobalNamespace::EnvironmentsListModel*  environmentsListModel,
++                ::GlobalNamespace::AudioClipAsyncLoader*  audioClipAsyncLoader,
++                ::GlobalNamespace::SettingsManager*  settingsManager,
++                ::GlobalNamespace::GameplayAdditionalInformation*  gameplayAdditionalInformation,
++                ::GlobalNamespace::BeatmapDataLoader*  beatmapDataLoader,
++                ::GlobalNamespace::BeatmapLevelsEntitlementModel*  beatmapLevelsEntitlementModel,
++                ::GlobalNamespace::BeatmapLevelsModel*  beatmapLevelsModel,
++                ::GlobalNamespace::IBeatmapLevelData*  beatmapLevelData) {
++  auto customBeatmapLevel = i2c::cast<i2c::result<SongCore::SongLoader::CustomBeatmapLevel*>>(beatmapLevel);
++  // Environment is currently unused by Noodle's patch; the game resolves its override during Init.
++  SceneTransitionHelper::Patch(customBeatmapLevel.value_or(nullptr), *beatmapKey, nullptr, playerSpecificSettings);
++  StandardLevelScenesTransitionSetupData_Init(self, gameMode, beatmapKey, beatmapLevel, overrideEnvironmentSettings, playerOverrideColorScheme, playerOverrideLightshowColors, gameplayModifiers, playerSpecificSettings, practiceSettings, environmentsListModel, audioClipAsyncLoader, settingsManager, gameplayAdditionalInformation, beatmapDataLoader, beatmapLevelsEntitlementModel, beatmapLevelsModel, beatmapLevelData);
+@@ -37,2 +45,2 @@ MAKE_HOOK_MATCH(StandardLevelScenesTransitionSetupDataSO_Init,
+-void InstallStandardLevelScenesTransitionSetupDataSOHooks() {
+-  INSTALL_HOOK(NELogger::Logger, StandardLevelScenesTransitionSetupDataSO_Init);
++void InstallStandardLevelScenesTransitionSetupDataHooks() {
++  INSTALL_HOOK(NELogger::Logger, StandardLevelScenesTransitionSetupData_Init);
+@@ -41 +49 @@ void InstallStandardLevelScenesTransitionSetupDataSOHooks() {
+-NEInstallHooks(InstallStandardLevelScenesTransitionSetupDataSOHooks);
+\ No newline at end of file
++NEInstallHooks(InstallStandardLevelScenesTransitionSetupDataHooks);
+\ No newline at end of file
+diff --git a/src/Hooks/SceneTransition/UnitySceneChange.cpp b/src/Hooks/SceneTransition/UnitySceneChange.cpp
+index 5531966..0f6976e 100644
+--- a/src/Hooks/SceneTransition/UnitySceneChange.cpp
++++ b/src/Hooks/SceneTransition/UnitySceneChange.cpp
+@@ -1,2 +1,2 @@
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "beatsaber-hook/shared/members.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+@@ -3,0 +4,3 @@
++#include "NECaches.h"
++#include "GameplaySceneLifetime.hpp"
++#include "UnityEngine/SceneManagement/LoadSceneMode.hpp"
+@@ -6,0 +10 @@
++#include "UnityEngine/SceneManagement/SceneHandle.hpp"
+@@ -19,0 +24,15 @@ MAKE_HOOK_MATCH(SceneManager_Internal_ActiveSceneChanged, &UnityEngine::SceneMan
++static GameplaySceneLifetime gameplayLifetime;
++
++MAKE_HOOK_MATCH(SceneManager_Internal_SceneLoaded, &UnityEngine::SceneManagement::SceneManager::Internal_SceneLoaded,
++                void, UnityEngine::SceneManagement::Scene scene, UnityEngine::SceneManagement::LoadSceneMode mode) {
++  if (scene.IsValid()) gameplayLifetime.Loaded(UnityEngine::SceneManagement::SceneHandle::op_Implicit_int32_t(scene.handle), std::string(scene.name));
++  SceneManager_Internal_SceneLoaded(scene, mode);
++}
++
++MAKE_HOOK_MATCH(SceneManager_Internal_SceneUnloaded, &UnityEngine::SceneManagement::SceneManager::Internal_SceneUnloaded,
++                void, UnityEngine::SceneManagement::Scene scene) {
++  const bool unloadedGameplay = gameplayLifetime.Unloaded(UnityEngine::SceneManagement::SceneHandle::op_Implicit_int32_t(scene.handle));
++  SceneManager_Internal_SceneUnloaded(scene);
++  if (unloadedGameplay && !gameplayLifetime.HasGameplay()) NECaches::ClearGameplayReferences();
++}
++
+@@ -21,0 +41,2 @@ void SceneManager_Internal() {
++  INSTALL_HOOK(NELogger::Logger, SceneManager_Internal_SceneLoaded);
++  INSTALL_HOOK(NELogger::Logger, SceneManager_Internal_SceneUnloaded);
+diff --git a/src/Hooks/SliderController.cpp b/src/Hooks/SliderController.cpp
+index aff0af3..58fdc29 100644
+--- a/src/Hooks/SliderController.cpp
++++ b/src/Hooks/SliderController.cpp
+@@ -3,3 +3,3 @@
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
+-#include "beatsaber-hook/shared/utils/typedefs-wrappers.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
++#include "beatsaber-hook/shared/members.hpp"
++#include "beatsaber-hook/shared/types.hpp"
+@@ -75 +75 @@ MAKE_HOOK_MATCH(SliderController_Init, &SliderController::Init, void, SliderCont
+-                SliderController::LengthType lengthType, SliderData* sliderData, ByRef<SliderSpawnData> sliderSpawnData,
++                SliderController::LengthType lengthType, SliderData* sliderData, by_ref<SliderSpawnData> sliderSpawnData,
+diff --git a/src/Hooks/SmallFixes/BaseNoteVisuals.cpp b/src/Hooks/SmallFixes/BaseNoteVisuals.cpp
+index 7ca0662..242aded 100644
+--- a/src/Hooks/SmallFixes/BaseNoteVisuals.cpp
++++ b/src/Hooks/SmallFixes/BaseNoteVisuals.cpp
+@@ -1,2 +1,2 @@
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "beatsaber-hook/shared/members.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+@@ -30 +30 @@ MAKE_HOOK_MATCH(BaseNoteVisuals_Awake, &BaseNoteVisuals::Awake, void, BaseNoteVi
+-      il2cpp_functions::class_is_assignable_from(ICubeNoteTypeProviderKlass, self->_noteController->klass)) {
++      i2c::functions::class_is_assignable_from(ICubeNoteTypeProviderKlass, self->_noteController->klass)) {
+@@ -37 +37 @@ MAKE_HOOK_MATCH(BaseNoteVisuals_Awake, &BaseNoteVisuals::Awake, void, BaseNoteVi
+-    if (il2cpp_functions::class_is_assignable_from(CustomNoteDataKlass, noteController->_noteData->klass)) {
++    if (i2c::functions::class_is_assignable_from(CustomNoteDataKlass, noteController->_noteData->klass)) {
+diff --git a/src/Hooks/SmallFixes/BasicBeatmapObjectManager.cpp b/src/Hooks/SmallFixes/BasicBeatmapObjectManager.cpp
+index 9075c63..837952a 100644
+--- a/src/Hooks/SmallFixes/BasicBeatmapObjectManager.cpp
++++ b/src/Hooks/SmallFixes/BasicBeatmapObjectManager.cpp
+@@ -1,2 +1,2 @@
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "beatsaber-hook/shared/members.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+@@ -16 +16 @@ using namespace UnityEngine;
+-SafePtr<System::Collections::Generic::List_1<UnityW<ObstacleController>>>& getActiveObstacles();
++safe_ptr<System::Collections::Generic::List_1<UnityW<ObstacleController>>*>& getActiveObstacles();
+@@ -19 +19,2 @@ MAKE_HOOK_MATCH(BasicBeatmapObjectManager_Init, &BasicBeatmapObjectManager::Init
+-                ::GlobalNamespace::BasicBeatmapObjectManager_InitData* initData, ::System::Random* random,
++                ::GlobalNamespace::BasicBeatmapObjectManager_InitData* initData, ::GlobalNamespace::IRandom* random,
++                ::GlobalNamespace::DeterminismConfig* determinismConfig,
+@@ -27 +28 @@ MAKE_HOOK_MATCH(BasicBeatmapObjectManager_Init, &BasicBeatmapObjectManager::Init
+-  BasicBeatmapObjectManager_Init(self, initData, random, variableMovementDataProvider, basicGameNotePool, burstSliderHeadGameNotePool,
++  BasicBeatmapObjectManager_Init(self, initData, random, determinismConfig, variableMovementDataProvider, basicGameNotePool, burstSliderHeadGameNotePool,
+@@ -33 +34 @@ MAKE_HOOK_MATCH(BasicBeatmapObjectManager_Init, &BasicBeatmapObjectManager::Init
+-  getActiveObstacles().emplace(ListW<UnityW<ObstacleController>>());
++  getActiveObstacles().emplace(System::Collections::Generic::List_1<UnityW<ObstacleController>>::New_ctor());
+diff --git a/src/Hooks/SmallFixes/BeatEffectSpawner.cpp b/src/Hooks/SmallFixes/BeatEffectSpawner.cpp
+index 1ea99ff..06bcfde 100644
+--- a/src/Hooks/SmallFixes/BeatEffectSpawner.cpp
++++ b/src/Hooks/SmallFixes/BeatEffectSpawner.cpp
+@@ -1,2 +1,2 @@
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "beatsaber-hook/shared/members.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+diff --git a/src/Hooks/SmallFixes/BeatmapObjectManager.cpp b/src/Hooks/SmallFixes/BeatmapObjectManager.cpp
+index 4a73af0..dc6eaf7 100644
+--- a/src/Hooks/SmallFixes/BeatmapObjectManager.cpp
++++ b/src/Hooks/SmallFixes/BeatmapObjectManager.cpp
+@@ -1,2 +1,4 @@
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "GlobalNamespace/IBeatmapObjectController.hpp"
++#include "System/Collections/Generic/List_1.hpp"
++#include "beatsaber-hook/shared/members.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+@@ -22 +24 @@ static bool GetHiddenForType(BeatmapObjectManager* beatmapObjectManager) {
+-  if (il2cpp_utils::AssignableFrom<BasicBeatmapObjectManager*>(beatmapObjectManager->klass)) {
++  if (i2c::functions::class_is_assignable_from(i2c::class_of<BasicBeatmapObjectManager*>(), beatmapObjectManager->klass)) {
+@@ -53 +55 @@ MAKE_HOOK_MATCH(BeatmapObjectManager_SpawnObstacle, &BeatmapObjectManager::AddSp
+-      il2cpp_utils::try_cast<CustomJSONData::CustomObstacleData>(obstacleController->_obstacleData);
++      i2c::cast<i2c::result<CustomJSONData::CustomObstacleData*>>(obstacleController->_obstacleData);
+diff --git a/src/Hooks/SmallFixes/BeatmapObjectSpawnController.cpp b/src/Hooks/SmallFixes/BeatmapObjectSpawnController.cpp
+index 09393f4..6acb973 100644
+--- a/src/Hooks/SmallFixes/BeatmapObjectSpawnController.cpp
++++ b/src/Hooks/SmallFixes/BeatmapObjectSpawnController.cpp
+@@ -1,2 +1,2 @@
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "beatsaber-hook/shared/members.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+diff --git a/src/Hooks/SmallFixes/CutoutEffect.cpp b/src/Hooks/SmallFixes/CutoutEffect.cpp
+index 3fd3346..1838ccb 100644
+--- a/src/Hooks/SmallFixes/CutoutEffect.cpp
++++ b/src/Hooks/SmallFixes/CutoutEffect.cpp
+@@ -1,2 +1,2 @@
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "beatsaber-hook/shared/members.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+diff --git a/src/Hooks/SmallFixes/DisappearingArrowController.cpp b/src/Hooks/SmallFixes/DisappearingArrowController.cpp
+index 189385b..567a659 100644
+--- a/src/Hooks/SmallFixes/DisappearingArrowController.cpp
++++ b/src/Hooks/SmallFixes/DisappearingArrowController.cpp
+@@ -1,2 +1,2 @@
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "beatsaber-hook/shared/members.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+@@ -13,3 +12,0 @@ using namespace UnityEngine;
+-template <>
+-struct ::il2cpp_utils::il2cpp_type_check::MetadataGetter<
+-    &DisappearingArrowControllerBase_1<GameNoteController*>::SetArrowTransparency> {
+@@ -17,14 +14,4 @@ struct ::il2cpp_utils::il2cpp_type_check::MetadataGetter<
+-  // make the compiler happy
+-  constexpr static std::size_t size = 0xc4;
+-  constexpr static std::size_t addrs = 0x26b6608;
+-
+-  static MethodInfo const* methodInfo() {
+-    return il2cpp_utils::FindMethodUnsafe(
+-        classof(GlobalNamespace::DisappearingArrowControllerBase_1<GameNoteController*>*), "SetArrowTransparency", 1);
+-  }
+-};
+-
+-MAKE_HOOK_MATCH(DisappearingArrowControllerBase_SetArrowTransparency,
+-                &DisappearingArrowControllerBase_1<GameNoteController*>::SetArrowTransparency, void,
+-                DisappearingArrowControllerBase_1<GameNoteController*>* self, float arrowTransparency) {
+-  DisappearingArrowControllerBase_SetArrowTransparency(self, arrowTransparency);
++MAKE_HOOK(DisappearingArrowControllerBase_SetArrowTransparency,
++          (classof(DisappearingArrowControllerBase_1<GameNoteController*>*), "SetArrowTransparency"), void,
++          DisappearingArrowControllerBase_1<GameNoteController*>* self, float arrowTransparency, MethodInfo* methodInfo) {
++  DisappearingArrowControllerBase_SetArrowTransparency(self, arrowTransparency, methodInfo);
+diff --git a/src/Hooks/SmallFixes/MemoryPoolBase.cpp b/src/Hooks/SmallFixes/MemoryPoolBase.cpp
+index 596dc16..4382e35 100644
+--- a/src/Hooks/SmallFixes/MemoryPoolBase.cpp
++++ b/src/Hooks/SmallFixes/MemoryPoolBase.cpp
+@@ -1,3 +1,3 @@
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
+-#include "beatsaber-hook/shared/utils/il2cpp-utils-methods.hpp"
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "beatsaber-hook/shared/members.hpp"
++#include "beatsaber-hook/shared/members.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+@@ -23,6 +22,0 @@ using namespace Zenject;
+-template <>
+-struct ::il2cpp_utils::il2cpp_type_check::MetadataGetter<&Zenject::MemoryPoolBase_1<Il2CppObject*>::Despawn> {
+-  static MethodInfo const* methodInfo() {
+-    return il2cpp_utils::FindMethodUnsafe(classof(Zenject::MemoryPoolBase_1<Il2CppObject*>*), "Despawn", 1);
+-  }
+-};
+@@ -82 +76 @@ struct ::il2cpp_utils::il2cpp_type_check::MetadataGetter<&Zenject::MemoryPoolBas
+-MAKE_HOOK(MemoryPoolBase_Despawn, nullptr, void, MemoryPoolBase_1<Il2CppObject*>* self, Il2CppObject* item,
++MAKE_HOOK(MemoryPoolBase_Despawn, (nullptr), void, MemoryPoolBase_1<Il2CppObject*>* self, Il2CppObject* item,
+@@ -87 +81 @@ MAKE_HOOK(MemoryPoolBase_Despawn, nullptr, void, MemoryPoolBase_1<Il2CppObject*>
+-                //    /* && !il2cpp_functions::class_is_assignable_from(ObstacleControllerKlass, item->klass) */ //
++                //    /* && !i2c::functions::class_is_assignable_from(ObstacleControllerKlass, item->klass) */ //
+@@ -118,2 +112,2 @@ void InstallMemoryPoolBaseHooks() {
+-      il2cpp_utils::il2cpp_type_check::MetadataGetter<&Zenject::MemoryPoolBase_1<Il2CppObject*>::Despawn>::methodInfo();
+-  INSTALL_HOOK_DIRECT(NELogger::Logger, MemoryPoolBase_Despawn, (void*)(mInfo->methodPointer));
++      i2c::find_method(classof(Zenject::MemoryPoolBase_1<Il2CppObject*>*), {"Despawn", 1});
++  INSTALL_HOOK(NELogger::Logger, MemoryPoolBase_Despawn, (void*)(mInfo->methodPointer));
+diff --git a/src/Hooks/SmallFixes/PauseMenuUseLocal.cpp b/src/Hooks/SmallFixes/PauseMenuUseLocal.cpp
+index a1ca80e..a813af1 100644
+--- a/src/Hooks/SmallFixes/PauseMenuUseLocal.cpp
++++ b/src/Hooks/SmallFixes/PauseMenuUseLocal.cpp
+@@ -1,2 +1,2 @@
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "beatsaber-hook/shared/members.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+diff --git a/src/Hooks/SmallFixes/PlayerTransforms.cpp b/src/Hooks/SmallFixes/PlayerTransforms.cpp
+index 4c7bc06..4807e6e 100644
+--- a/src/Hooks/SmallFixes/PlayerTransforms.cpp
++++ b/src/Hooks/SmallFixes/PlayerTransforms.cpp
+@@ -0,0 +1 @@
++#include "songcore/shared/SongCore.hpp"
+@@ -2,2 +3,2 @@
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "beatsaber-hook/shared/members.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+@@ -9,0 +11 @@
++#include "GlobalNamespace/BeatmapCharacteristicExtensions.hpp"
+@@ -50 +52 @@ MAKE_HOOK_MATCH(PlayerTransforms_HeadsetOffsetZ, &PlayerTransforms::Update, void
+-  if (UnityW<Transform> headTransform = self->_headTransform; headTransform.isAlive()) {
++  if (UnityW<Transform> headTransform = self->_headTransform; headTransform.is_alive()) {
+@@ -92,2 +94,5 @@ MAKE_HOOK_MATCH(PlayerTransforms_HeadsetOffsetZ, &PlayerTransforms::Update, void
+-  if (self->_beatmapKey.hasValue && self->_beatmapKey.Value.beatmapCharacteristic->containsRotationEvents) {
+-    return;
++  if (self->_beatmapKey.hasValue) {
++    auto characteristic = SongCore::API::Characteristics::GetCharacteristic(self->_beatmapKey.Value.characteristic);
++    const bool containsRotationEvents = characteristic ? characteristic->containsRotationEvents :
++        BeatmapCharacteristicExtensions::ContainsRotationEvents(self->_beatmapKey.Value.characteristic);
++    if (containsRotationEvents) return;
+diff --git a/src/Hooks/SmallFixes/SaberCullingFix.cpp b/src/Hooks/SmallFixes/SaberCullingFix.cpp
+index b0ecffc..bcafae2 100644
+--- a/src/Hooks/SmallFixes/SaberCullingFix.cpp
++++ b/src/Hooks/SmallFixes/SaberCullingFix.cpp
+@@ -1,2 +1,2 @@
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "beatsaber-hook/shared/members.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+diff --git a/src/Hooks/SmallFixes/SaberPlayerMovementFix.cpp b/src/Hooks/SmallFixes/SaberPlayerMovementFix.cpp
+index 3964a49..64951cd 100644
+--- a/src/Hooks/SmallFixes/SaberPlayerMovementFix.cpp
++++ b/src/Hooks/SmallFixes/SaberPlayerMovementFix.cpp
+@@ -3,3 +3,3 @@
+-#include "beatsaber-hook/shared/utils/byref.hpp"
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "beatsaber-hook/shared/byref.hpp"
++#include "beatsaber-hook/shared/members.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+@@ -17 +17 @@
+-#include "beatsaber-hook/shared/utils/typedefs-wrappers.hpp"
++#include "beatsaber-hook/shared/types.hpp"
+@@ -29 +29,6 @@ static std::unordered_map<GlobalNamespace::IBladeMovementData*, GlobalNamespace:
+-static SafePtrUnity<Transform> _origin;
++static safe_ptr<Transform*, true> _origin;
++
++void NECaches::ClearSaberMovementCaches() {
++  _worldMovementData.clear();
++  _origin = nullptr;
++}
+@@ -36 +41,2 @@ void CheckOrigin() {
+-  auto playerTransform = Resources::FindObjectsOfTypeAll<PlayerTransforms*>()->FirstOrDefault();
++  auto playerTransformObjects = Resources::FindObjectsOfTypeAll<PlayerTransforms*>();
++  auto playerTransform = playerTransformObjects && !playerTransformObjects.empty() ? playerTransformObjects[0] : nullptr;
+@@ -70,2 +76,2 @@ MAKE_HOOK_MATCH(SaberMovementData_ComputeAdditionalData, &SaberMovementData::Com
+-                SaberMovementData* self, Vector3 topPos, Vector3 bottomPos, int idxOffset, ByRef<Vector3> segmentNormal,
+-                ByRef<float> segmentAngle) {
++                SaberMovementData* self, Vector3 topPos, Vector3 bottomPos, int idxOffset, by_ref<Vector3> segmentNormal,
++                by_ref<float> segmentAngle) {
+@@ -86,2 +92,2 @@ MAKE_HOOK_MATCH(SaberMovementData_ComputeAdditionalData, &SaberMovementData::Com
+-    segmentNormal = self->ComputePlaneNormal(topPos2, bottomPos2, topPos3, bottomPos3);
+-    segmentAngle = Sombrero::FastVector3::Angle(topPos3 - bottomPos3, topPos2 - bottomPos2);
++    *segmentNormal = self->ComputePlaneNormal(topPos2, bottomPos2, topPos3, bottomPos3);
++    *segmentAngle = Sombrero::FastVector3::Angle(topPos3 - bottomPos3, topPos2 - bottomPos2);
+@@ -90,2 +96,2 @@ MAKE_HOOK_MATCH(SaberMovementData_ComputeAdditionalData, &SaberMovementData::Com
+-  segmentNormal = Sombrero::FastVector3::zero();
+-  segmentAngle = 0.0f;
++  *segmentNormal = Sombrero::FastVector3::zero();
++  *segmentAngle = 0.0f;
+diff --git a/src/Hooks/SpawnRotationProcessor.cpp b/src/Hooks/SpawnRotationProcessor.cpp
+index cc87d5f..ee8a9a1 100644
+--- a/src/Hooks/SpawnRotationProcessor.cpp
++++ b/src/Hooks/SpawnRotationProcessor.cpp
+@@ -1,2 +1,2 @@
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
++#include "beatsaber-hook/shared/members.hpp"
+diff --git a/src/Hooks/Temporary/BeatmapObjectSpawnController.cpp b/src/Hooks/Temporary/BeatmapObjectSpawnController.cpp
+index c2739b1..84c4ba9 100644
+--- a/src/Hooks/Temporary/BeatmapObjectSpawnController.cpp
++++ b/src/Hooks/Temporary/BeatmapObjectSpawnController.cpp
+@@ -1,3 +1,3 @@
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
+-#include "beatsaber-hook/shared/utils/typedefs-array.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
++#include "beatsaber-hook/shared/members.hpp"
++#include "beatsaber-hook/shared/arrayw.hpp"
+diff --git a/src/Hooks/Temporary/ClampPatches.cpp b/src/Hooks/Temporary/ClampPatches.cpp
+index e1d337e..9e512dd 100644
+--- a/src/Hooks/Temporary/ClampPatches.cpp
++++ b/src/Hooks/Temporary/ClampPatches.cpp
+@@ -1 +1 @@
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+diff --git a/src/NoodleExtensions.cpp b/src/NoodleExtensions.cpp
+index 00d56a5..282c2b5 100644
+--- a/src/NoodleExtensions.cpp
++++ b/src/NoodleExtensions.cpp
+@@ -20,6 +20,6 @@ bool NECaches::LeftHandedMode;
+-SafePtr<Zenject::DiContainer> NECaches::GameplayCoreContainer;
+-// SafePtr<CustomJSONData::CustomBeatmapData> NECaches::customBeatmapData;
+-SafePtr<GlobalNamespace::IJumpOffsetYProvider> NECaches::JumpOffsetYProvider;
+-SafePtr<GlobalNamespace::VariableMovementDataProvider> NECaches::VariableMovementDataProvider;
+-SafePtr<GlobalNamespace::BeatmapObjectSpawnController::InitData> NECaches::InitData;
+-SafePtr<GlobalNamespace::BeatmapObjectSpawnController>  NECaches::beatmapObjectSpawnController;
++safe_ptr<Zenject::DiContainer*> NECaches::GameplayCoreContainer;
++// safe_ptr<CustomJSONData::CustomBeatmapData*> NECaches::customBeatmapData;
++safe_ptr<GlobalNamespace::IJumpOffsetYProvider*> NECaches::JumpOffsetYProvider;
++safe_ptr<GlobalNamespace::VariableMovementDataProvider*> NECaches::VariableMovementDataProvider;
++safe_ptr<GlobalNamespace::BeatmapObjectSpawnController::InitData*> NECaches::InitData;
++safe_ptr<GlobalNamespace::BeatmapObjectSpawnController*>  NECaches::beatmapObjectSpawnController;
+@@ -27,0 +28,21 @@ std::shared_ptr<NoodleExtensions::Pool::NoodleMovementDataProviderPool> NECaches
++void NECaches::ClearGameplayReferences() {
++  const int rootCount = int(bool(GameplayCoreContainer)) + int(bool(JumpOffsetYProvider)) +
++      int(bool(VariableMovementDataProvider)) + int(bool(InitData)) + int(bool(beatmapObjectSpawnController));
++  const bool hadPool = bool(noodleMovementDataProviderPool);
++  ClearNoteCaches();
++  ClearObstacleCaches();
++  ClearSliderCaches();
++  ClearSaberMovementCaches();
++  // Pool providers retain their original movement provider and last note/wall.
++  // Drop these only after GameCore has finished unloading and despawning.
++  noodleMovementDataProviderPool.reset();
++  beatmapObjectSpawnController = nullptr;
++  InitData = nullptr;
++  VariableMovementDataProvider = nullptr;
++  JumpOffsetYProvider = nullptr;
++  GameplayCoreContainer = nullptr;
++  hasLocalSpaceTrail = false;
++  hasPlayerTransfrom = false;
++  NELogger::Logger.info("Released GameCore references: roots={}, pool={}", rootCount, hadPool);
++}
++
+diff --git a/src/TimeSourceHelper.cpp b/src/TimeSourceHelper.cpp
+index 739dd3a..89a6bfd 100644
+--- a/src/TimeSourceHelper.cpp
++++ b/src/TimeSourceHelper.cpp
+@@ -7 +7 @@ float TimeSourceHelper::getSongTime(GlobalNamespace::IAudioTimeSource* timeSourc
+-  static auto* timeSyncControllerClass = classof(AudioTimeSyncController*);
++  static auto* timeSyncControllerClass = i2c::class_of<AudioTimeSyncController*>();
+diff --git a/src/main.cpp b/src/main.cpp
+index 9a92664..547ede1 100644
+--- a/src/main.cpp
++++ b/src/main.cpp
+@@ -9 +9 @@ extern "C" void setup(CModInfo* info) {
+-  info->version = VERSION;
++  info->version = "1.6.3+local.1451.2";
+diff --git a/include/GameplaySceneLifetime.hpp b/include/GameplaySceneLifetime.hpp
+new file mode 100644
+--- /dev/null
++++ b/include/GameplaySceneLifetime.hpp
+@@ -0,0 +1,19 @@
++#pragma once
++#include <optional>
++#include <string_view>
++
++// Scene names may no longer be available during the unload callback. Match the
++// handle captured while GameCore was loaded, ignoring additive environments.
++class GameplaySceneLifetime {
++  std::optional<int> gameplayHandle;
++public:
++  void Loaded(int handle, std::string_view name) {
++    if (name == "GameCore") gameplayHandle = handle;
++  }
++  bool HasGameplay() const { return gameplayHandle.has_value(); }
++  bool Unloaded(int handle) {
++    if (!gameplayHandle || *gameplayHandle != handle) return false;
++    gameplayHandle.reset();
++    return true;
++  }
++};

@@ -1,0 +1,245 @@
+diff --git a/Cargo.lock b/Cargo.lock
+index 14f44e2..aa499de 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -100,13 +99,0 @@ dependencies = [
+-[[package]]
+-name = "bad64"
+-version = "0.6.0"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "cdfe7137c8817d4649b0f05e559c759efa8fb376cd25a33c4d069288332f1202"
+-dependencies = [
+- "bad64-sys 0.5.0",
+- "cstr_core",
+- "num-derive 0.3.3",
+- "num-traits",
+- "static_assertions",
+-]
+-
+@@ -119 +106 @@ dependencies = [
+- "bad64-sys 0.10.0",
++ "bad64-sys",
+@@ -121 +108 @@ dependencies = [
+- "num-derive 0.4.2",
++ "num-derive",
+@@ -126,11 +112,0 @@ dependencies = [
+-[[package]]
+-name = "bad64-sys"
+-version = "0.5.0"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "95ee29370ca1576779cbf37adc0bebd518ef7956bb457f64fe499817a7774aea"
+-dependencies = [
+- "bindgen 0.59.2",
+- "cc",
+- "glob",
+-]
+-
+@@ -143 +119 @@ dependencies = [
+- "bindgen 0.72.1",
++ "bindgen",
+@@ -166,19 +141,0 @@ dependencies = [
+-[[package]]
+-name = "bindgen"
+-version = "0.59.2"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "2bd2a9a458e8f4304c52c43ebb0cfbd520289f8379a52e329a38afda99bf8eb8"
+-dependencies = [
+- "bitflags 1.3.2",
+- "cexpr",
+- "clang-sys",
+- "lazy_static",
+- "lazycell",
+- "peeking_take_while",
+- "proc-macro2",
+- "quote",
+- "regex",
+- "rustc-hash 1.1.0",
+- "shlex 1.3.0",
+-]
+-
+@@ -191 +148 @@ dependencies = [
+- "bitflags 2.13.1",
++ "bitflags",
+@@ -200 +157 @@ dependencies = [
+- "rustc-hash 2.1.3",
++ "rustc-hash",
+@@ -227,6 +183,0 @@ dependencies = [
+-[[package]]
+-name = "bitflags"
+-version = "1.3.2"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
+-
+@@ -242,14 +192,0 @@ version = "0.1.0"
+-source = "git+https://github.com/Stackdoubleflow/brocolib.git?branch=il2cpp_v29#d3bc9f2bd9f0c42b71d5a8e0549a1a34cb1e943e"
+-dependencies = [
+- "bad64 0.6.0",
+- "binde",
+- "binread",
+- "byteorder",
+- "object 0.30.4",
+- "thiserror 1.0.69",
+-]
+-
+-[[package]]
+-name = "brocolib"
+-version = "0.1.0"
+-source = "git+https://github.com/Fernthedev/brocolib.git?branch=il2cpp_v39#618b38b1fd6d697474c93079c74198eae9475c74"
+@@ -257 +194 @@ dependencies = [
+- "bad64 0.12.0",
++ "bad64",
+@@ -264 +201 @@ dependencies = [
+- "thiserror 2.0.20",
++ "thiserror",
+@@ -270 +206,0 @@ version = "0.1.0"
+-source = "git+https://github.com/Fernthedev/brocolib.git?branch=il2cpp_v39#618b38b1fd6d697474c93079c74198eae9475c74"
+@@ -403,3 +339,2 @@ dependencies = [
+- "bitflags 2.13.1",
+- "brocolib 0.1.0 (git+https://github.com/Stackdoubleflow/brocolib.git?branch=il2cpp_v29)",
+- "brocolib 0.1.0 (git+https://github.com/Fernthedev/brocolib.git?branch=il2cpp_v39)",
++ "bitflags",
++ "brocolib",
+@@ -429,9 +363,0 @@ dependencies = [
+-[[package]]
+-name = "crc32fast"
+-version = "1.5.0"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "9481c1c90cbf2ac953f07c8d4a58aa3945c425b7185c9154d67a65e4230da511"
+-dependencies = [
+- "cfg-if",
+-]
+-
+@@ -524,10 +449,0 @@ checksum = "d45db016d36b838f563236e9193d0ee6ce38f3f68b6c94e914b4929c96bbb890"
+-[[package]]
+-name = "flate2"
+-version = "1.1.9"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "843fba2746e448b37e26a819579957415c8cef339bf08564fe8b7ddbd959573c"
+-dependencies = [
+- "crc32fast",
+- "miniz_oxide",
+-]
+-
+@@ -678,6 +593,0 @@ checksum = "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
+-[[package]]
+-name = "lazycell"
+-version = "1.3.0"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "830d08ce1d1d941e6b30645f1a0eb5643013d835ce3779a5fc208261dbe10f55"
+-
+@@ -725 +634,0 @@ dependencies = [
+- "simd-adler32",
+@@ -738,11 +646,0 @@ dependencies = [
+-[[package]]
+-name = "num-derive"
+-version = "0.3.3"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "876a53fff98e03a936a674b29568b0e605f06b29372c2489ff4de23f1949743d"
+-dependencies = [
+- "proc-macro2",
+- "quote",
+- "syn 1.0.109",
+-]
+-
+@@ -769,10 +666,0 @@ dependencies = [
+-[[package]]
+-name = "object"
+-version = "0.30.4"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "03b4680b86d9cfafba8fc491dc9b6df26b68cf40e9e6cd73909194759a63c385"
+-dependencies = [
+- "flate2",
+- "memchr",
+-]
+-
+@@ -821,6 +708,0 @@ checksum = "df94ce210e5bc13cb6651479fa48d14f601d9858cfe0467f43ae157023b938d3"
+-[[package]]
+-name = "peeking_take_while"
+-version = "0.1.2"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "19b17cddbe7ec3f8bc800887bab5e717348c95ea2ca0b1bf0837fb964dc67099"
+-
+@@ -932,6 +813,0 @@ checksum = "b74b56ffa8bb2830709a538c2cbcae9aa062db0d2a42563bfb09bdaae44020eb"
+-[[package]]
+-name = "rustc-hash"
+-version = "1.1.0"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "08d43f7aa6b08d49f382cde6a7982047c3426db949b1424bc4b7ec9ae12c6ce2"
+-
+@@ -1023,6 +898,0 @@ checksum = "f8fadd59c855ef2080decdef8ff161eb6661b86933c9d82e5ba29dc602a55aba"
+-[[package]]
+-name = "simd-adler32"
+-version = "0.3.10"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "3a219298ac11a56ea9a6d2120044824d6f01aeb034955e7af7bc16858527deea"
+-
+@@ -1083,9 +952,0 @@ dependencies = [
+-[[package]]
+-name = "thiserror"
+-version = "1.0.69"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "b6aaf5339b578ea85b50e080feb250a3e8ae8cfcdff9a461c9ec2904bc923f52"
+-dependencies = [
+- "thiserror-impl 1.0.69",
+-]
+-
+@@ -1098,12 +959 @@ dependencies = [
+- "thiserror-impl 2.0.20",
+-]
+-
+-[[package]]
+-name = "thiserror-impl"
+-version = "1.0.69"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "4fee6c4efc90059e10f81e6d42c60a18f76588c3d74cb83a0b242a2b6c7504c1"
+-dependencies = [
+- "proc-macro2",
+- "quote",
+- "syn 2.0.119",
++ "thiserror-impl",
+diff --git a/Cargo.toml b/Cargo.toml
+index e296ac1..3c252ca 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -12 +12 @@ il2cpp_v31 = ["brocolib_il2cpp_v39", "brocolib_il2cpp_v39/il2cpp_v31"]
+-il2cpp_v29 = ["brocolib_il2cpp_v29"]
++il2cpp_v29 = []
+@@ -20,8 +20 @@ cpp = []
+-git = "https://github.com/Fernthedev/brocolib.git"
+-branch = "il2cpp_v39"
+-optional = true
+-package = "brocolib"
+-
+-[dependencies.brocolib_il2cpp_v29]
+-git = "https://github.com/Stackdoubleflow/brocolib.git"
+-branch = "il2cpp_v29"
++path = "../brocolib-src"
+diff --git a/src/generate/offsets/offsets_31.rs b/src/generate/offsets/offsets_31.rs
+index 8825e74..a12e78b 100644
+--- a/src/generate/offsets/offsets_31.rs
++++ b/src/generate/offsets/offsets_31.rs
+@@ -229,0 +230,24 @@ pub fn layout_fields(
++
++    // An enum's unboxed storage is exactly its underlying primitive. Computing
++    // its field offset by laying out System.Enum as an ordinary parent can add
++    // the parent's native-size padding (observed as +4 with metadata v39).
++    // Keep the boxed object prefix here; make_fields removes that prefix when
++    // emitting value-type members. This preserves the generated layout checks.
++    if declaring_ty_def.is_enum_type() {
++        let backing_index = declaring_ty_def
++            .enum_backing_type_index(metadata.metadata)
++            .expect("An enum must declare its underlying value__ field");
++        let backing = &metadata.metadata_registration.types[backing_index.0 as usize];
++        let sa = get_type_size_and_alignment(backing, generic_inst_types, metadata);
++        let object_size = metadata.object_size() as usize;
++        if let Some(offsets) = offsets {
++            offsets.push(object_size as u32);
++        }
++        return SizeAndAlignment {
++            size: object_size + sa.size,
++            actual_size: object_size + sa.size,
++            alignment: sa.alignment,
++            packing: sa.packing,
++        };
++    }
++

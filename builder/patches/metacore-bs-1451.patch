@@ -1,0 +1,72 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index ec595ae..ff4b592 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -59,0 +60,11 @@ include(extern.cmake)
++# Link the exact-target release implementations; QPM also globs debug variants
++# with the same SONAME, which can otherwise mask the selected release exports.
++get_target_property(port_link_libraries ${COMPILE_ID} LINK_LIBRARIES)
++list(FILTER port_link_libraries EXCLUDE REGEX "\\.debug\\.so$")
++list(FILTER port_link_libraries EXCLUDE REGEX "/debug_[^/]*\\.so$")
++set_property(TARGET ${COMPILE_ID} PROPERTY LINK_LIBRARIES "${port_link_libraries}")
++target_link_options(${COMPILE_ID} PRIVATE -Wl,--no-undefined)
++
++# Exact target API generated from the local 1.45.1 APK.
++target_include_directories(${COMPILE_ID} BEFORE PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../../toolchain/codegen/include")
++
+diff --git a/shared/songs.hpp b/shared/songs.hpp
+index 22d5984..a54939f 100644
+--- a/shared/songs.hpp
++++ b/shared/songs.hpp
+@@ -59 +59 @@ namespace MetaCore::Songs {
+-    /// @param playlist The playlist to select, will open the "All Songs" menu if nullptr
++    /// @param playlist The playlist to select; nullptr resolves the registered pack for custom songs and uses All Songs for builtin levels
+@@ -63 +63 @@ namespace MetaCore::Songs {
+-    /// @param playlist The playlist to select, will open the "All Songs" menu if nullptr
++    /// @param playlist The playlist to select; nullptr resolves the registered pack for custom songs and uses All Songs for builtin levels
+diff --git a/src/internals.cpp b/src/internals.cpp
+index 66a2ee2..488fe5b 100644
+--- a/src/internals.cpp
++++ b/src/internals.cpp
+@@ -242 +242 @@ void Internals::Initialize() {
+-    beatmapKey = setupData ? setupData->beatmapKey : BeatmapKey();
++    beatmapKey = setupData ? setupData->beatmapKey : BeatmapKey{BeatmapCharacteristic(0), BeatmapDifficulty(0), nullptr};
+@@ -384 +384 @@ void Internals::Finish(bool quit, bool restart) {
+-BeatmapKey Internals::selectedKey = {};
++BeatmapKey Internals::selectedKey{BeatmapCharacteristic(0), BeatmapDifficulty(0), nullptr};
+diff --git a/src/songs.cpp b/src/songs.cpp
+index e778aea..3593446 100644
+--- a/src/songs.cpp
++++ b/src/songs.cpp
+@@ -114 +114,2 @@ BeatmapKey MetaCore::Songs::GetSelectedKey(bool last) {
+-        return {};
++        // The generated default C++ constructor does not initialize its fields.
++        return {BeatmapCharacteristic(0), BeatmapDifficulty(0), nullptr};
+@@ -131,0 +133,17 @@ void MetaCore::Songs::SelectLevel(BeatmapLevel* level, BeatmapLevelPack* playlis
++    if (!main || !level) {
++        logger.warn("Cannot select a level before the main menu and level are available");
++        return;
++    }
++
++    const bool customLevel = level->levelID.starts_with(u"custom_level_");
++    if (customLevel && !playlist) {
++        // SongCore registers custom packs in the game's all-loaded repository.
++        // A null pack with category All may leave the previous OST pack selected.
++        auto container = Game::GetAppDiContainer();
++        auto model = container ? container->Resolve<BeatmapLevelsModel*>() : nullptr;
++        playlist = model && model->_allLoadedBeatmapLevelsRepository ? model->GetLevelPackForLevelId(level->levelID) : nullptr;
++        if (!playlist) {
++            logger.warn("Cannot select custom level {} before its pack is registered", level->levelID);
++            return;
++        }
++    }
+@@ -136 +154,3 @@ void MetaCore::Songs::SelectLevel(BeatmapLevel* level, BeatmapLevelPack* playlis
+-    if (playlist)
++    if (customLevel)
++        state->levelCategory.value = SelectLevelCategoryViewController::LevelCategory::CustomSongs;
++    else if (playlist)
+@@ -147,0 +168,4 @@ void MetaCore::Songs::SelectLevel(BeatmapKey level, BeatmapLevelPack* playlist)
++    if (!main || !level.IsValid()) {
++        logger.warn("Cannot select an invalid key or select before the main menu is available");
++        return;
++    }

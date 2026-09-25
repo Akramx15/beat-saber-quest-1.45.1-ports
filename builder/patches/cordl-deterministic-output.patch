@@ -1,0 +1,5 @@
+--- a/src/generate/cpp/cpp_context_collection.rs
++++ b/src/generate/cpp/cpp_context_collection.rs
+@@ -212,0 +213,2 @@
++            // Duplicate type names can share output paths; use a stable last writer.
++            .sorted_by_key(|(tag, _)| **tag)

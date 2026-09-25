@@ -1,0 +1,203 @@
+{
+  "experimental": true,
+  "sources": [
+    {
+      "id": "BeatLeader",
+      "version": "0.9.1+local.1451.2",
+      "upstream": "https://github.com/BeatLeader/beatleader-qmod.git",
+      "upstream_base_commit": "fbeb314ba0b1ab48232db544c661b9e7a09209b4",
+      "license": "MIT",
+      "source_url": "https://github.com/Akramx15/beat-saber-quest-1.45.1-ports/releases/download/v0.1.0-experimental.1/BeatLeader-source.zip",
+      "source_sha256": "520939d3afd8897b12de224e377dc76848f835796d69bccf6dffb0911c29a952",
+      "source_scope": "review_snapshot_only_not_full_build_closure",
+      "status": "held_binary"
+    },
+    {
+      "id": "BeatTogether",
+      "version": "2.2.5+local.1451",
+      "upstream": "https://github.com/BeatTogether/BeatTogether.Quest.git",
+      "upstream_base_commit": "7d7a6c5c08494b3dece863ba1ddd5d56f8d2ed38",
+      "license": "MIT",
+      "source_url": "https://github.com/Akramx15/beat-saber-quest-1.45.1-ports/releases/download/v0.1.0-experimental.1/BeatTogether-source.zip",
+      "source_sha256": "375d8f0f349345620007795f7c263325c8d75e8653a5045ae2f6f42a7017e8fd",
+      "source_scope": "review_snapshot_only_not_full_build_closure",
+      "status": "staged_licensed_binary"
+    },
+    {
+      "id": "bsl",
+      "version": "0.1.0+local.1451.2",
+      "upstream": "https://github.com/bsq-ports/BetterSongList.git",
+      "upstream_base_commit": "cf1f63049d590f2f70207aa1285f9a5cf511ba38",
+      "license": "GPL-3.0 (see upstream grant for or-later terms)",
+      "source_url": "https://github.com/Akramx15/beat-saber-quest-1.45.1-ports/releases/download/v0.1.0-experimental.1/bsl-source.zip",
+      "source_sha256": "227669728642ea1e8e48a1c6261df5bc789fb6280feb01c2442667f9c36f9657",
+      "source_scope": "review_snapshot_only_not_full_build_closure",
+      "status": "held_binary"
+    },
+    {
+      "id": "BetterSongSearch",
+      "version": "2.2.0+local.1451",
+      "upstream": "https://github.com/bsq-ports/BetterSongSearchQuest.git",
+      "upstream_base_commit": "005514b001ea472d41e0a4dc155e925702998a1a",
+      "license": "MIT",
+      "source_url": "https://github.com/Akramx15/beat-saber-quest-1.45.1-ports/releases/download/v0.1.0-experimental.1/BetterSongSearch-source.zip",
+      "source_sha256": "8d0338960dbc2b1e14c48e40846cc2996811b30c074917d1efe9d5d7097c9a21",
+      "source_scope": "review_snapshot_only_not_full_build_closure",
+      "status": "staged_licensed_binary"
+    },
+    {
+      "id": "chroma",
+      "version": "2.10.3+local.1451",
+      "upstream": "https://github.com/bsq-ports/Chroma.git",
+      "upstream_base_commit": "e3d7419f00d7b120857edfccb0a15f202c6ebd61",
+      "license": "GPL-3.0 (see upstream grant for or-later terms)",
+      "source_url": "https://github.com/Akramx15/beat-saber-quest-1.45.1-ports/releases/download/v0.1.0-experimental.1/chroma-source.zip",
+      "source_sha256": "85754f6c63e65a08eff098ee48b5a87ca06c35af3736676594db902fc892a188",
+      "source_scope": "review_snapshot_only_not_full_build_closure",
+      "status": "held_binary"
+    },
+    {
+      "id": "custom-json-data",
+      "version": "0.24.5+local.1451",
+      "upstream": "https://github.com/bsq-ports/CustomJSONData.git",
+      "upstream_base_commit": "e1dc75604d1663e5c890102da5f615bb5198f650",
+      "license": "MIT",
+      "source_url": "https://github.com/Akramx15/beat-saber-quest-1.45.1-ports/releases/download/v0.1.0-experimental.1/custom-json-data-source.zip",
+      "source_sha256": "06be8bb2260a0533c2dfd899e0b9d57e17b9b518fa711e9e5924f181f24c2ae7",
+      "source_scope": "review_snapshot_only_not_full_build_closure",
+      "status": "held_binary"
+    },
+    {
+      "id": "jdfixer",
+      "version": "3.4.0+local.1451",
+      "upstream": "https://github.com/Metalit/QuestJDFixer.git",
+      "upstream_base_commit": "172dda2e0ddaec71a60d635836fcbfd2ea895d42",
+      "license": "GPL-3.0 (see upstream grant for or-later terms)",
+      "source_url": "https://github.com/Akramx15/beat-saber-quest-1.45.1-ports/releases/download/v0.1.0-experimental.1/jdfixer-source.zip",
+      "source_sha256": "f53dc52a3df416e09b66636e7bcfca85c6764570ee6488a5f2b59eb4879d46c7",
+      "source_scope": "review_snapshot_only_not_full_build_closure",
+      "status": "held_binary"
+    },
+    {
+      "id": "lapiz",
+      "version": "0.3.5+local.1451",
+      "upstream": "https://github.com/raineaeternal/Lapiz.git",
+      "upstream_base_commit": "eca1a844c59b97261ae6a787c7b9347464fc21aa",
+      "license": "MIT",
+      "source_url": "https://github.com/Akramx15/beat-saber-quest-1.45.1-ports/releases/download/v0.1.0-experimental.1/lapiz-source.zip",
+      "source_sha256": "d36722a74e3336bddc806e5fd52e9c847005bcd28f817d7b1ff42c426512c257",
+      "source_scope": "review_snapshot_only_not_full_build_closure",
+      "status": "staged_licensed_binary"
+    },
+    {
+      "id": "MappingExtensions",
+      "version": "0.25.5-1.45.1-dev.3",
+      "upstream": "https://github.com/rcelyte/MappingExtensions.git",
+      "upstream_base_commit": "eafc097b355a30021d1491c5368187938aafe012",
+      "license": "MIT",
+      "source_url": "https://github.com/Akramx15/beat-saber-quest-1.45.1-ports/releases/download/v0.1.0-experimental.1/MappingExtensions-source.zip",
+      "source_sha256": "1aa6174aef5324151a658938f5e79d300b5cd073621bcee0e9c7ceeca8235593",
+      "source_scope": "review_snapshot_only_not_full_build_closure",
+      "status": "staged_licensed_binary"
+    },
+    {
+      "id": "mod-list",
+      "version": "0.2.8+local.1451",
+      "upstream": "https://github.com/DanTheMan827-BeatSaber/Quest.ModList.git",
+      "upstream_base_commit": "7c55243d017b035f2e3ccc20cf15ba3fde660ee6",
+      "license": "GPL-3.0 (see upstream grant for or-later terms)",
+      "source_url": "https://github.com/Akramx15/beat-saber-quest-1.45.1-ports/releases/download/v0.1.0-experimental.1/mod-list-source.zip",
+      "source_sha256": "d72d6caf0cc19e52e3227f380cc770dddde41a3253730995f9f1c0a2fc5efaac",
+      "source_scope": "review_snapshot_only_not_full_build_closure",
+      "status": "held_binary"
+    },
+    {
+      "id": "multiplayer-core",
+      "version": "1.6.7+local.1451.3",
+      "upstream": "https://github.com/EnderdracheLP/MultiplayerCore.Quest.git",
+      "upstream_base_commit": "135d2f8888d1d73131b48f723a902d83b9900275",
+      "license": "MIT",
+      "source_url": "https://github.com/Akramx15/beat-saber-quest-1.45.1-ports/releases/download/v0.1.0-experimental.1/multiplayer-core-source.zip",
+      "source_sha256": "0b66cd967cff91cd1f1558ffc55e9b49a5a5c140a9c49f76b2e7fafce397d8e7",
+      "source_scope": "review_snapshot_only_not_full_build_closure",
+      "status": "staged_licensed_binary"
+    },
+    {
+      "id": "playlistcore",
+      "version": "1.7.1+local.1451",
+      "upstream": "https://github.com/Metalit/PlaylistCore.git",
+      "upstream_base_commit": "5aa74ed2200870402ec6b4a5fb36e6bf8050cc7a",
+      "license": "GPL-3.0 (see upstream grant for or-later terms)",
+      "source_url": "https://github.com/Akramx15/beat-saber-quest-1.45.1-ports/releases/download/v0.1.0-experimental.1/playlistcore-source.zip",
+      "source_sha256": "1ce7488b9eea654ee4ed47f68383f649b6bb4b71d73e14384cc6550e05c6a0a0",
+      "source_scope": "review_snapshot_only_not_full_build_closure",
+      "status": "held_binary"
+    },
+    {
+      "id": "PracticeTweaqs",
+      "version": "0.1.0+local.1451",
+      "upstream": "https://github.com/NSGolova/PracticeTweaqs.git",
+      "upstream_base_commit": "59e453918f9e0ca16cc2afdd7e10f1ce1a5c1e33",
+      "license": "MIT",
+      "source_url": "https://github.com/Akramx15/beat-saber-quest-1.45.1-ports/releases/download/v0.1.0-experimental.1/PracticeTweaqs-source.zip",
+      "source_sha256": "0c37d8d2c9d598813e1cb98f103374339494dc18e74b7cd5e60e3f36dd151d82",
+      "source_scope": "review_snapshot_only_not_full_build_closure",
+      "status": "staged_licensed_binary"
+    },
+    {
+      "id": "RecentlyPlayed",
+      "version": "1.0.0+local.1451",
+      "upstream": "https://github.com/Tatenshi/RecentlyPlayed.git",
+      "upstream_base_commit": "d82f7ee24c21f137b6508f0e02cae1926e0e797f",
+      "license": "GPL-3.0 (see upstream grant for or-later terms)",
+      "source_url": "https://github.com/Akramx15/beat-saber-quest-1.45.1-ports/releases/download/v0.1.0-experimental.1/RecentlyPlayed-source.zip",
+      "source_sha256": "061d25c68b9132ff1f66db31cff85521f89b1c5dca1541de358aa67e4ca2c032",
+      "source_scope": "review_snapshot_only_not_full_build_closure",
+      "status": "held_binary"
+    },
+    {
+      "id": "smoothedcontroller",
+      "version": "1.5.2+local.1451",
+      "upstream": "https://github.com/FrozenAlex/SmoothedController.git",
+      "upstream_base_commit": "ba3787ba521de6418e0f0926903c2654603e8897",
+      "license": "GPL-3.0 (see upstream grant for or-later terms)",
+      "source_url": "https://github.com/Akramx15/beat-saber-quest-1.45.1-ports/releases/download/v0.1.0-experimental.1/smoothedcontroller-source.zip",
+      "source_sha256": "2dbffc2ffcc90948609645cdeece909dcdecf72572d9b4403aab9f2ba71e4a0b",
+      "source_scope": "review_snapshot_only_not_full_build_closure",
+      "status": "held_binary"
+    },
+    {
+      "id": "songcore",
+      "version": "1.3.2+local.1451",
+      "upstream": "https://github.com/raineaeternal/Quest-SongCore.git",
+      "upstream_base_commit": "fa75600323dad78660f52e6f6d45541264806350",
+      "license": "MIT",
+      "source_url": "https://github.com/Akramx15/beat-saber-quest-1.45.1-ports/releases/download/v0.1.0-experimental.1/songcore-source.zip",
+      "source_sha256": "4b91f6293b04ad1f4a8451be3ccd739f495f93b1412bdf09cbb9f9209580cc73",
+      "source_scope": "review_snapshot_only_not_full_build_closure",
+      "status": "staged_licensed_binary"
+    },
+    {
+      "id": "songdownloader",
+      "version": "0.8.7+local.1451.3",
+      "upstream": "https://github.com/darknight1050/SongDownloader.git",
+      "upstream_base_commit": "17448f9e13dfabb4c05b948c3951f85e939d78ba",
+      "license": "GPL-3.0 (see upstream grant for or-later terms)",
+      "source_url": "https://github.com/Akramx15/beat-saber-quest-1.45.1-ports/releases/download/v0.1.0-experimental.1/songdownloader-source.zip",
+      "source_sha256": "e1ef1336e1128ab6d2ea29a8b9d837af4a633b49f57b4689c93bde523650793f",
+      "source_scope": "review_snapshot_only_not_full_build_closure",
+      "status": "held_binary"
+    },
+    {
+      "id": "beatsaber-hook",
+      "version": "8.2.1+local.1451.2",
+      "upstream": "https://github.com/QuestPackageManager/beatsaber-hook.git",
+      "upstream_base_commit": "59ea0626b5ed980bf299330575aea5236aa0f0c3",
+      "license": "MIT",
+      "source_url": "https://github.com/Akramx15/beat-saber-quest-1.45.1-ports/releases/download/v0.1.0-experimental.1/beatsaber-hook-source.zip",
+      "source_sha256": "6c5f0cc4b4acda90d085197e8f7d6fbd59ac9287ed9064b5c643a37f3dbb0c93",
+      "source_scope": "review_snapshot_only_not_full_build_closure",
+      "status": "staged_licensed_binary"
+    }
+  ]
+}

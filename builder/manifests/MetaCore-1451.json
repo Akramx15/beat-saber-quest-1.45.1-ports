@@ -1,0 +1,37 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Lauriethefish/QuestPatcher.QMod/refs/heads/main/QuestPatcher.QMod/Resources/qmod.schema.json",
+  "_QPVersion": "0.1.1",
+  "name": "MetaCore",
+  "id": "metacore",
+  "modloader": "Scotland2",
+  "author": "Metalit",
+  "version": "2.0.3+local.1451",
+  "packageId": "com.beatgames.beatsaber",
+  "packageVersion": "1.45.1_27839",
+  "description": "Generic utilities for mod developers Local experimental 1.45.1 port; see PORT-PROVENANCE.json for verification limits.",
+  "dependencies": [
+    {
+      "version": "^4.8.0",
+      "id": "paper2_scotland2"
+    },
+    {
+      "version": "^1.2.1",
+      "id": "flamingo"
+    },
+    {
+      "version": "^8.1.0",
+      "id": "beatsaber-hook"
+    },
+    {
+      "version": "^0.20.0",
+      "id": "custom-types"
+    }
+  ],
+  "modFiles": [
+    "libmetacore.so"
+  ],
+  "lateModFiles": [],
+  "libraryFiles": [],
+  "fileCopies": [],
+  "copyExtensions": []
+}

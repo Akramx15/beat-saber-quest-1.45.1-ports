@@ -1,0 +1,1063 @@
+{
+  "schema": 1,
+  "name": "Experimental Quest 1.45.1 ports",
+  "release": "v0.1.0-experimental.1",
+  "package": "com.beatgames.beatsaber",
+  "game_version": "1.45.1_27839",
+  "target": "1.45.1_27839",
+  "version_code": 3071,
+  "experimental": true,
+  "patched_game": {
+    "modded_loader": "Scotland2",
+    "loader_sha256": "3c34627ede42c9281a0d28147bc222424c5dc451263a14c7a9ab6a88331890fe",
+    "apk_libmain_sha256": "5e3ef9701b89ae911113b0adad8f5d5b58f644867cdcd18f8a51ac807df60119"
+  },
+  "profiles": {
+    "core": [
+      "songcore"
+    ],
+    "recommended": [
+      "songcore",
+      "BetterSongSearch",
+      "MappingExtensions",
+      "chroma",
+      "NoodleExtensions",
+      "unicode",
+      "bsl",
+      "playlistcore",
+      "songdownloader"
+    ],
+    "practice": [
+      "songcore",
+      "BetterSongSearch",
+      "MappingExtensions",
+      "chroma",
+      "NoodleExtensions",
+      "unicode",
+      "bsl",
+      "playlistcore",
+      "songdownloader",
+      "PracticeTweaqs"
+    ],
+    "online-experimental": [
+      "songcore",
+      "BetterSongSearch",
+      "MappingExtensions",
+      "chroma",
+      "NoodleExtensions",
+      "unicode",
+      "bsl",
+      "playlistcore",
+      "songdownloader",
+      "BeatTogether",
+      "multiplayer-core"
+    ]
+  },
+  "packages": [
+    {
+      "id": "beatsaber-hook",
+      "name": "beatsaber-hook",
+      "version": "8.2.1+local.1451.2",
+      "dependencies": [
+        {
+          "id": "paper2_scotland2",
+          "version": "^4.4.0"
+        },
+        {
+          "id": "flamingo",
+          "version": "^1.2.1"
+        }
+      ],
+      "native_sha256": {
+        "libbeatsaber-hook.so": "1c2917bc271616b752eebc4b050d676340c133f05d3e8772365ab938eab0644e"
+      },
+      "experimental": true,
+      "runtime_scope": "Corrected directory check;533 runtime OK/0FAIL; earlier metadata39 tests; no general all-mod guarantee.",
+      "filename": "beatsaber-hook-8.2.1-local.1451.qmod",
+      "sha256": "42f093d409f241f3d5d96fabafcece1105f2b81d1f4e07d0c2c16fc16da88ae3",
+      "license": "MIT",
+      "url": "https://github.com/Akramx15/beat-saber-quest-1.45.1-ports/releases/download/v0.1.0-experimental.1/beatsaber-hook-8.2.1-local.1451.qmod"
+    },
+    {
+      "id": "beatsaverplusplus",
+      "name": "BeatSaverPlusPlus",
+      "version": "0.2.4",
+      "dependencies": [
+        {
+          "id": "paper2_scotland2",
+          "version": "^4.0.0"
+        },
+        {
+          "id": "web-utils",
+          "version": "^0.6.8"
+        },
+        {
+          "id": "beatsaber-hook",
+          "version": "*"
+        }
+      ],
+      "native_sha256": {
+        "libbeatsaverplusplus.so": "3fde470b614073f304781d37a491f92bfc22abc503d610fd35d6c5f67bc0a1c9",
+        "libzip.so": "ef6a5443633739e898144a52c96909cbcf530aa96d9542ae33455abdb6346f86"
+      },
+      "experimental": true,
+      "runtime_scope": "Clean startup only unless a separately cited feature trial covers this exact native.",
+      "filename": "beatsaverplusplus-0.2.4.qmod",
+      "sha256": "06ad6a384fc8c44dae244e18131c9c7a039a3f90824565220f3095d6f213ee95",
+      "url": "https://github.com/bsq-ports/BeatSaverPlusPlus/releases/download/v0.2.4/BeatSaverPlusPlus.qmod",
+      "verified_untargeted_library": true
+    },
+    {
+      "id": "BeatTogether",
+      "name": "BeatTogether (experimental 1.45.1)",
+      "version": "2.2.5+local.1451",
+      "dependencies": [
+        {
+          "id": "beatsaber-hook",
+          "version": "^8.2.1"
+        },
+        {
+          "id": "flamingo",
+          "version": "^1.2.1"
+        },
+        {
+          "id": "paper2_scotland2",
+          "version": "^4.8.0"
+        },
+        {
+          "id": "custom-types",
+          "version": "^0.20.1"
+        },
+        {
+          "id": "lapiz",
+          "version": "^0.3.3"
+        },
+        {
+          "id": "bsml",
+          "version": "^0.5.8"
+        },
+        {
+          "id": "multiplayer-core",
+          "version": "^1.6.7"
+        }
+      ],
+      "native_sha256": {
+        "libBeatTogether.so": "739562387d39488c1c47534d6396d16f93d07aef79ca5576409cd6c184ed3e93"
+      },
+      "experimental": true,
+      "runtime_scope": "Startup passed; real online room connection not verified.",
+      "filename": "BeatTogether-2.2.5+local.1451.qmod",
+      "sha256": "7743629caa3bf66c0cff8edb1690fd06449c159c3ed9289c0ba3a811f0131fc7",
+      "license": "MIT",
+      "url": "https://github.com/Akramx15/beat-saber-quest-1.45.1-ports/releases/download/v0.1.0-experimental.1/BeatTogether-2.2.5%2Blocal.1451.qmod"
+    },
+    {
+      "id": "BetterSongSearch",
+      "name": "BetterSongSearch",
+      "version": "2.2.0+local.1451",
+      "dependencies": [
+        {
+          "id": "beatsaverplusplus",
+          "version": "^0.2.4"
+        },
+        {
+          "id": "metacore",
+          "version": "^2.0.3"
+        },
+        {
+          "id": "tinyxml2",
+          "version": "^10.0.0"
+        },
+        {
+          "id": "web-utils",
+          "version": "^0.6.9"
+        },
+        {
+          "id": "flamingo",
+          "version": "^1.2.1"
+        },
+        {
+          "id": "paper2_scotland2",
+          "version": "^4.8.0"
+        },
+        {
+          "id": "song-details",
+          "version": "^1.0.5"
+        },
+        {
+          "id": "custom-types",
+          "version": "^0.20.1"
+        },
+        {
+          "id": "reflectcpp",
+          "version": "^0.25.0"
+        },
+        {
+          "id": "beatsaber-hook",
+          "version": "^8.2.1"
+        },
+        {
+          "id": "bsml",
+          "version": "^0.5.8"
+        },
+        {
+          "id": "songcore",
+          "version": "^1.3.2"
+        }
+      ],
+      "native_sha256": {
+        "libBetterSongSearch.so": "86786e3150452070f1832b8b6f7ca10200a44e12d643bede06d1a10ec933e63b"
+      },
+      "experimental": true,
+      "runtime_scope": "User-confirmed search UI/results and downloading.",
+      "filename": "BetterSongSearch-2.2.0-local.1451.qmod",
+      "sha256": "6521a1ed30ab5ebe145cdd531f76d6b01bfbaf4ea18f154de5f75d649d69b84f",
+      "license": "MIT",
+      "url": "https://github.com/Akramx15/beat-saber-quest-1.45.1-ports/releases/download/v0.1.0-experimental.1/BetterSongSearch-2.2.0-local.1451.qmod"
+    },
+    {
+      "id": "bsl",
+      "name": "Better Song List",
+      "version": "0.1.0+local.1451.2",
+      "dependencies": [
+        {
+          "version": "^8.1.0",
+          "id": "beatsaber-hook"
+        },
+        {
+          "version": "^0.5.8",
+          "id": "bsml"
+        },
+        {
+          "version": "^0.20.0",
+          "id": "custom-types"
+        },
+        {
+          "version": "^1.2.1",
+          "id": "flamingo"
+        },
+        {
+          "version": "^4.8.0",
+          "id": "paper2_scotland2"
+        },
+        {
+          "version": "^1.6.0",
+          "id": "playlistcore"
+        },
+        {
+          "version": "^0.25.0",
+          "id": "reflectcpp"
+        },
+        {
+          "version": "^1.0.5",
+          "id": "song-details"
+        },
+        {
+          "version": "^1.3.2",
+          "id": "songcore"
+        }
+      ],
+      "native_sha256": {
+        "libbsl.so": "aaf3a6c376460c4ef6c8ef73b2352fd7e9fe44090a843b70ddef8dcd4e161398"
+      },
+      "experimental": true,
+      "runtime_scope": "User-confirmed sorting; menu-selection profile/fix validated separately; no broad UI guarantee.",
+      "filename": "bsl-0.1.0+local.1451.2.qmod",
+      "local_build": {
+        "target": "BetterSongList",
+        "inputs_sha256": "a9bc9340a5a04770b5abcb6b89c762327c4b0708f6981c2389cf3c111f428752"
+      },
+      "upstream": "https://github.com/bsq-ports/BetterSongList.git",
+      "upstream_commit": "cf1f63049d590f2f70207aa1285f9a5cf511ba38",
+      "url": null
+    },
+    {
+      "id": "bsml",
+      "name": "BSML",
+      "version": "0.5.8+local.1451",
+      "dependencies": [
+        {
+          "version": "^8.0.1",
+          "id": "beatsaber-hook"
+        },
+        {
+          "version": "^0.20.0",
+          "id": "custom-types"
+        },
+        {
+          "version": "^4.8.0",
+          "id": "paper2_scotland2"
+        },
+        {
+          "version": "^10.0.0",
+          "id": "tinyxml2"
+        },
+        {
+          "version": "^1.2.1",
+          "id": "flamingo"
+        }
+      ],
+      "native_sha256": {
+        "libbsml.so": "836eb0f7da607556225d3e8ed8c54fb8e1afc2991f11603722fb016e50db921d"
+      },
+      "experimental": true,
+      "runtime_scope": "Clean startup only unless a separately cited feature trial covers this exact native.",
+      "filename": "bsml-0.5.8+local.1451.qmod",
+      "local_build": {
+        "target": "Quest-BSML",
+        "inputs_sha256": "85a42fba0efb0aced31cecd750f93588b2b2e39be9e169705efc8f0c421e4520"
+      },
+      "upstream": "https://github.com/bsq-ports/Quest-BSML.git",
+      "upstream_commit": "7a9cbe5b8d90061b0bac4167d21e42b24c224be4",
+      "url": null
+    },
+    {
+      "id": "chroma",
+      "name": "Chroma",
+      "version": "2.10.3+local.1451",
+      "dependencies": [
+        {
+          "version": "^0.24.5",
+          "id": "custom-json-data"
+        },
+        {
+          "version": "^2.5.4",
+          "id": "tracks"
+        },
+        {
+          "version": "^1.2.1",
+          "id": "flamingo"
+        },
+        {
+          "version": "^8.2.1",
+          "id": "beatsaber-hook"
+        },
+        {
+          "version": "^0.20.1",
+          "id": "custom-types"
+        },
+        {
+          "version": "^0.5.8",
+          "id": "bsml"
+        },
+        {
+          "version": "^1.3.2",
+          "id": "songcore"
+        },
+        {
+          "version": "^4.8.0",
+          "id": "paper2_scotland2"
+        }
+      ],
+      "native_sha256": {
+        "libchroma.so": "b3e65a2cc7b0265da6dcdc5daa8b043a1cf617aa124799eeb02b0ec66ed602b4"
+      },
+      "experimental": true,
+      "runtime_scope": "User-confirmed Onii/Blue colors; four bounded DADADADA visual variants; Mario white-outline differences unresolved.",
+      "filename": "chroma-2.10.3+local.1451.qmod",
+      "local_build": {
+        "target": "Chroma",
+        "inputs_sha256": "9bcc6aa4dc2d1a691afea4ceea83ed9a84bc6e7a4874c696f7ede03c92b7f19b"
+      },
+      "upstream": "https://github.com/bsq-ports/Chroma.git",
+      "upstream_commit": "e3d7419f00d7b120857edfccb0a15f202c6ebd61",
+      "url": null
+    },
+    {
+      "id": "custom-json-data",
+      "name": "CustomJSONData (experimental 1.45.1)",
+      "version": "0.24.5+local.1451",
+      "dependencies": [
+        {
+          "id": "beatsaber-hook",
+          "version": "^8.2.1"
+        },
+        {
+          "id": "custom-types",
+          "version": "^0.20.1"
+        },
+        {
+          "id": "songcore",
+          "version": "^1.3.2"
+        },
+        {
+          "id": "paper2_scotland2",
+          "version": "^4.8.0"
+        },
+        {
+          "id": "flamingo",
+          "version": "^1.2.1"
+        }
+      ],
+      "native_sha256": {
+        "libcustom-json-data.so": "d79e89a3d9cd22293f8e9b44898df941b8cf9ae7a2a6ac64a33e5ec9d6097113"
+      },
+      "experimental": true,
+      "runtime_scope": "Dependency exercised by named custom-map runs; not full schema coverage.",
+      "filename": "custom-json-data-0.24.5+local.1451.qmod",
+      "local_build": {
+        "target": "CustomJSONData",
+        "inputs_sha256": "e3ee0bf4d06e05147170fbf29f02c1aff17d22a22e3aa737b626077b614500b2"
+      },
+      "upstream": "https://github.com/bsq-ports/CustomJSONData.git",
+      "upstream_commit": "e1dc75604d1663e5c890102da5f615bb5198f650",
+      "url": null
+    },
+    {
+      "id": "custom-types",
+      "name": "custom-types",
+      "version": "0.20.1",
+      "dependencies": [
+        {
+          "id": "paper2_scotland2",
+          "version": "^4.7.0"
+        },
+        {
+          "id": "flamingo",
+          "version": "^1.1.2"
+        },
+        {
+          "id": "beatsaber-hook",
+          "version": "^8.0.0"
+        }
+      ],
+      "native_sha256": {
+        "libcustom-types.so": "8673a6c1a20cb512719640553b935804ec76295538fb7ef5cbaf25d53b8a0f28"
+      },
+      "experimental": true,
+      "runtime_scope": "Clean startup only unless a separately cited feature trial covers this exact native.",
+      "filename": "custom-types-0.20.1.qmod",
+      "sha256": "aaad8fd4f5e875186476072d5fb3eb10850f08c4624c3e1c8267df9fa084bd6c",
+      "url": "https://github.com/QuestPackageManager/Il2CppQuestTypePatching/releases/download/v0.20.1/CustomTypes.qmod",
+      "verified_untargeted_library": true
+    },
+    {
+      "id": "flamingo",
+      "name": "flamingo",
+      "version": "1.2.1",
+      "dependencies": [],
+      "native_sha256": {
+        "libflamingo.so": "654cfe34d5a3f2bbe550eb9dfb4aa8d48a8b770583fe60069ce45d990bddedbe"
+      },
+      "experimental": true,
+      "runtime_scope": "Clean startup only unless a separately cited feature trial covers this exact native.",
+      "filename": "flamingo-1.2.1.qmod",
+      "sha256": "b1a01e13a62b64ded05e93574f2fca6a225a879bcc21fa88012d18f8152b81a9",
+      "url": "https://github.com/QuestPackageManager/Flamingo/releases/download/v1.2.1/flamingo.qmod",
+      "verified_untargeted_library": true
+    },
+    {
+      "id": "lapiz",
+      "name": "Lapiz",
+      "version": "0.3.5+local.1451",
+      "dependencies": [
+        {
+          "id": "beatsaber-hook",
+          "version": "^8.0.0"
+        },
+        {
+          "id": "custom-types",
+          "version": "^0.20.0"
+        },
+        {
+          "id": "paper2_scotland2",
+          "version": "^4.7.0"
+        },
+        {
+          "id": "flamingo",
+          "version": "^1.1.2"
+        }
+      ],
+      "native_sha256": {
+        "liblapiz.so": "9c708bc9b88da61e87bce6f7c8b5500a93acc87e0318ac8104027358d49fa502"
+      },
+      "experimental": true,
+      "runtime_scope": "Clean startup only unless a separately cited feature trial covers this exact native.",
+      "filename": "Lapiz-0.3.5-local.1451.qmod",
+      "sha256": "688e675f9d5b6d4a518ee11348cd37beab2487adee9ac7132968388df23e68c0",
+      "license": "MIT",
+      "url": "https://github.com/Akramx15/beat-saber-quest-1.45.1-ports/releases/download/v0.1.0-experimental.1/Lapiz-0.3.5-local.1451.qmod"
+    },
+    {
+      "id": "MappingExtensions",
+      "name": "Mapping Extensions (experimental 1.45.1)",
+      "version": "0.25.5-1.45.1-dev.3",
+      "dependencies": [
+        {
+          "id": "beatsaber-hook",
+          "version": "^8.2.1"
+        },
+        {
+          "id": "songcore",
+          "version": "^1.3.2"
+        },
+        {
+          "id": "paper2_scotland2",
+          "version": "^4.8.0"
+        },
+        {
+          "id": "flamingo",
+          "version": "^1.2.1"
+        }
+      ],
+      "native_sha256": {
+        "libmappingextensions.so": "fd5af3bbff9cd8daa60ba51d06240fbc0e6f2fff09bd8b10c02fa1bd548f174a"
+      },
+      "experimental": true,
+      "runtime_scope": "Startup and bounded installed-map trials; user confirmation of every extension behavior not established.",
+      "filename": "MappingExtensions-0.25.5-1.45.1-dev.3.qmod",
+      "sha256": "27b06609543b175f2c1e71bf2d90f136ce62a0a985a241b0122cd5378bb49059",
+      "license": "MIT",
+      "url": "https://github.com/Akramx15/beat-saber-quest-1.45.1-ports/releases/download/v0.1.0-experimental.1/MappingExtensions-0.25.5-1.45.1-dev.3.qmod"
+    },
+    {
+      "id": "metacore",
+      "name": "MetaCore",
+      "version": "2.0.3+local.1451",
+      "dependencies": [
+        {
+          "version": "^4.8.0",
+          "id": "paper2_scotland2"
+        },
+        {
+          "version": "^1.2.1",
+          "id": "flamingo"
+        },
+        {
+          "version": "^8.1.0",
+          "id": "beatsaber-hook"
+        },
+        {
+          "version": "^0.20.0",
+          "id": "custom-types"
+        }
+      ],
+      "native_sha256": {
+        "libmetacore.so": "11803f8873e11d87b950ed1fc14d860c7802d388592c131225cbae9d1ea366bf"
+      },
+      "experimental": true,
+      "runtime_scope": "Clean startup only unless a separately cited feature trial covers this exact native.",
+      "filename": "metacore-2.0.3+local.1451.qmod",
+      "local_build": {
+        "target": "MetaCore-1451",
+        "inputs_sha256": "85b9a660a2c711dbafb88b611157d6f57fe749383e2e13566e3126d3a193bc92"
+      },
+      "upstream": "https://github.com/Metalit/MetaCore.git",
+      "upstream_commit": "906b9e34c6b2e6b7755432db43a9d4be3c9838d5",
+      "url": null
+    },
+    {
+      "id": "metacore-bs",
+      "name": "MetaCoreBS",
+      "version": "1.0.0+local.1451",
+      "dependencies": [
+        {
+          "version": "^4.8.0",
+          "id": "paper2_scotland2"
+        },
+        {
+          "version": "^1.2.1",
+          "id": "flamingo"
+        },
+        {
+          "version": "^8.0.0",
+          "id": "beatsaber-hook"
+        },
+        {
+          "version": "^0.20.0",
+          "id": "custom-types"
+        },
+        {
+          "version": "^2.0.2",
+          "id": "metacore"
+        },
+        {
+          "version": "^1.0.4",
+          "id": "song-details"
+        },
+        {
+          "version": "^0.6.8",
+          "id": "web-utils"
+        },
+        {
+          "version": "^0.25.0",
+          "id": "reflectcpp"
+        }
+      ],
+      "native_sha256": {
+        "libmetacore-bs.so": "32ac034ee1e01d66ae9b5c9018ecbe4d8cd1bc0cebcb0e6cdcfc3f9eeb0a37c3"
+      },
+      "experimental": true,
+      "runtime_scope": "Clean startup only unless a separately cited feature trial covers this exact native.",
+      "filename": "metacore-bs-1.0.0+local.1451.qmod",
+      "local_build": {
+        "target": "metacore-bs-1451",
+        "inputs_sha256": "457039db4a459735de3d35a22296e32de23eb121bb8eb310e455ffdb777bd6c0"
+      },
+      "upstream": "https://github.com/Metalit/MetaCoreBS.git",
+      "upstream_commit": "1d092b323571b5c4c2629212d9c8b49a34fc6a27",
+      "url": null
+    },
+    {
+      "id": "multiplayer-core",
+      "name": "MultiplayerCore (experimental 1.45.1)",
+      "version": "1.6.7+local.1451.3",
+      "dependencies": [
+        {
+          "id": "beatsaber-hook",
+          "version": "^8.2.1"
+        },
+        {
+          "id": "flamingo",
+          "version": "^1.2.1"
+        },
+        {
+          "id": "paper2_scotland2",
+          "version": "^4.8.0"
+        },
+        {
+          "id": "custom-types",
+          "version": "^0.20.1"
+        },
+        {
+          "id": "songcore",
+          "version": "^1.3.2"
+        },
+        {
+          "id": "lapiz",
+          "version": "^0.3.3"
+        },
+        {
+          "id": "bsml",
+          "version": "^0.5.8"
+        },
+        {
+          "id": "beatsaverplusplus",
+          "version": "^0.2.3"
+        },
+        {
+          "id": "web-utils",
+          "version": "^0.6.8"
+        }
+      ],
+      "native_sha256": {
+        "libMultiplayerCore.so": "1271ea5c412bce096ab5a62a2157313241d4af8ef91c304d0a611c8a123b3d05"
+      },
+      "experimental": true,
+      "runtime_scope": "Startup passed; bounded API/observer fixes; online gameplay not verified.",
+      "filename": "MultiplayerCore-1.6.7+local.1451.3.qmod",
+      "sha256": "d437255a9c18d7e255bfd144d895a21cc1196d445922c55f6ae93bd00929e85c",
+      "license": "MIT",
+      "url": "https://github.com/Akramx15/beat-saber-quest-1.45.1-ports/releases/download/v0.1.0-experimental.1/MultiplayerCore-1.6.7%2Blocal.1451.3.qmod"
+    },
+    {
+      "id": "NoodleExtensions",
+      "name": "NoodleExtensions (experimental 1.45.1)",
+      "version": "1.6.3+local.1451.4",
+      "dependencies": [
+        {
+          "id": "beatsaber-hook",
+          "version": "^8.2.1"
+        },
+        {
+          "id": "custom-types",
+          "version": "^0.20.1"
+        },
+        {
+          "id": "custom-json-data",
+          "version": "^0.24.5"
+        },
+        {
+          "id": "tracks",
+          "version": "^2.5.4"
+        },
+        {
+          "id": "bsml",
+          "version": "^0.5.8"
+        },
+        {
+          "id": "songcore",
+          "version": "^1.3.2"
+        },
+        {
+          "id": "paper2_scotland2",
+          "version": "^4.8.0"
+        },
+        {
+          "id": "flamingo",
+          "version": "^1.2.1"
+        }
+      ],
+      "native_sha256": {
+        "libnoodleextensions.so": "5c58547291698fb711097a66fa1e82af11480341aa0a52b4e4c2dd5375e03da8"
+      },
+      "experimental": true,
+      "runtime_scope": "User-confirmed Noodle and Onii; bounded Onii/Blue/DADADADA runs; visuals not equivalent on every map.",
+      "filename": "NoodleExtensions-1.6.3+local.1451.4.qmod",
+      "local_build": {
+        "target": "NoodleExtensions",
+        "inputs_sha256": "4e3bd6bc0deafdf1981d15492476d01838e597c7f6634e7032a75de7bab30b16"
+      },
+      "upstream": "https://github.com/bsq-ports/NoodleExtensions",
+      "upstream_commit": "565e3b33c98e9536d5b7e9c78d7f96e3ab2a4fad",
+      "url": null
+    },
+    {
+      "id": "paper2_scotland2",
+      "name": "Paperlog Scotland2",
+      "version": "4.8.0",
+      "dependencies": [],
+      "native_sha256": {
+        "libpaper2_scotland2.so": "11d1b51c041b3c81f46dc23e629c00fbf484877dec866fd89c2ad3a5c0c9d914"
+      },
+      "experimental": true,
+      "runtime_scope": "Clean startup only unless a separately cited feature trial covers this exact native.",
+      "filename": "paper2_scotland2-4.8.0.qmod",
+      "sha256": "e46c815577d52b115119335cae5ec49e184be1f2f8affd5f67fa4c295788781a",
+      "url": "https://github.com/Fernthedev/paperlog/releases/download/v4.8.0/paper2_scotland2.qmod",
+      "verified_untargeted_library": true
+    },
+    {
+      "id": "playlistcore",
+      "name": "PlaylistCore",
+      "version": "1.7.1+local.1451",
+      "dependencies": [
+        {
+          "version": "^4.7.0",
+          "id": "paper2_scotland2"
+        },
+        {
+          "version": "^1.2.1",
+          "id": "flamingo"
+        },
+        {
+          "version": "^8.0.0",
+          "id": "beatsaber-hook"
+        },
+        {
+          "version": "^0.20.0",
+          "id": "custom-types"
+        },
+        {
+          "version": "^2.0.3",
+          "id": "metacore"
+        },
+        {
+          "version": "^0.5.5",
+          "id": "bsml"
+        },
+        {
+          "version": "^0.6.8",
+          "id": "web-utils"
+        },
+        {
+          "version": "^0.2.4",
+          "id": "beatsaverplusplus"
+        },
+        {
+          "version": "^1.3.1",
+          "id": "songcore"
+        },
+        {
+          "version": "^0.25.0",
+          "id": "reflectcpp"
+        },
+        {
+          "version": "^1.0.0",
+          "id": "metacore-bs"
+        }
+      ],
+      "native_sha256": {
+        "libplaylistcore.so": "3d76eb1f2b264e6386926c08a1f24bb00bd8b0210a3817d37022869e9c0ce6a5"
+      },
+      "experimental": true,
+      "runtime_scope": "Clean startup only unless a separately cited feature trial covers this exact native.",
+      "filename": "playlistcore-1.7.1+local.1451.qmod",
+      "local_build": {
+        "target": "PlaylistCore-1451",
+        "inputs_sha256": "4eac0de4e4fdd7ad14abce5008b510bb2e20d0aa24323239955c027042186b23"
+      },
+      "upstream": "https://github.com/Metalit/PlaylistCore.git",
+      "upstream_commit": "5aa74ed2200870402ec6b4a5fb36e6bf8050cc7a",
+      "url": null
+    },
+    {
+      "id": "PracticeTweaqs",
+      "name": "PracticeTweaqs",
+      "version": "0.1.0+local.1451",
+      "dependencies": [
+        {
+          "id": "beatsaber-hook",
+          "version": "^8.2.1"
+        },
+        {
+          "id": "custom-types",
+          "version": "^0.20.1"
+        },
+        {
+          "id": "paper2_scotland2",
+          "version": "^4.8.0"
+        },
+        {
+          "id": "bsml",
+          "version": "^0.5.8"
+        }
+      ],
+      "native_sha256": {
+        "libpracticetweaqs.so": "8f9fba5814842cb90d2f2176e6a975f9dbca72f8ac3152d1e604a0665d494c5c"
+      },
+      "experimental": true,
+      "runtime_scope": "Clean startup only unless a separately cited feature trial covers this exact native.",
+      "filename": "PracticeTweaqs-0.1.0-local.1451.qmod",
+      "sha256": "65b478594adb7c02cddf4c6efd7a3c4ba521e324a50d1f2823b778e97e1f9c24",
+      "license": "MIT",
+      "url": "https://github.com/Akramx15/beat-saber-quest-1.45.1-ports/releases/download/v0.1.0-experimental.1/PracticeTweaqs-0.1.0-local.1451.qmod"
+    },
+    {
+      "id": "reflectcpp",
+      "name": "reflectcpp",
+      "version": "0.25.0",
+      "dependencies": [],
+      "native_sha256": {
+        "libreflectcpp.so": "00b2d46f97fe63b22108ac479a4c2c42ed02004e146950b8d3dd405e74a1af0e"
+      },
+      "experimental": true,
+      "runtime_scope": "Clean startup only unless a separately cited feature trial covers this exact native.",
+      "filename": "reflectcpp-0.25.0.qmod",
+      "sha256": "4261f5a7b9ee8845379408313dab657a419b35062d066a40025a216c758e1cc5",
+      "url": "https://github.com/kodenamekrak/reflectcpp-qpm/releases/download/v0.25.0/reflectcpp.qmod",
+      "verified_untargeted_library": true
+    },
+    {
+      "id": "song-details",
+      "name": "SongDetails",
+      "version": "1.0.5",
+      "dependencies": [
+        {
+          "id": "paper2_scotland2",
+          "version": "^4.6.4"
+        }
+      ],
+      "native_sha256": {
+        "libsongdetails.so": "74f41f4a2b053320e719a37cdf48c71f164528ea6671a15e3a374080ddda6457"
+      },
+      "experimental": true,
+      "runtime_scope": "Clean startup only unless a separately cited feature trial covers this exact native.",
+      "filename": "song-details-1.0.5.qmod",
+      "sha256": "dea6f8509338545f5fe5abbc916ae2fe96d2e4aff34718386c105cf5b90f066a",
+      "url": "https://github.com/bsq-ports/SongDetails/releases/download/v1.0.5/SongDetails.qmod",
+      "verified_untargeted_library": true
+    },
+    {
+      "id": "songcore",
+      "name": "SongCore",
+      "version": "1.3.2+local.1451",
+      "dependencies": [
+        {
+          "id": "beatsaber-hook",
+          "version": "^8.0.1"
+        },
+        {
+          "id": "paper2_scotland2",
+          "version": "^4.7.0"
+        },
+        {
+          "id": "bsml",
+          "version": "^0.5.5"
+        },
+        {
+          "id": "lapiz",
+          "version": "^0.3.5"
+        },
+        {
+          "id": "custom-types",
+          "version": "^0.20.0"
+        },
+        {
+          "id": "flamingo",
+          "version": "^1.1.2"
+        },
+        {
+          "id": "metacore",
+          "version": "^2.0.3"
+        }
+      ],
+      "native_sha256": {
+        "libsongcore.so": "33c424a6312f92d2cd13462ec84c95500ffa3f5a95886353995ab432246e3775"
+      },
+      "experimental": true,
+      "runtime_scope": "User-confirmed custom-song visibility/playback; bounded named-map trials; not broad map coverage.",
+      "filename": "SongCore-1.3.2-local.1451.qmod",
+      "sha256": "365eceaee1787a27de34bc155c66f9f62e3d81f8a1b3677adb9c62dad52610c3",
+      "license": "MIT",
+      "url": "https://github.com/Akramx15/beat-saber-quest-1.45.1-ports/releases/download/v0.1.0-experimental.1/SongCore-1.3.2-local.1451.qmod"
+    },
+    {
+      "id": "songdownloader",
+      "name": "SongDownloader",
+      "version": "0.8.7+local.1451.3",
+      "dependencies": [
+        {
+          "id": "beatsaber-hook",
+          "version": "^8.2.1",
+          "required": true
+        },
+        {
+          "id": "bsml",
+          "version": "^0.5.8",
+          "required": true
+        },
+        {
+          "id": "custom-types",
+          "version": "^0.20.1",
+          "required": true
+        },
+        {
+          "id": "paper2_scotland2",
+          "version": "^4.8.0",
+          "required": true
+        },
+        {
+          "id": "playlistcore",
+          "version": "^1.7.1",
+          "required": true
+        },
+        {
+          "id": "reflectcpp",
+          "version": "^0.25.0",
+          "required": true
+        },
+        {
+          "id": "songcore",
+          "version": "^1.3.2",
+          "required": true
+        }
+      ],
+      "native_sha256": {
+        "libsongdownloader.so": "2f7342b7f42d5badb010e521651e4613c3365892b7d374ca18b93ca352d18593"
+      },
+      "experimental": true,
+      "runtime_scope": "User-confirmed More Songs/results/download; owned-cover lifetime host regression; no endurance guarantee.",
+      "filename": "songdownloader-0.8.7+local.1451.3.qmod",
+      "local_build": {
+        "target": "SongDownloader",
+        "inputs_sha256": "0d22a0baaf9ff3b6f8e23294425bc20440622ff64c3490dd63d018b32debb35d"
+      },
+      "upstream": "https://github.com/darknight1050/SongDownloader.git",
+      "upstream_commit": "17448f9e13dfabb4c05b948c3951f85e939d78ba",
+      "url": null
+    },
+    {
+      "id": "tinyxml2",
+      "name": "tinyxml2",
+      "version": "10.0.0",
+      "dependencies": [],
+      "native_sha256": {
+        "libtinyxml2.so": "839e298cb4d61b75f7b1233dd087295b4cf67c1891bc6a99a7fbd0aed4636a8a"
+      },
+      "experimental": true,
+      "runtime_scope": "Clean startup only unless a separately cited feature trial covers this exact native.",
+      "filename": "tinyxml2-10.0.0.qmod",
+      "sha256": "dd4af8b43a251a7f96fc86a2e2e0801a1405d452497b30cbeab438142e56797a",
+      "url": "https://github.com/MillzyDev/NDK-tinyxml2/releases/download/v10.0.0/tinyxml2.qmod",
+      "allowed_package_versions": [
+        "1.29.0_4466478251"
+      ]
+    },
+    {
+      "id": "tracks",
+      "name": "Tracks (experimental 1.45.1)",
+      "version": "2.5.4+local.1451.3",
+      "dependencies": [
+        {
+          "id": "beatsaber-hook",
+          "version": "^8.2.1"
+        },
+        {
+          "id": "custom-types",
+          "version": "^0.20.1"
+        },
+        {
+          "id": "custom-json-data",
+          "version": "^0.24.5"
+        },
+        {
+          "id": "songcore",
+          "version": "^1.3.2"
+        },
+        {
+          "id": "paper2_scotland2",
+          "version": "^4.8.0"
+        },
+        {
+          "id": "flamingo",
+          "version": "^1.2.1"
+        }
+      ],
+      "native_sha256": {
+        "libtracks.so": "07fd992ae43983ff87b82c8abb329ac7a2ea0564de9bf807a0de6a5e685cb8c9"
+      },
+      "experimental": true,
+      "runtime_scope": "Dependency exercised by named Noodle/Chroma maps; no comprehensive event coverage.",
+      "filename": "tracks-2.5.4+local.1451.3.qmod",
+      "local_build": {
+        "target": "Tracks",
+        "inputs_sha256": "9cdca96d90925ea15c3e04efbfd532d536773fb40b3650138b6e6d8ca5e3327f"
+      },
+      "upstream": "https://github.com/bsq-ports/Tracks",
+      "upstream_commit": "9c0f8889f9ac29eff46437a8dfdc61e61ba36354",
+      "url": null
+    },
+    {
+      "id": "unicode",
+      "name": "Unicode",
+      "version": "0.1.8+local.1451",
+      "dependencies": [
+        {
+          "id": "paper2_scotland2",
+          "version": "^4.8.0"
+        },
+        {
+          "id": "flamingo",
+          "version": "^1.2.1"
+        },
+        {
+          "id": "beatsaber-hook",
+          "version": "^8.2.1"
+        },
+        {
+          "id": "metacore",
+          "version": "^2.0.3"
+        }
+      ],
+      "native_sha256": {
+        "libunicode.so": "f4ffc06cd2e9ff07f400a8b97e3c54c03ee084cdc8acb43dc579dc798ee411f7"
+      },
+      "experimental": true,
+      "runtime_scope": "Clean startup only unless a separately cited feature trial covers this exact native.",
+      "filename": "unicode-0.1.8+local.1451.qmod",
+      "local_build": {
+        "target": "UnicodeQuest",
+        "inputs_sha256": "66589b1972f90e5b425b51c98e92b21287ea05c8c949757f89a78c2c7e328f5e"
+      },
+      "upstream": "https://github.com/Metalit/UnicodeQuest.git",
+      "upstream_commit": "a411756d57dd23c6d561cf008ae601447015b7b3",
+      "url": null
+    },
+    {
+      "id": "web-utils",
+      "name": "WebUtils",
+      "version": "0.6.9",
+      "dependencies": [],
+      "native_sha256": {
+        "libweb-utils.so": "51097d6a7b460ffd0564a7b77691008a9d56384bf7cfd883472a684f9a5ba5bd"
+      },
+      "experimental": true,
+      "runtime_scope": "Clean startup only unless a separately cited feature trial covers this exact native.",
+      "filename": "web-utils-0.6.9.qmod",
+      "sha256": "8acebe93dbac29cf095c46d37c47c524cd6e61512b09cda908449df918b0029e",
+      "url": "https://github.com/bsq-ports/WebUtils/releases/download/v0.6.9/WebUtils.qmod",
+      "verified_untargeted_library": true
+    }
+  ]
+}

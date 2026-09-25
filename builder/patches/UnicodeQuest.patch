@@ -1,0 +1,65 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 3c74e7a..66bcb71 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -59,0 +60,19 @@ include(extern.cmake)
++# Resolve against the runtime providers rather than a QPM debug sibling with
++# the same SONAME, which could otherwise hide an unresolved runtime symbol.
++get_target_property(port_link_libraries ${COMPILE_ID} LINK_LIBRARIES)
++set(port_runtime_libraries)
++foreach(port_library IN LISTS port_link_libraries)
++    get_filename_component(port_filename "${port_library}" NAME)
++    if(port_filename MATCHES "(^debug_|\\.debug\\.so$)")
++        continue()
++    elseif(port_filename STREQUAL "libbeatsaber-hook.so")
++        set(port_library "${CMAKE_CURRENT_SOURCE_DIR}/../../core-qmods/native/beatsaber-hook-1451/libbeatsaber-hook.so")
++    elseif(port_filename STREQUAL "libmetacore.so")
++        set(port_library "${CMAKE_CURRENT_SOURCE_DIR}/../../core-qmods/native/metacore-1451/libmetacore.so")
++    endif()
++    list(APPEND port_runtime_libraries "${port_library}")
++endforeach()
++list(REMOVE_DUPLICATES port_runtime_libraries)
++set_property(TARGET ${COMPILE_ID} PROPERTY LINK_LIBRARIES "${port_runtime_libraries}")
++target_link_options(${COMPILE_ID} PRIVATE -Wl,--no-undefined -Wl,--fatal-warnings)
++
+@@ -67,0 +87,5 @@ add_custom_command(
++
++# Optional exact-game bindings for the local 1.45.1 port.
++if(BEAT_SABER_CODEGEN_INCLUDE)
++    target_include_directories(${COMPILE_ID} BEFORE PRIVATE "${BEAT_SABER_CODEGEN_INCLUDE}")
++endif()
+diff --git a/src/main.cpp b/src/main.cpp
+index e724020..7e853f9 100644
+--- a/src/main.cpp
++++ b/src/main.cpp
+@@ -160,0 +161,17 @@ TMP_SpriteGlyph* PushSprite(int unicode) {
++TMP_SpriteCharacter* FindStyledSprite(uint unicode) {
++    if (!rootEmojiAsset || !rootEmojiAsset->m_CachedPtr.m_value) return nullptr;
++
++    TMP_SpriteCharacter* character = nullptr;
++    auto findIn = [&](TMP_SpriteAsset* asset) {
++        return asset && asset->m_CachedPtr.m_value && asset->m_SpriteCharacterLookup &&
++            asset->m_SpriteCharacterLookup->TryGetValue(unicode, by_ref(character));
++    };
++    if (findIn(rootEmojiAsset)) return character;
++    if (rootEmojiAsset->fallbackSpriteAssets) {
++        for (auto asset : ListW<UnityW<TMP_SpriteAsset>>(rootEmojiAsset->fallbackSpriteAssets)) {
++            if (findIn(asset.ptr())) return character;
++        }
++    }
++    return nullptr;
++}
++
+@@ -316,0 +334,2 @@ void DrawTexture(uint unicode, TMP_SpriteGlyph* glyph, FontStyles fontStyle) {
++    // The atlas owns the copied pixels; keep no standalone texture per glyph.
++    UnityEngine::Object::Destroy(tex);
+@@ -372,0 +392,2 @@ MAKE_HOOK_MATCH(
++        if (!rootEmojiAsset || !rootEmojiAsset->m_CachedPtr.m_value ||
++            !currentEmojiAsset || !currentEmojiAsset->m_CachedPtr.m_value) return nullptr;
+@@ -373,0 +395,3 @@ MAKE_HOOK_MATCH(
++        // The base font searches the original code point, while our atlas uses
++        // a style-specific key. Reuse that key before allocating another glyph.
++        if (auto existing = FindStyledSprite(withStyle)) return existing;
+@@ -381 +405 @@ MAKE_HOOK_MATCH(
+-        TMP_SpriteCharacter* sprite;
++        TMP_SpriteCharacter* sprite = nullptr;

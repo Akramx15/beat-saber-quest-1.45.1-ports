@@ -1,0 +1,112 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index cb816be..3637523 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -72,0 +73,7 @@ include(extern.cmake)
++# Debug copies carry the same SONAME as the active provider; linking both can
++# silently resolve against old bindings. Use the exact local release providers.
++get_target_property(port_link_libraries ${COMPILE_ID} LINK_LIBRARIES)
++list(FILTER port_link_libraries EXCLUDE REGEX "(^|/)(debug_[^/]*|[^/]*\\.debug)\\.so$")
++set_target_properties(${COMPILE_ID} PROPERTIES LINK_LIBRARIES "${port_link_libraries}")
++target_link_options(${COMPILE_ID} PRIVATE -Wl,--no-undefined)
++
+diff --git a/include/config.hpp b/include/config.hpp
+index 8516d8b..ad7c5d2 100644
+--- a/include/config.hpp
++++ b/include/config.hpp
+@@ -14 +14 @@ struct Config {
+-        void set_lastSong(const auto& value) { lastSong = value; SaveConfig(); }
++        void set_lastSong(const auto& value) { if (lastSong == value) return; lastSong = value; SaveConfig(); }
+@@ -85 +85 @@ ___CREATE_INSTANCE_METHOD(set_##name, "set_" #name, METHOD_ATTRIBUTE_PUBLIC | ME
+-#endif
+\ No newline at end of file
++#endif
+diff --git a/src/config.cpp b/src/config.cpp
+index 3a7ddfc..f949936 100644
+--- a/src/config.cpp
++++ b/src/config.cpp
+@@ -2,0 +3 @@
++#include "Utils/ConfigWriteQueue.hpp"
+@@ -12 +12,0 @@ void Config::SaveConfig() {
+-    INFO("Saving Configuration...");
+@@ -34,4 +34,9 @@ void Config::SaveConfig() {
+-        if (!BetterSongList::FileUtils::WriteFileAtomic(get_config_path(MOD_ID), rfl::json::write(doc))) {
+-            ERROR("Failed to write configuration");
+-            return;
+-        }
++        static BetterSongList::FileUtils::ConfigWriteQueue writes([](auto const& path, auto const& contents) {
++            try {
++                if (!BetterSongList::FileUtils::WriteFileAtomic(path, contents))
++                    ERROR("Failed to write configuration");
++            } catch (std::exception const& error) {
++                ERROR("Failed to write configuration: {}", error.what());
++            }
++        });
++        writes.Enqueue(get_config_path(MOD_ID), rfl::json::write(doc));
+@@ -42 +46,0 @@ void Config::SaveConfig() {
+-    INFO("Saved Configuration!");
+diff --git a/include/Utils/ConfigWriteQueue.hpp b/include/Utils/ConfigWriteQueue.hpp
+new file mode 100644
+--- /dev/null
++++ b/include/Utils/ConfigWriteQueue.hpp
+@@ -0,0 +1,60 @@
++#pragma once
++
++#include <condition_variable>
++#include <functional>
++#include <mutex>
++#include <optional>
++#include <string>
++#include <thread>
++#include <utility>
++
++namespace BetterSongList::FileUtils {
++    // Disk sync must not run in the Unity selection callback. Only the newest
++    // complete snapshot needs saving while an earlier atomic write is in flight.
++    class ConfigWriteQueue {
++    public:
++        using Sink = std::function<void(std::string const&, std::string const&)>;
++
++        explicit ConfigWriteQueue(Sink sink) : sink_(std::move(sink)), worker_([this] { Run(); }) {}
++        ConfigWriteQueue(ConfigWriteQueue const&) = delete;
++        ConfigWriteQueue& operator=(ConfigWriteQueue const&) = delete;
++
++        ~ConfigWriteQueue() {
++            {
++                std::lock_guard lock(mutex_);
++                stopping_ = true;
++            }
++            wake_.notify_one();
++            worker_.join();
++        }
++
++        void Enqueue(std::string path, std::string contents) {
++            {
++                std::lock_guard lock(mutex_);
++                pending_.emplace(std::move(path), std::move(contents));
++            }
++            wake_.notify_one();
++        }
++
++    private:
++        void Run() {
++            std::unique_lock lock(mutex_);
++            for (;;) {
++                wake_.wait(lock, [this] { return stopping_ || pending_.has_value(); });
++                if (!pending_) return;
++                auto snapshot = std::move(*pending_);
++                pending_.reset();
++                lock.unlock();
++                sink_(snapshot.first, snapshot.second);
++                lock.lock();
++            }
++        }
++
++        Sink sink_;
++        std::mutex mutex_;
++        std::condition_variable wake_;
++        std::optional<std::pair<std::string, std::string>> pending_;
++        bool stopping_ = false;
++        std::thread worker_;
++    };
++}

@@ -1,0 +1,1192 @@
+{
+  "schema": 1,
+  "target_game": "1.45.1_27839",
+  "state": "experimental_build_recipe_not_yet_clean_machine_validated",
+  "ndk_revision": "27.2.12479018",
+  "clang_major": 22,
+  "rust_toolchain": "nightly-2026-09-24",
+  "targets": {
+    "Quest-BSML": {
+      "repo": "https://github.com/bsq-ports/Quest-BSML.git",
+      "commit": "7a9cbe5b8d90061b0bac4167d21e42b24c224be4",
+      "patch": {
+        "path": "patches/Quest-BSML.patch",
+        "sha256": "8d3701d26c846a564a5295e0766b81e93a4169783fb91ba693f433a37fc4fb03"
+      },
+      "binary": "libbsml.so",
+      "target": "bsml",
+      "manifest": "manifests/Quest-BSML.json",
+      "qpm_info": {
+        "id": "bsml",
+        "name": "BSML",
+        "version": "0.5.5"
+      },
+      "source_file_hashes": {
+        "CMakeLists.txt": "f72283447af9b9c243cd9d1dc96afb4647b7b527471a282b887d4ade3e08bfc6",
+        "include/Initialization.hpp": "0d965ef53a9b63d160249e3753189af0ee44c0c26c3d197572d0c7496c3ae20b",
+        "include/port-precompiled.hpp": "7e9dc432445897c3cdafbd0d439e0b120b45d2b3a3920c03647413fcde29b370",
+        "src/BSML-Lite/Creation/Image.cpp": "f70f902e4d606fb18bc522feaa66ced49361fd414196781a96184e40728792f0",
+        "src/BSML.cpp": "4c12b64387282a72997f56b3853d5c08995b18a1f7f6658b3ea96abe082fac20",
+        "src/BSML/Settings/UI/ModSettingsFlowCoordinator.cpp": "37f46363f2f896ff2843bb2a1e2720393406a126b9485ccb6ed1c005b3d71bc0",
+        "src/BSML/TypeHandlers/ProgressBarHandler.cpp": "81ebac099f090ee9cfeb21e866a7ba5bbe2746b1ff5a8495ecf58973361c74b6",
+        "src/BSMLDataCache.cpp": "fcbccc8af82bddf602e158f8c73af387cc333409e587375efcdabda6222eb3be",
+        "src/Helpers/utilities.cpp": "68e5bda6a00da776f5fbf97a4bac3e4c745f345653a7084e73e9dcc3d1f71c1b",
+        "src/main.cpp": "c30bfdcf3b4c1161df786288c4b475a8ac0e0a93e312d1008cbe180266c567dd"
+      },
+      "dependencies": [
+        "custom-types@0.20.1",
+        "bs-cordl@4500.0.0",
+        "paper2_scotland2@4.8.0",
+        "tinyxml2@10.0.0",
+        "gif-lib@5.2.2",
+        "fmt@11.0.2",
+        "beatsaber-hook@8.2.1",
+        "libil2cpp@0.5.0",
+        "scotland2@0.1.7",
+        "flamingo@1.2.1"
+      ],
+      "state": "recipe_unverified_clean_build",
+      "previous_local_native_sha256": "836eb0f7da607556225d3e8ed8c54fb8e1afc2991f11603722fb016e50db921d",
+      "manifest_sha256": "539c7597d0e72cd05bf9f6337633b5d89d41cbc0eeb437e75b5c0a823d8e52b8",
+      "inputs_sha256": "85a42fba0efb0aced31cecd750f93588b2b2e39be9e169705efc8f0c421e4520"
+    },
+    "MetaCore-1451": {
+      "repo": "https://github.com/Metalit/MetaCore.git",
+      "commit": "906b9e34c6b2e6b7755432db43a9d4be3c9838d5",
+      "patch": {
+        "path": "patches/MetaCore-1451.patch",
+        "sha256": "2f87378f5ec9e1f3dd5771017828a6b7550ec05b4a7756bf957e5b866aacb2bc"
+      },
+      "binary": "libmetacore.so",
+      "target": "metacore",
+      "manifest": "manifests/MetaCore-1451.json",
+      "qpm_info": {
+        "id": "metacore",
+        "name": "MetaCore",
+        "version": "2.0.3"
+      },
+      "source_file_hashes": {
+        "CMakeLists.txt": "bf71680965a8ddb6474fd0490445b572fb3f6f50a4f10b99066c74069b4e368e",
+        "include/types.hpp": "7e9b152a46e0a897d4848a75c200eb856b8f092fe91dc948f4ec42364dd371cf",
+        "shared/unity.hpp": "285674bf2041a457f81fa717fd63bc093c789322089df7da1fbdc4a6d350eab2",
+        "src/hooks.cpp": "138e5388e7216060a2abee1f0eb1bdd1290514a11cd920478560f3c7a2c9109e",
+        "src/types.cpp": "dd3f399d53c0f6adecb5d5d2255fb3f9cc1d449d83944a0c282c51323828341f",
+        "src/unity.cpp": "1784ad7057abcea198bbbb57e6d969f1e4bcffd6383cc598054360616c66640b"
+      },
+      "dependencies": [
+        "libil2cpp@0.5.0",
+        "custom-types@0.20.1",
+        "paper2_scotland2@4.8.0",
+        "bs-cordl@4500.0.0",
+        "fmt@11.0.2",
+        "beatsaber-hook@8.1.0",
+        "scotland2@0.1.7",
+        "flamingo@1.2.1",
+        "mod-scripts@1.0.2"
+      ],
+      "state": "recipe_unverified_clean_build",
+      "previous_local_native_sha256": "11803f8873e11d87b950ed1fc14d860c7802d388592c131225cbae9d1ea366bf",
+      "manifest_sha256": "dde8da12aab4934c58697d0a56b8096b7fb30f97cb106acf1d361c922ff23bc5",
+      "inputs_sha256": "85b9a660a2c711dbafb88b611157d6f57fe749383e2e13566e3126d3a193bc92"
+    },
+    "metacore-bs-1451": {
+      "repo": "https://github.com/Metalit/MetaCoreBS.git",
+      "commit": "1d092b323571b5c4c2629212d9c8b49a34fc6a27",
+      "patch": {
+        "path": "patches/metacore-bs-1451.patch",
+        "sha256": "3a0b10898ab2f2d0c55d4c9fb4b27fef8398d903682bece2ef6f2097b89ba455"
+      },
+      "binary": "libmetacore-bs.so",
+      "target": "metacore-bs",
+      "manifest": "manifests/metacore-bs-1451.json",
+      "qpm_info": {
+        "id": "metacore-bs",
+        "name": "MetaCoreBS",
+        "version": "1.0.0"
+      },
+      "source_file_hashes": {
+        "CMakeLists.txt": "1dd189b811bdc373386b41976fe9286ed5df0be95771cec78c88042634384c1e",
+        "shared/songs.hpp": "80f86f19835127b47e140bf7156e8244b518d6297bf460efd6f48cf2585c7ea7",
+        "src/internals.cpp": "289d02cb8fb9a4f62d2f7d0e6b9013032413eeb9e26ecdec9347a402edb3077f",
+        "src/songs.cpp": "9a82afa953c888f942fe97c5be34c68b629face663e827009ced2f86b29f137b"
+      },
+      "dependencies": [
+        "libil2cpp@0.5.0",
+        "custom-types@0.20.1",
+        "paper2_scotland2@4.8.0",
+        "bs-cordl@4500.0.0",
+        "song-details@1.0.5",
+        "metacore@2.0.3",
+        "reflectcpp@0.25.0",
+        "fmt@11.0.2",
+        "beatsaber-hook@8.2.1",
+        "web-utils@0.6.9",
+        "scotland2@0.1.7",
+        "flamingo@1.2.1",
+        "mod-scripts@1.0.2"
+      ],
+      "state": "recipe_unverified_clean_build",
+      "previous_local_native_sha256": "32ac034ee1e01d66ae9b5c9018ecbe4d8cd1bc0cebcb0e6cdcfc3f9eeb0a37c3",
+      "manifest_sha256": "07cba49e361178d9a5a3bd208736716234e362ad46e5e38d196adee2fb81f48a",
+      "build_after": [
+        "MetaCore-1451"
+      ],
+      "inputs_sha256": "457039db4a459735de3d35a22296e32de23eb121bb8eb310e455ffdb777bd6c0"
+    },
+    "UnicodeQuest": {
+      "repo": "https://github.com/Metalit/UnicodeQuest.git",
+      "commit": "a411756d57dd23c6d561cf008ae601447015b7b3",
+      "patch": {
+        "path": "patches/UnicodeQuest.patch",
+        "sha256": "d85aeb180f13e2da6bd58efc065b2123c72f80423c1c4a8e44cfb94298a05cc1"
+      },
+      "binary": "libunicode.so",
+      "target": "unicode",
+      "manifest": "manifests/UnicodeQuest.json",
+      "qpm_info": {
+        "id": "unicode",
+        "name": "Unicode",
+        "version": "0.1.8"
+      },
+      "source_file_hashes": {
+        "CMakeLists.txt": "a9f96a95399eba346ae8734b5bec3dd9b67ef5c7a08a4826aec6aa6db72dabde",
+        "src/main.cpp": "a5d8342c1d951b776f51c0ea04a3462b9b9bac4a3208cf870027ee6e65ffaf74"
+      },
+      "dependencies": [
+        "libil2cpp@0.5.0",
+        "paper2_scotland2@4.8.0",
+        "bs-cordl@4500.1.0",
+        "metacore@2.0.3",
+        "fmt@11.0.2",
+        "beatsaber-hook@8.2.1",
+        "scotland2@0.1.7",
+        "flamingo@1.2.1",
+        "mod-scripts@1.0.2"
+      ],
+      "state": "recipe_unverified_clean_build",
+      "previous_local_native_sha256": "f4ffc06cd2e9ff07f400a8b97e3c54c03ee084cdc8acb43dc579dc798ee411f7",
+      "manifest_sha256": "445b3254944bb63d9a84d5194c1883e0be4a6df48dfc84b7cf5083d5578f0c23",
+      "build_after": [
+        "MetaCore-1451"
+      ],
+      "inputs_sha256": "66589b1972f90e5b425b51c98e92b21287ea05c8c949757f89a78c2c7e328f5e"
+    },
+    "CustomJSONData": {
+      "repo": "https://github.com/bsq-ports/CustomJSONData.git",
+      "commit": "e1dc75604d1663e5c890102da5f615bb5198f650",
+      "patch": {
+        "path": "patches/CustomJSONData.patch",
+        "sha256": "92d1ecc9c4ec18ddec446f3b704a8d41e12cdcde50a4c8f341bbe4e971baf0fb"
+      },
+      "binary": "libcustom-json-data.so",
+      "target": "custom-json-data",
+      "manifest": "manifests/CustomJSONData.json",
+      "qpm_info": {
+        "id": "custom-json-data",
+        "name": "CustomJSONData",
+        "version": "0.24.5"
+      },
+      "source_file_hashes": {
+        "CMakeLists.txt": "23abe04e9eb26135b7d64dacd34d567a3aa3cec4abe3d1554ff29162f6e3485e",
+        "include/CustomJSONDataHooks.h": "d1b77c4789dcfa5f9dfc26845368baa7772fc2505b7f466ea340a6c18aad73e2",
+        "include/HookUtils.hpp": "e951ce271eb4bc3f3a60c69b216e0509d8ef63c9a9988626095821bd4d8ea260",
+        "shared/CJDLogger.h": "12fd4c78e39b743b18dbc79b3aa9d04fbf09e5c129ef73ec92c7b353919779b1",
+        "shared/CustomBeatmapData.h": "e90b188ae870943e7d7aec1e5b089611e8bcf5699ae404e9ad5d1a12f1e5a727",
+        "shared/CustomBeatmapSaveDatav2.h": "1fee43d3ed6d1d23620958efb92b6c9f104d9c8ceef3af00b88b0f4bc664c1f0",
+        "shared/CustomBeatmapSaveDatav3.h": "49909c43fd326ac2264af9453e8e954dd988bcddffe9122f18ba0209dad32d9d",
+        "shared/CustomEventData.h": "99a839dc8069b59d27d26659f5a36fc03259bb098359f3d997feb0515f98a671",
+        "shared/JSONWrapper.h": "e8dc7060b2f196ca6c5f0c1f4c81c83a25b475399ab81a8d430c77bfd33de3fe",
+        "shared/JsonUtils.h": "c19282a8cd49d4a0ddf2788e96e52c13d3b060f1aef1da7828165299daf78f97",
+        "shared/LowLevelUtils.hpp": "3277f0f9d1a483752eae14383615f048f78d8da3fd759692dee8c6de1a31519e",
+        "shared/VList.h": "57dce032aac9da2b5cf51827b501f8e40a66a5ba76f5104bf47de8daf0be8394",
+        "shared/misc/BeatmapDataLoaderUtils.hpp": "35236f92d40cc6968ebb15feb351d250a40722693ea87f1920b4ce4848833c41",
+        "src/CustomBeatmapData.cpp": "dcea7856328efe6724917910cb9bff479f5778397848805eb71c2fbe5bcc7ddf",
+        "src/CustomBeatmapSaveDatav2.cpp": "3f3dc94ffd33f260320a96fb400b3ff2d77b2a384bd4ee691e26c3180e3e99d0",
+        "src/CustomBeatmapSaveDatav3.cpp": "81102c352b8520ae23eca138007cae0f86a225dca48a563b92aff60e091dd90c",
+        "src/CustomEventData.cpp": "40ca6ccb46b40775d3802dad29f4003c416e1bdb020f28102ad2c61ad345e280",
+        "src/hooks/BeatmapHooks.cpp": "fe62a82ee0ae00bcf026f4b647af415cc7495f6d2ca190570ffebec587c2766c",
+        "src/hooks/CustomJSONDataHooks.cpp": "3fcef5b8be94da7f2b19bc19aee749bc09f0ecd71c7963c77c7dfbb31aee7642",
+        "src/hooks/V2Hooks.cpp": "6af021c107e529b8006db64285dd51058de5a009957a033d9d5c9c26da0171d6",
+        "src/hooks/V3Hooks.cpp": "db956a86724d9965032717ef5759432ef897ef1ad09a3012e968d1f973385683",
+        "src/hooks/V4Hooks.cpp": "38d4809c03243973ebca75a1542eca63faf7b0127dff4ffaefab7d436fdf6263"
+      },
+      "dependencies": [
+        "custom-types@0.20.1",
+        "sombrero@0.1.43",
+        "paper2_scotland2@4.8.0",
+        "libil2cpp@0.5.0",
+        "metacore@2.0.3",
+        "bs-cordl@4500.1.0",
+        "cpp-semver@0.1.2",
+        "fmt@11.0.2",
+        "beatsaber-hook@8.2.1",
+        "songcore@1.3.2",
+        "scotland2@0.1.7",
+        "flamingo@1.2.1"
+      ],
+      "state": "recipe_unverified_clean_build",
+      "previous_local_native_sha256": "d79e89a3d9cd22293f8e9b44898df941b8cf9ae7a2a6ac64a33e5ec9d6097113",
+      "dependency_patches": {
+        "sombrero@0.1.43": {
+          "path": "patches/CustomJSONData-sombrero.patch",
+          "sha256": "fa9ae31443c858be31ea4df921139d5fb16bee6a9651dff18618fe0d91c26381",
+          "source_file_hashes": {
+            "shared/ColorUtils.hpp": "51b20290104bdd1575cb9baf1e4b96af07ab97c1815451a376b2cbf5b90b3efc",
+            "shared/QuaternionUtils.hpp": "8746458bc35685d36fc9490bd6e6279769d517d01d10d4bc46b13ddbf9903a5d",
+            "shared/Vector2Utils.hpp": "5beb96d3c03b3983477fccce8b6173d325affe203f802df223bd78f512ae0f7c",
+            "shared/Vector3Utils.hpp": "cb57a95b0ebae5847f2b797ec88f4502325b2cb0667a0e521306352ed4367791",
+            "shared/linq.hpp": "53e6cb92385883fb4918ab0a2cc266dae806f8646f76e0c150c60fc5dcf5cfff"
+          }
+        }
+      },
+      "manifest_sha256": "e3bd127ed8e65a9359c65f48385daf5ba88f438bc58a1b8a8dbd050880dac389",
+      "inputs_sha256": "e3ee0bf4d06e05147170fbf29f02c1aff17d22a22e3aa737b626077b614500b2"
+    },
+    "Tracks": {
+      "repo": "https://github.com/bsq-ports/Tracks",
+      "commit": "9c0f8889f9ac29eff46437a8dfdc61e61ba36354",
+      "patch": {
+        "path": "patches/Tracks.patch",
+        "sha256": "3cd0cd1e2c30424ff2abf70c85069a6bbedd43720a8c8a69c6f7828ce669f9f0"
+      },
+      "binary": "libtracks.so",
+      "target": "tracks",
+      "manifest": "manifests/Tracks.json",
+      "qpm_info": {
+        "id": "tracks",
+        "name": "Tracks",
+        "version": "2.5.2"
+      },
+      "source_file_hashes": {
+        "CMakeLists.txt": "6c1d8a37fa2930319899889fab25f7e18a359ceb35c1138e0d8e68519f46e379",
+        "include/GameplayLifetime.hpp": "0a4eb08cf84f9868b455969c57fe1ab1c3d556ff11807554146e412b13e05514",
+        "include/GameplaySceneLifetime.hpp": "583fdf359d9733274b361dc46f55cc4443b34f232cd681c22c7b20bfa5e2bfef",
+        "shared/Animation/GameObjectTrackController.hpp": "02d8d088d0c76b6264236b33bfb48bc315d686352efd54857d1831177bc159a5",
+        "shared/Animation/PointDefinition.h": "72d27b60cef783367383be8284e58451107dfd359a159bb67776396466809cfd",
+        "shared/Animation/Track.h": "22c88f727aeb703bc710409cb0fb5b99b3520459e21d1d0afd05eb8712445ebc",
+        "shared/Json.h": "6cace9f39feb5c9dafee15db7d0ecc209841fd66308df7ad03284458a856e3d8",
+        "shared/StaticHolders.hpp": "d16dc4408952ea26771cd5353dd99e3547fec0f5c3169bc95f603fd2e441e283",
+        "shared/TLogger.h": "fd7a781cd1db875a435e25ad4a36b6c2e8b51937b6827211e7f026b09c441b38",
+        "shared/VariableMovementHelper.hpp": "82e30c23f7332075ef83092bfffce4278caa3581c339c82c58798e7e7a7d8a96",
+        "src/Animation/Events.cpp": "eb018e0262b3260ad1187b810b324b09d7473a15846c219fb2dd15ff38312648",
+        "src/Animation/GameObjectTrackController.cpp": "9bd64205e9339b0a5eafb58cedcf119c21ea5162e806d72393e01c690ab4547d",
+        "src/Hooks/BaseProviderHooks.cpp": "b62eef3cb4e0cd8b22bce6591677f985e15fd689e795f306fafb6928ed2deac1",
+        "src/Hooks/BeatmapObjectCallbackController.cpp": "1fc0b8e4840844062fee9b06ad4c0c63e08d995e05c5e765464dd454c30d2894",
+        "src/Hooks/UnitySceneChange.cpp": "2e03e57d7b90046d8a02fee62d92576bc34becde38350532688fe997c875a309",
+        "src/TimeSourceHelper.cpp": "772686f15d907cbe6c7e86b4a3a83d62bd427fb68cc6c57fd647ad4a45e6f39b",
+        "src/main.cpp": "2acae5aed48fd7c506f2e8783238298d098b6a9eae92311b9473c6f88f0c977f"
+      },
+      "dependencies": [
+        "sombrero@0.1.43",
+        "custom-types@0.20.1",
+        "paper2_scotland2@4.8.0",
+        "metacore@2.0.3",
+        "bs-cordl@4500.1.0",
+        "fmt@11.0.2",
+        "beatsaber-hook@8.2.1",
+        "songcore@1.3.2",
+        "scotland2@0.1.7",
+        "flamingo@1.2.1",
+        "libil2cpp@0.5.0"
+      ],
+      "state": "recipe_unverified_clean_build",
+      "previous_local_native_sha256": "07fd992ae43983ff87b82c8abb329ac7a2ea0564de9bf807a0de6a5e685cb8c9",
+      "dependency_patches": {
+        "sombrero@0.1.43": {
+          "path": "patches/Tracks-sombrero.patch",
+          "sha256": "fa9ae31443c858be31ea4df921139d5fb16bee6a9651dff18618fe0d91c26381",
+          "source_file_hashes": {
+            "shared/ColorUtils.hpp": "51b20290104bdd1575cb9baf1e4b96af07ab97c1815451a376b2cbf5b90b3efc",
+            "shared/QuaternionUtils.hpp": "8746458bc35685d36fc9490bd6e6279769d517d01d10d4bc46b13ddbf9903a5d",
+            "shared/Vector2Utils.hpp": "5beb96d3c03b3983477fccce8b6173d325affe203f802df223bd78f512ae0f7c",
+            "shared/Vector3Utils.hpp": "cb57a95b0ebae5847f2b797ec88f4502325b2cb0667a0e521306352ed4367791",
+            "shared/linq.hpp": "53e6cb92385883fb4918ab0a2cc266dae806f8646f76e0c150c60fc5dcf5cfff"
+          }
+        }
+      },
+      "portable_adaptations": [
+        "Rust output fallback relocated under binary directory; runner passes explicit path."
+      ],
+      "manifest_sha256": "74e5c3cb5c5a8c9e001703faa55083cdadd8d19e448b35ee5f81d9d043295778",
+      "build_after": [
+        "CustomJSONData",
+        "MetaCore-1451"
+      ],
+      "inputs_sha256": "9cdca96d90925ea15c3e04efbfd532d536773fb40b3650138b6e6d8ca5e3327f",
+      "local_header_overlays": {
+        "custom-json-data": "CustomJSONData"
+      }
+    },
+    "NoodleExtensions": {
+      "repo": "https://github.com/bsq-ports/NoodleExtensions",
+      "commit": "565e3b33c98e9536d5b7e9c78d7f96e3ab2a4fad",
+      "patch": {
+        "path": "patches/NoodleExtensions.patch",
+        "sha256": "9082ebdc9ef7e3349b140d9725eb7af2978959dc45434d080024aecec7ce7a74"
+      },
+      "binary": "libnoodleextensions.so",
+      "target": "noodleextensions",
+      "manifest": "manifests/NoodleExtensions.json",
+      "qpm_info": {
+        "id": "NoodleExtensions",
+        "name": "Noodle Extensions",
+        "version": "1.6.2"
+      },
+      "source_file_hashes": {
+        "CMakeLists.txt": "1cff55f24c78a58983324ed6c26e32086269f222e902c2a557bc37d44de59730",
+        "include/Animation/AnimationHelper.h": "97ee0d82466c5da53189dbab9150418871b0448b8636084306f6efde230a3516",
+        "include/Animation/NoodleMovementDataProvider.hpp": "d52a40cecb2b698e6039eaa385cdf7dc87748accdc712de7ddf9844055a11399",
+        "include/Animation/PlayerTrack.h": "17636d007c0bcf395ad4733b0892e3bbc6cc1ee71acc25f05ea5c0d19d8bf198",
+        "include/GameplaySceneLifetime.hpp": "583fdf359d9733274b361dc46f55cc4443b34f232cd681c22c7b20bfa5e2bfef",
+        "include/NECaches.h": "e671c1b6bf5ec221956441c4ecaed6a5b17f0414e330c2ffb3d2ff943cc47886",
+        "include/NEConfig.h": "8e192764a499ecb0435efadc56657eae0a433d92665684238a2a994053d262fb",
+        "include/NEJSON.h": "e09ca1078f57480494a909bcc1e02b77d97df149be0445d25dc54364c8cac022",
+        "include/NELogger.h": "4c3e6276d5ed2a0e20f16dbd3bc183cc02a9970cc90306b61aa7bc6eb9a5877e",
+        "include/NEObjectPool.hpp": "507a99d932c7dfcd68fe282c47c7558fe260d8c90c8269fffc7caef7b0225ff3",
+        "include/NEUtils.hpp": "d01ca1e330f1e7ce05c6ce078f920b9f4e8e5483e52b3dfdd077cdff2b8d2348",
+        "include/chroma/shared/ObstacleAPI.hpp": "0ffbd9798518a5e41db52d192e01a417ee18ba4d9e365a150e4d3a3c45148076",
+        "src/Animation/Events.cpp": "e8dee0d21a7c0322be780521cd4ae8741d98bc604f4a1c3f791a5f0a3f1a1fd7",
+        "src/Animation/ParentObject.cpp": "49d105359efa4b9c79b77d76c84bb045746f5ebbb29252cfca06cdf88e1624e5",
+        "src/Animation/PlayerTrack.cpp": "b4581286de9a828cca56234a57844e2fc4d7071706b797defd425e7f88ac0c8b",
+        "src/Hooks/BeatmapDataLoader.cpp": "27f640f8eb631574ddc66a9b9034234390c2a62fc37cb42152f742bcb36ab27c",
+        "src/Hooks/BeatmapDataTransformHelper.cpp": "367d9f9b3c81fa73a3e668142710446b596d6a5c598684eced71e1e9f624148b",
+        "src/Hooks/BeatmapObjectCallBackController.cpp": "d6f7b6ebdeb99875fa02b73bbc5501d6afdedf3863f7704a917f5576b60038d5",
+        "src/Hooks/BeatmapObjectManager.cpp": "e91405359dfa67d54f8e5cfa54946c9a5cfd4e8549a4f30d46a541d19e52c7a3",
+        "src/Hooks/BeatmapObjectSpawnMovementData.cpp": "379d7af10c9495a2de069cd9b58af22b2723aa56bc644ea751513166083bb3a1",
+        "src/Hooks/BeatmapObjectsInTimeRowProcessor.cpp": "2d59f13d35d68800ed40f19a05f269ce9871a849ae93d982c8d5acaeb562adec",
+        "src/Hooks/EnvironmentSceneSetup.cpp": "5be872e4a5a251ce296ca4e8bc6e1ed16b24c6931b048c9ded240bb34f214f2c",
+        "src/Hooks/FakeNotes/BadNoteCutEffectSpawner.cpp": "63e66c4d7a4d7bc9bda57d87a60dab822da994bc04785e8c0d7c8688c224a523",
+        "src/Hooks/FakeNotes/BeatmapData.cpp": "a6716d136ba9a56052a75a11ce644c40844bb4e66178e4d369f7a182f6c6d7fa",
+        "src/Hooks/FakeNotes/BeatmapObjectManager.cpp": "8f349861038b055050fa63808419a341c74d2c007743d1a8cb83a0430a832c54",
+        "src/Hooks/FakeNotes/BombNoteController.cpp": "385d067f998196e07499b23ed37e753570085fd0d195633ca5856a4273b2b396",
+        "src/Hooks/FakeNotes/FakeNoteHelper.cpp": "e54493440b43021365b1224681a350adc33cff8c52b52dbbabba670eeb6e8220",
+        "src/Hooks/FakeNotes/GameNoteController.cpp": "8f40ca60eecdfbb4eb493fa07341a35f632d707d4b3e312435180badf8b39401",
+        "src/Hooks/FakeNotes/NoteCutCoreEffectsSpawner.cpp": "298a3cc74a58a04ccb6156dd32f7850f9e29895775c645bf96a111d9856c1a52",
+        "src/Hooks/FakeNotes/NoteCutSoundEffectManager.cpp": "f9f158ccd2777f54bfacc5100969a371109da37c68bb8ad7d00bc6a4a74a1a84",
+        "src/Hooks/FakeNotes/ObstacleSaberSparklerEffectManager.cpp": "c3ee2d244fe6cc5a6bd38e8073f74f10f2d61118c10eb52756154afc85af86d7",
+        "src/Hooks/FakeNotes/PlayerHeadAndObstacleInteration.cpp": "560ded31490c6d09210e7efabb870e08f2587a48003ab410c31a414032ba5630",
+        "src/Hooks/FakeNotes/SliderController.cpp": "e318a9f24c975dd53145873e3e29f2efadde2f5cc95c25a323108db82d2cd7df",
+        "src/Hooks/GameNoteController.cpp": "88e7d5911c3041699854d5d7717910d557c4309cc5e9dda1517b30a8e8c7917c",
+        "src/Hooks/GameplayCoreInstaller.cpp": "a1708e9585db19a7ee9bd44d65c6580488def41b15a4ec7136ce491511b5d317",
+        "src/Hooks/LeftHanded/BeatmapDataMirrorTransform.cpp": "d17f5701872af2c0e2c22b0e5e4929b64476aaef5c3d5aad3c460ec19a4060f3",
+        "src/Hooks/LeftHanded/NoteData.cpp": "0f6932a95e3e37bb1ec93ae21d00cf8f73b775cf02fee782cdced7a426db978d",
+        "src/Hooks/LeftHanded/ObstacleData.cpp": "8a589cddcf1d2001a9f92ed33ca491ddd283d6d6dbe006a92a2689ee9bb548dd",
+        "src/Hooks/Mirror/MirroredNoteController.cpp": "3e3a723955eb1c5e825d7827a1a66bae03e281283ab77c51f1ee5dc584a802c2",
+        "src/Hooks/Mirror/MirroredObstacleController.cpp": "38f4b79ddc18e9f6537608f6a9ed9889bf4ac1f395f922c91ef5b17703c64a83",
+        "src/Hooks/NoteController.cpp": "546fad51e7b46b6a56b3da19568ed1d5531c72c5b654b78926e95418d8776e0e",
+        "src/Hooks/NoteFloorMovement.cpp": "7cb3d16d101c70c90f7f4519c788cf59a234d3bdb8eebc402cadc0041a9e8eb4",
+        "src/Hooks/NoteJump.cpp": "242f93ff311d8a02299326d343b67b2a22e46c3b0ec29d53827f41f5812ddbdf",
+        "src/Hooks/ObstacleController.cpp": "43b7488ea1a49c2e980a23d1e6e691eae928af20f3c90912c64136d12781e78f",
+        "src/Hooks/OutdatedMods.cpp": "6c8440cdf4411cf472313578f0cd2336704eafb07f8b233bc58e69e83d40213f",
+        "src/Hooks/ReplaceMovementDataProvider.cpp": "928899ed0f65d26b37aa9ee2fc9ef32a5a166ccb97932f7b69af9ff8a0635531",
+        "src/Hooks/SceneTransition/MissionLevelScenesTransitionSetupDataSO.cpp": "2129b21532b6e498c1511733cdf0bd1a94472e9bdafcd50496036bf1e750bf95",
+        "src/Hooks/SceneTransition/MultiplayerLevelScenesTransitionSetupDataSO.cpp": "3412b26ab3ccaa14869f9b869412aca404875c9c9c8ce36764d6abe8304681ee",
+        "src/Hooks/SceneTransition/SceneTransitionHelper.cpp": "d74e2341a07539f300218bc2f01aee56f4ff5ec7fd060447c825e319a4908d50",
+        "src/Hooks/SceneTransition/StandardLevelScenesTransitionSetupDataSO.cpp": "9b79f25570e8870298de9e8087039cb19fccf57435b014ba5d2386fdf5a1d2d7",
+        "src/Hooks/SceneTransition/UnitySceneChange.cpp": "e2120d4f643290d8d9269d3fbf266eec415552f2936276331b922d4dba71aaa2",
+        "src/Hooks/SliderController.cpp": "6d42453e5ef72050ca19472a6028a2233e28eae0bd1b92aa1cdc443dc608e63d",
+        "src/Hooks/SmallFixes/BaseNoteVisuals.cpp": "dd3293fdd716c9ea27e25701b4191c915d136dab3e9098f241b3ab1d026df398",
+        "src/Hooks/SmallFixes/BasicBeatmapObjectManager.cpp": "5d31d37d6fb3c01f6a558a473fb3f3f9960d1d03859d26198ca6610b9a7b4ad0",
+        "src/Hooks/SmallFixes/BeatEffectSpawner.cpp": "0288f1b21ec8896beca2c93fdda2638f7ae8142ac204ce8b075efacea24a0cfa",
+        "src/Hooks/SmallFixes/BeatmapObjectManager.cpp": "9240292cc62dfcfaec67758a2b538e9f73aa817bb58c1ff392037986c0f6fbe3",
+        "src/Hooks/SmallFixes/BeatmapObjectSpawnController.cpp": "832a7fc1f545c0776b7c8f0c3f4f2d0e95ea841b098ff3991a6685e69c053687",
+        "src/Hooks/SmallFixes/CutoutEffect.cpp": "e4489ad68c742ee5c81a7d6691e2aa8b140edcd5beca059a20239d4784c9e9dd",
+        "src/Hooks/SmallFixes/DisappearingArrowController.cpp": "e5e27309cd4ef80388fde7b779b9ae9a15c9560025a6fa0dc810e23898bb501a",
+        "src/Hooks/SmallFixes/MemoryPoolBase.cpp": "aaef2be3b0ddf97684b4da971d42616038928162b0a667b7523b68308ab5e980",
+        "src/Hooks/SmallFixes/PauseMenuUseLocal.cpp": "d36df0f53f5ccf0f242057d2978873bad38aa2525bc28c4f728327f193607a5d",
+        "src/Hooks/SmallFixes/PlayerTransforms.cpp": "788331b67d52d1ed822e5bf45ee00c53bb667cc6457c775ef8dfc5e7a6169388",
+        "src/Hooks/SmallFixes/SaberCullingFix.cpp": "66383193d52ebc1206d13e0163ae012ebd69814ee344379d417790344ae63624",
+        "src/Hooks/SmallFixes/SaberPlayerMovementFix.cpp": "9b6f358ef93eb073e0c58084db862e06badf251be4384ce7bb381b1a80ef10a0",
+        "src/Hooks/SpawnRotationProcessor.cpp": "33c0478f7f1277094e6bff9e201aa0fb64f3c2238630b3bbcd7644f8ef290f08",
+        "src/Hooks/Temporary/BeatmapObjectSpawnController.cpp": "163adce9cf07a953f5a9939a2de65de3b953f36b7545885745dfe77fb05513da",
+        "src/Hooks/Temporary/ClampPatches.cpp": "8270e3cce00ae1d628232b667ff925ee8ccbe18ff4172bebe32b93db480c83cf",
+        "src/NoodleExtensions.cpp": "15533c5ae25b958476f057204e18f05be4a082a0fa006b8c1a268d972a3b9d76",
+        "src/TimeSourceHelper.cpp": "3cd4b7e40c6d876ed9d01822a90b7fcf4dfcef2145d61c748b9f74362dd4007b",
+        "src/main.cpp": "34dd543b88b8a51d83e1fe8d9ef84df97cf3f4b6f9f33c5e2a8ea803c72504a8"
+      },
+      "dependencies": [
+        "sombrero@0.1.43",
+        "metacore@2.0.3",
+        "bs-cordl@4500.1.0",
+        "tinyxml2@10.0.0",
+        "fmt@11.0.2",
+        "scotland2@0.1.7",
+        "flamingo@1.2.1",
+        "libil2cpp@0.5.0",
+        "custom-types@0.20.1",
+        "paper2_scotland2@4.8.0",
+        "conditional-dependencies@0.3.0",
+        "reflectcpp@0.25.0",
+        "config-utils@3.0.0",
+        "cpp-semver@0.1.2",
+        "beatsaber-hook@8.2.1",
+        "songcore@1.3.2",
+        "bsml@0.5.8"
+      ],
+      "state": "recipe_unverified_clean_build",
+      "previous_local_native_sha256": "5c58547291698fb711097a66fa1e82af11480341aa0a52b4e4c2dd5375e03da8",
+      "dependency_patches": {
+        "sombrero@0.1.43": {
+          "path": "patches/NoodleExtensions-sombrero.patch",
+          "sha256": "ff20e5cd40265911b34ce73913fb833c4c538548db41b456ec3e274c6bd7b7bc",
+          "source_file_hashes": {
+            "shared/ColorUtils.hpp": "51b20290104bdd1575cb9baf1e4b96af07ab97c1815451a376b2cbf5b90b3efc",
+            "shared/QuaternionUtils.hpp": "8746458bc35685d36fc9490bd6e6279769d517d01d10d4bc46b13ddbf9903a5d",
+            "shared/Vector2Utils.hpp": "5beb96d3c03b3983477fccce8b6173d325affe203f802df223bd78f512ae0f7c",
+            "shared/Vector3Utils.hpp": "cb57a95b0ebae5847f2b797ec88f4502325b2cb0667a0e521306352ed4367791",
+            "shared/linq.hpp": "f6683b5f2c5804a272846ab38009dee4b3c44c4fbc9e4eb1510e37f0a705615b"
+          }
+        }
+      },
+      "manifest_sha256": "4ebfecc8fc1f0bf65800c31fab975aa66d72d9a3f7cbeaa1371c0f04d2f640fe",
+      "build_after": [
+        "CustomJSONData",
+        "Tracks",
+        "Quest-BSML"
+      ],
+      "inputs_sha256": "4e3bd6bc0deafdf1981d15492476d01838e597c7f6634e7032a75de7bab30b16",
+      "local_header_overlays": {
+        "custom-json-data": "CustomJSONData",
+        "tracks": "Tracks"
+      }
+    },
+    "Chroma": {
+      "repo": "https://github.com/bsq-ports/Chroma.git",
+      "commit": "e3d7419f00d7b120857edfccb0a15f202c6ebd61",
+      "patch": {
+        "path": "patches/Chroma.patch",
+        "sha256": "6bd8c06d4f3ca24549280af79f6b68ec63bae5095e66a3b8481c33e755cc9d20"
+      },
+      "binary": "libchroma.so",
+      "target": "chroma",
+      "manifest": "manifests/Chroma.json",
+      "qpm_info": {
+        "id": "chroma",
+        "name": "Chroma",
+        "version": "2.10.3+local.1451"
+      },
+      "source_file_hashes": {
+        "CMakeLists.txt": "b7ea6ee7f838387ebaec8c9545109b00eed917a43d4eb13ad5e274285f471c65",
+        "assets_include.cmake": "d242611e5bfe45e86961a6aad318633713214f04f3d7d28232b8c02039ba301c",
+        "include/Chroma.hpp": "accb78c78e216cbd1f87bd4110281fbd54d4db6cd7740d8972435c4b9d53037a",
+        "include/ChromaController.hpp": "30200d943b62b24846a3bbc4e6ac581877772d7afe2e5cec5b362a55e064e5b5",
+        "include/ChromaHooks.hpp": "ebc92da11f8f60e76f866117973a7ad1799c1b2f2bc04016a8fc7a3cf16ceffd",
+        "include/ChromaLogger.hpp": "7f1e75e49b0583bc7d4ffaf629e0d98ac087308985ccd1a8793da2b7c951b35b",
+        "include/GameplayLifetime.hpp": "b1eef3c7448f1774059e80d71e5f89f295bde92c46242a952a09c3ff58710ede",
+        "include/GameplaySceneLifetime.hpp": "583fdf359d9733274b361dc46f55cc4443b34f232cd681c22c7b20bfa5e2bfef",
+        "include/assets.hpp": "1b3a376a1e1abbe40a8d21176079d931ea229a8ec6c4c19f03d4ee8377b985c7",
+        "include/colorizer/BombColorizer.hpp": "6e264b060ce524d83fc368774cbd95664302d3dc0ed81093dd1f193404033767",
+        "include/colorizer/LightColorizer.hpp": "373815c4c3acf9d71162442b0917c270e0820fabe9663c25048ff8784b73e6fd",
+        "include/colorizer/NoteColorizer.hpp": "b009d11f294722451b35ec8ebf6767dde1231a7daa7b5e5e06d71f5a8311a509",
+        "include/colorizer/ObstacleColorizer.hpp": "4dce31eef8ccaab19875216c5c22d8ee8c703c66c53cea628f00b6d82c2752a8",
+        "include/colorizer/ParticleColorizer.hpp": "18352b671b6f1c2640cf0960cbd603c6e4a24f2eca350d92b520417998250b3f",
+        "include/colorizer/SaberColorizer.hpp": "14cebb4c740e027140a9bd85c7b05075008dfb51683b6077c03164688f7c947f",
+        "include/colorizer/SliderColorizer.hpp": "3ec0c4d4c57c113f0052fbedc613aecde1c04e7c2ff200aae974f4cefb9a5744",
+        "include/environment_enhancements/ComponentData.hpp": "ddf23befce8caa0ef7185f4e870d98fd5bc92fb81c84049833c650b5443ee811",
+        "include/environment_enhancements/ComponentInitializer.hpp": "489996227cd2e85a2b3ccb340f3cb0898f8dd58e8bbdaaa225f9640aaad476a0",
+        "include/environment_enhancements/EnvironmentEnhancementManager.hpp": "b50b271bc9722e8380b7650aac236608410f00d48ae5b70962bd25b33b152700",
+        "include/environment_enhancements/EnvironmentMaterialManager.hpp": "b3306497d9987b11e6a9c3905a60e78aa4703b99af9e7b53221d9b362a5ae3da",
+        "include/environment_enhancements/GeometryFactory.hpp": "24112feeb79993ba09c36cb5249f4ffefca1de68c54927bb3b48fa565ee2eb86",
+        "include/environment_enhancements/MaterialsManager.hpp": "6168390b0a5413544d707a08cbb779084755870178340b9bc291f666ea8a2df2",
+        "include/hooks/LightWithIdManager.hpp": "f73ed26602faed4a2f4e37cc29fa4600aea168c14e4f105c5c9760de9ae4b4ff",
+        "include/hooks/MultiplayerConnectedPlayerInstaller.hpp": "07783d6d8658f9e01d508cd1f50da709cb0d2404840f64be7b04a1ab78449c0b",
+        "include/hooks/TrackLaneRingsManager.hpp": "c603efb1903a7a27663e612dec8ae47bc6ebff41b11c881ccbad2d8181323087",
+        "include/lighting/ChromaEventData.hpp": "1a1c693cd0c689904d95c9561cfaa332dffb1a8e5421b99164bc0f45e1ab3928",
+        "include/lighting/ChromaGradientController.hpp": "f97d0da279514044c92efd15b18737db2fd762edd7d9bc59e0fa51f14dccdd7a",
+        "include/lighting/ChromaLightSwitchEventEffect.hpp": "97acd74d9da99a896d72a6dd129c1552e3aa34cac527db5146e279842b9e8cdf",
+        "include/lighting/ChromaRingsRotationEffect.hpp": "5830c4097d1fd2df4b193999f20b4e3386922feff49d8d88a1653d4fae8a2992",
+        "include/lighting/LegacyLightMapping.hpp": "2fa14b95b7ad5ded0d066c2b4577a30cd91393a7d587d36e580bcef5ba59c891",
+        "include/lighting/LightIDTableManager.hpp": "1d2982ea4f208ef78aca996ee974f1069fb86a1f425a351062688617aa38748e",
+        "include/ui/ModifierViewController.hpp": "5c4dd7b7f766486248593e1b5674e3d91d23f97a7de21565c3b3809029ef1492",
+        "include/utils/ChromaUtils.hpp": "6a4a23d803445c5da84a1d259824b52a9afccc51cd05b8ca062f8f6302f798c9",
+        "shared/BombAPI.hpp": "900a210f1a9e0bffe9f50c0715bbb8c023dac6e090b52c6f4eb1114e77b96147",
+        "shared/NoteAPI.hpp": "ab1961b308f9f7ac9335b7aa5b02f7ec87ce2acfa5cbe7a3c247cea5e217f186",
+        "shared/ObstacleAPI.hpp": "9fddb2b1cf54f9ea1bbf378abb8b4e470a98070f63a27d5171ce2e952aa1568d",
+        "shared/SaberAPI.hpp": "2577fa801c8255f5a002b5d73491b90b3ae63568c782541355bfe7ecabf194fb",
+        "src/ChromaComponentManager.cpp": "2628495d35bcb52d6a9d652b8b06bd7c3ec57958a7228a0eacb4abc9824d1125",
+        "src/ChromaController.cpp": "7dacd7fa51f380ea6b53ae863cc8bea4e6be1d33c8ce378ae8e6be4d4dad0f5f",
+        "src/ChromaEvents.cpp": "2d28460958021957708fd0bd0aa3079e11e6ed3728f0830e625a403aaa4a5bf6",
+        "src/ChromaObjectData.cpp": "1f9abe63ddf0debdceffbf69e993aee16e7a1becb9d2c8f2825c3e5b8757d106",
+        "src/api/LightAPI.cpp": "7cc4436971bc666cf66849739ed4a7db7426840b77c4fe870601d64a94ab87e2",
+        "src/colorizer/BombColorizer.cpp": "537c7b1d4b61eaa541d017d50691786616f3910c98e22ec024ce601846589966",
+        "src/colorizer/LightColorizer.cpp": "96cec2db2f83b125eaf1992df1ad55a717a4e0f20eef5492ba4cf2e1c393f22e",
+        "src/colorizer/ObstacleColorizer.cpp": "3951834f074e9e9e437fceff258af521d70276977576adb9df8a65546450ceae",
+        "src/colorizer/ParticleColorizer.cpp": "cad7dfe7fcdf51f43039ed17ce2f7e2cf95f355cba5f53e5cb2abca05eacd79f",
+        "src/environment_enhancements/ComponentInitializer.cpp": "703b921a27dfbffef17746365c79c9ed9e9f652f2c0e76d8bb4e6330b66975a9",
+        "src/environment_enhancements/EnvironmentEnhancementManager.cpp": "bdf0c3397a6ad75d7537bfacbd9390dc2be19cd30a0d61065f4fb56099bdd9f9",
+        "src/environment_enhancements/EnvironmentMaterialManager.cpp": "f61a75f75667e09e4389dbbf28e800cc873f3cef2c4d605f37c6e85cfe72b408",
+        "src/environment_enhancements/GameObjectInfo.cpp": "24d7a7a2c920cbfb99c1aada1530d250474a6de207b4c6fb5c725c665c99a83c",
+        "src/environment_enhancements/GeometryFactory.cpp": "56c3e659abe8e00834a676d15a339fee23b804cc7a05cb8dd1921b6eb87076fc",
+        "src/environment_enhancements/MaterialsManager.cpp": "ac7a68a88c302272bcac0121f6916d0b339cd45e508d073a22c634f1824561de",
+        "src/hooks/BeatmapDataTransformHelper.cpp": "eb9ce86144676544a3cc0f30091c04110c832dfbc9a5357b083e793bcfcacf3a",
+        "src/hooks/BeatmapObjectCallbackController.cpp": "3f2fed1e84cc14b18857c0d6a35f08eea952452a6050c4f7ad603fe202edb68a",
+        "src/hooks/EnvironmentComponent/LightWithIdManager.cpp": "b081afabe5fef78d736edf3b63b274b47efe0abcd67de7c9c30bf6add73bea2f",
+        "src/hooks/EnvironmentComponent/TrackLaneRingsManager.cpp": "02271459e8beea06731e79394c3f654fddea24930c5186563a047f26c638ce76",
+        "src/hooks/Events/TrackLaneRingsRotationEffect.cpp": "5dfee6e57e1961a74f79a316e91ff3d078d9f85b4982ac2ff3e46b5eebd481c5",
+        "src/hooks/Events/TrackLaneRingsRotationEffectSpawner.cpp": "faaeae52c96bf011c7cd9c90acedd787b39e9280be6c0ee1344f7da0e5c2b454",
+        "src/hooks/Mirror/MirroredNoteController.cpp": "2e2a4ae34d58cff8e921c8229da0825ba1aee84fdb9cff1115da826faccb5542",
+        "src/hooks/Mirror/MirroredObstacleController.cpp": "6a3540e321af348b27e95f41c2d6125a2dafb1f8312e5b3b1afa80551520bbe8",
+        "src/hooks/SceneTransition/MissionLevelScenesTransitionSetupDataSO.cpp": "18ef5c06d76b24e8fca8341f5180ea052e42fabb28d593ef2cbe1582e3330a80",
+        "src/hooks/SceneTransition/MultiplayerLevelScenesTransitionSetupDataSO.cpp": "8abf1ac19d9ec4dcc73c01d93342b2cfd7ff3b2aca187788d515006787edf366",
+        "src/hooks/SceneTransition/SceneTransitionHelper.cpp": "783351cb7244d7f71e9c2a24b6d90ac5c99c6e9d3797a19427bf8e45d3463d74",
+        "src/hooks/SceneTransition/StandardLevelScenesTransitionSetupDataSO.cpp": "8060a52468c0d40a62d251554f1222f6ddc73c2d8678b6079c3537858ff361e0",
+        "src/hooks/SceneTransition/TutorialScenesTransitionSetupDataSO.cpp": "1aa7cb79c9f6a177581f1f820849d2a8315fe4abda7a0716a9bfe9914c552b21",
+        "src/hooks/SceneTransition/UnitySceneChange.cpp": "533b1807ac4fefb1b94dccc3633b08346acfe1e4bfda15124aea1cad8cd130b1",
+        "src/hooks/colorizer/BeatmapObjectManager.cpp": "1bb56f70450e040fa2aeb88ac54d90201452fe197a9e64b783454ca3d828ec3b",
+        "src/hooks/colorizer/BombNoteController.cpp": "f84cdb4358c36ba8c9f5bdc959215f78796c756e623e8d9dfe41bce1e3c06880",
+        "src/hooks/colorizer/BurstSliderController.cpp": "3e88be67851df7ccf18992655db1eba2b752f2500f19fe4655032ce88ec21342",
+        "src/hooks/colorizer/ColorNoteVisuals.cpp": "a62b43f286ae36b0ba33e9cd5710ee2fc596f512beb16a5e5a36c9d90e7d40bb",
+        "src/hooks/colorizer/Initialize/ParticleSystemEventEffect.cpp": "e226d6875d8a4350790f6735ec9fd1cb12ce5dbca92a2632063ba381f145bcca",
+        "src/hooks/colorizer/Initialize/SliderController.cpp": "db790453d7fd52e41dc30b394fb7815cb31db25568967c2b09a84c18fb25e6de",
+        "src/hooks/colorizer/Note/NoteCutEffectSpawner.cpp": "ad4db4b3f144c1ce89c86b4d84f73386b92d1a1f3f9b14d84d40da5e9a0a59de",
+        "src/hooks/colorizer/NoteController.cpp": "8b692cfe4e02faf6c2b0d1d66193f80ad48b3c7a96fbf44c11ff6e5eb6706645",
+        "src/hooks/colorizer/Obstacle/ObstacleSaberSparklerEffectManager.cpp": "206804c654429830beb8f55db065bc3fbaf9bbff944abf1ba7fc77eb5e27e2b7",
+        "src/hooks/colorizer/ObstacleController.cpp": "f102c50e834479c1106e4d303e69c854468e0a57227c01c0332e22896bfb557c",
+        "src/hooks/colorizer/Saber/SaberBurnMarkArea.cpp": "f3689974db265ab2d5b1214b71d7d873d34669088d256a40d1fd6453043d8b8d",
+        "src/hooks/colorizer/Saber/SaberBurnMarkSparkles.cpp": "497c7a2fef7e12a5b8b2a9b6aa93cb88bfd2802a334ddd110dfd509dd2ce2c9e",
+        "src/hooks/colorizer/SliderController.cpp": "9ac92dcb1de3700ac1ffcc3f5c5bf23f70c5453c1e83c3ea0910bf3a4c1c2a88",
+        "src/lighting/ChromaEventData.cpp": "157810175d592f1670cc70db667dacec92e1226c3b55d83d2dcf8430b344cd58",
+        "src/lighting/ChromaFogController.cpp": "78f6e470e9f8465f1a3b90126e70ac408fe3c454d13ecbc19850e587b5b9aa7f",
+        "src/lighting/ChromaLightSwitchEventEffect.cpp": "11c492835aabe1b01e55c7f9e7eb7e4adf2bef0e4ee6e5d7dec4b5c7bb9d0fd3",
+        "src/lighting/ChromaRingsRotationEffect.cpp": "150fa5ddf9a05729f96d64be19a574602205e6eb3218af986366e619a6297ea2",
+        "src/lighting/LegacyLightHelper.cpp": "be3148ac9dfa410f2158b1cbedb16299ac56651d30efd3b592a005f2b3c60e81",
+        "src/lighting/LightIDTableManager.cpp": "4eb4bab61a19666cf837c70244392519fc86fe9ec6b5bd3db1393e1aee42d9c4",
+        "src/main.cpp": "13c7ec8c81771931a20f1a5b1299f8b976a8fab333dfd2fd9ba140f832dcefca"
+      },
+      "dependencies": [
+        "sombrero@0.1.43",
+        "bs-cordl@4500.1.0",
+        "metacore@2.0.3",
+        "tinyxml2@10.0.0",
+        "fmt@11.0.2",
+        "boost-regex@1.80.0",
+        "libil2cpp@0.5.0",
+        "flamingo@1.2.1",
+        "scotland2@0.1.7",
+        "custom-types@0.20.1",
+        "paper2_scotland2@4.8.0",
+        "conditional-dependencies@0.3.0",
+        "reflectcpp@0.25.0",
+        "config-utils@3.0.0",
+        "beatsaber-hook@8.2.1",
+        "bsml@0.5.8",
+        "songcore@1.3.2"
+      ],
+      "state": "recipe_unverified_clean_build",
+      "previous_local_native_sha256": "b3e65a2cc7b0265da6dcdc5daa8b043a1cf617aa124799eeb02b0ec66ed602b4",
+      "dependency_patches": {
+        "sombrero@0.1.43": {
+          "path": "patches/Chroma-sombrero.patch",
+          "sha256": "ff20e5cd40265911b34ce73913fb833c4c538548db41b456ec3e274c6bd7b7bc",
+          "source_file_hashes": {
+            "shared/ColorUtils.hpp": "51b20290104bdd1575cb9baf1e4b96af07ab97c1815451a376b2cbf5b90b3efc",
+            "shared/QuaternionUtils.hpp": "8746458bc35685d36fc9490bd6e6279769d517d01d10d4bc46b13ddbf9903a5d",
+            "shared/Vector2Utils.hpp": "5beb96d3c03b3983477fccce8b6173d325affe203f802df223bd78f512ae0f7c",
+            "shared/Vector3Utils.hpp": "cb57a95b0ebae5847f2b797ec88f4502325b2cb0667a0e521306352ed4367791",
+            "shared/linq.hpp": "f6683b5f2c5804a272846ab38009dee4b3c44c4fbc9e4eb1510e37f0a705615b"
+          }
+        }
+      },
+      "manifest_sha256": "773edb15664d6b44ccfd5e80bac5681678fa32033ae85aa2986bef77a39d1fa3",
+      "local_header_overlays": {
+        "custom-json-data": "CustomJSONData",
+        "tracks": "Tracks"
+      },
+      "build_after": [
+        "CustomJSONData",
+        "Tracks",
+        "Quest-BSML"
+      ],
+      "inputs_sha256": "9bcc6aa4dc2d1a691afea4ceea83ed9a84bc6e7a4874c696f7ede03c92b7f19b"
+    },
+    "PlaylistCore-1451": {
+      "repo": "https://github.com/Metalit/PlaylistCore.git",
+      "commit": "5aa74ed2200870402ec6b4a5fb36e6bf8050cc7a",
+      "patch": {
+        "path": "patches/PlaylistCore-1451.patch",
+        "sha256": "f8c0fee79800525b779c8429dee5bc67bcb984ab60489fd6fb74c453765c1669"
+      },
+      "binary": "libplaylistcore.so",
+      "target": "playlistcore",
+      "manifest": "manifests/PlaylistCore-1451.json",
+      "qpm_info": {
+        "id": "playlistcore",
+        "name": "PlaylistCore",
+        "version": "1.7.0"
+      },
+      "source_file_hashes": {
+        "CMakeLists.txt": "bdc810e54be906e65f15384e0df6358ab81fa7d2c971c01871bca9dd941a8821"
+      },
+      "dependencies": [
+        "beatsaverplusplus@0.2.4",
+        "metacore@2.0.3",
+        "bs-cordl@4500.1.0",
+        "tinyxml2@10.0.0",
+        "metacore-bs@1.0.0",
+        "fmt@11.0.2",
+        "web-utils@0.6.9",
+        "scotland2@0.1.7",
+        "flamingo@1.2.1",
+        "mod-scripts@1.0.2",
+        "libil2cpp@0.5.0",
+        "custom-types@0.20.1",
+        "paper2_scotland2@4.8.0",
+        "reflectcpp@0.25.0",
+        "config-utils@3.0.0",
+        "beatsaber-hook@8.2.1",
+        "songcore@1.3.2",
+        "bsml@0.5.8"
+      ],
+      "state": "recipe_unverified_clean_build",
+      "previous_local_native_sha256": "3d76eb1f2b264e6386926c08a1f24bb00bd8b0210a3817d37022869e9c0ce6a5",
+      "manifest_sha256": "00f525e7160d3efae96dac17394338246a0e0d58c75102a5cf66f4e3d054e57a",
+      "build_after": [
+        "metacore-bs-1451"
+      ],
+      "inputs_sha256": "4eac0de4e4fdd7ad14abce5008b510bb2e20d0aa24323239955c027042186b23"
+    },
+    "BetterSongList": {
+      "repo": "https://github.com/bsq-ports/BetterSongList.git",
+      "commit": "cf1f63049d590f2f70207aa1285f9a5cf511ba38",
+      "patch": {
+        "path": "patches/BetterSongList.patch",
+        "sha256": "18133077013d9b4537d783ca7b5d7920c45a38c3bb6c789c582b778326fe6862"
+      },
+      "binary": "libbsl.so",
+      "target": "bsl",
+      "manifest": "manifests/BetterSongList.json",
+      "qpm_info": {
+        "id": "bsl",
+        "name": "Better Song List",
+        "version": "0.1.0"
+      },
+      "source_file_hashes": {
+        "CMakeLists.txt": "33aab04234aa4203d1b98cc8e3083a654b14c783645a6355c694bb3e6411c920",
+        "include/Utils/ConfigWriteQueue.hpp": "37087ce63c29ccdec6172b6b40598c9d9711b96530cff4d23fcd51fc4226d56c",
+        "include/config.hpp": "8a5d11b3b6c41c229fd470ff47f90895a8c77c02acfea453b7fdf7c0b0584e9b",
+        "src/config.cpp": "f093bebf53aa79a776bae7c7fe8fae5be50a8d14a39fafded145e39b8aa82e85"
+      },
+      "dependencies": [
+        "sombrero@0.1.43",
+        "metacore@2.0.3",
+        "bs-cordl@4500.1.0",
+        "tinyxml2@10.0.0",
+        "metacore-bs@1.0.0",
+        "fmt@11.0.2",
+        "libil2cpp@0.5.0",
+        "flamingo@1.2.1",
+        "song-details@1.0.5",
+        "custom-types@0.20.1",
+        "scotland2@0.1.7",
+        "paper2_scotland2@4.8.0",
+        "conditional-dependencies@0.3.0",
+        "reflectcpp@0.25.0",
+        "config-utils@3.0.0",
+        "cpp-semver@0.1.2",
+        "playlistcore@1.6.0",
+        "bsml@0.5.8",
+        "songcore@1.3.2",
+        "beatsaber-hook@8.2.1"
+      ],
+      "state": "recipe_unverified_clean_build",
+      "previous_local_native_sha256": "aaf3a6c376460c4ef6c8ef73b2352fd7e9fe44090a843b70ddef8dcd4e161398",
+      "manifest_sha256": "2ec6cb476bfacb2e78848e76c87e4fed00d5cdc29bfe9dcdc93bda87b2b1c3bb",
+      "build_after": [
+        "PlaylistCore-1451",
+        "Quest-BSML"
+      ],
+      "inputs_sha256": "a9bc9340a5a04770b5abcb6b89c762327c4b0708f6981c2389cf3c111f428752"
+    },
+    "SongDownloader": {
+      "repo": "https://github.com/darknight1050/SongDownloader.git",
+      "commit": "17448f9e13dfabb4c05b948c3951f85e939d78ba",
+      "patch": {
+        "path": "patches/SongDownloader.patch",
+        "sha256": "efde6dd3a7a12707bcd7b1fcdfd5bca2a6e5332f1e8cd2277a967a2b4d082dd7"
+      },
+      "binary": "libsongdownloader.so",
+      "target": "songdownloader",
+      "manifest": "manifests/SongDownloader.json",
+      "qpm_info": {
+        "id": "songdownloader",
+        "name": "SongDownloader",
+        "version": "0.8.7"
+      },
+      "source_file_hashes": {
+        "CMakeLists.txt": "506c141a3fb51bee4ee706c58c04bced9748c339804f20e38f0bb68d23006146",
+        "include/CustomTypes/DownloadSongsSearchViewController.hpp": "d9401544fe11f116fe529fd8884cdd227d6b351e1e31d2c9c24e7c53aeff3bb5",
+        "include/ModConfig.hpp": "922840c8305ef301c9d6892e04efe2b3f899c2f3b03bf2569474df98053233fd",
+        "src/CustomTypes/SearchEntry.cpp": "5d0fae86767df8de1e2611491027da48806ce997f51941386ff5d57c244fbf06",
+        "src/Main.cpp": "f6aab5712428eba31db7fd102aeb6c4175442fbb270b22ccd88eea6419dac3a8"
+      },
+      "dependencies": [
+        "metacore@2.0.3",
+        "tinyxml2@10.0.0",
+        "bs-cordl@4500.1.0",
+        "fmt@11.0.2",
+        "scotland2@0.1.7",
+        "libil2cpp@0.5.0",
+        "flamingo@1.2.1",
+        "custom-types@0.20.1",
+        "rapidjson-macros@3.0.0",
+        "paper2_scotland2@4.8.0",
+        "reflectcpp@0.25.0",
+        "config-utils@3.0.0",
+        "libcurl@7.78.0",
+        "playlistcore@1.7.0",
+        "beatsaber-hook@8.2.1",
+        "bsml@0.5.8",
+        "songcore@1.3.2"
+      ],
+      "state": "recipe_unverified_clean_build",
+      "previous_local_native_sha256": "2f7342b7f42d5badb010e521651e4613c3365892b7d374ca18b93ca352d18593",
+      "manifest_sha256": "e522251471d9283cac93f713d9a7ac5b7ed1d173d3b56bada2a4d6c88d7174e5",
+      "build_after": [
+        "PlaylistCore-1451",
+        "Quest-BSML"
+      ],
+      "inputs_sha256": "0d22a0baaf9ff3b6f8e23294425bc20440622ff64c3490dd63d018b32debb35d"
+    }
+  },
+  "dependencies": {
+    "custom-types@0.20.1": {
+      "id": "custom-types",
+      "version": "0.20.1",
+      "shared_dir": "shared",
+      "compile_options": {
+        "cppFlags": [
+          "-Wno-invalid-offsetof"
+        ]
+      },
+      "repo": "https://github.com/QuestPackageManager/Il2CppQuestTypePatching.git",
+      "commit": "5c13408053c449adf20dc9737e744717e01d6d21",
+      "binary": {
+        "url": "https://github.com/QuestPackageManager/Il2CppQuestTypePatching/releases/download/v0.20.1/libcustom-types.so",
+        "name": "libcustom-types.so",
+        "sha256": "8673a6c1a20cb512719640553b935804ec76295538fb7ef5cbaf25d53b8a0f28"
+      }
+    },
+    "bs-cordl@4500.0.0": {
+      "id": "bs-cordl",
+      "version": "4500.0.0",
+      "local_generated": true,
+      "compile_options": {
+        "includePaths": [
+          "include"
+        ],
+        "cppFeatures": [],
+        "cppFlags": [
+          "-fdeclspec",
+          "-DUNITY_6",
+          "-DHAS_CODEGEN",
+          "-Wno-invalid-offsetof"
+        ]
+      }
+    },
+    "paper2_scotland2@4.8.0": {
+      "id": "paper2_scotland2",
+      "version": "4.8.0",
+      "shared_dir": "shared",
+      "compile_options": {
+        "systemIncludes": [
+          "shared/utfcpp/source"
+        ]
+      },
+      "repo": "https://github.com/Fernthedev/paperlog.git",
+      "commit": "1188ed60ed5a9c15ce95f31bbc0d58ede6e00a0e",
+      "binary": {
+        "url": "https://github.com/Fernthedev/paperlog/releases/download/v4.8.0/libpaper2_scotland2.so",
+        "name": "libpaper2_scotland2.so",
+        "sha256": "11d1b51c041b3c81f46dc23e629c00fbf484877dec866fd89c2ad3a5c0c9d914"
+      }
+    },
+    "tinyxml2@10.0.0": {
+      "id": "tinyxml2",
+      "version": "10.0.0",
+      "shared_dir": "shared",
+      "compile_options": {},
+      "repo": "https://github.com/MillzyDev/NDK-tinyxml2.git",
+      "commit": "3a9698dedab1e1e77e2a4b91ff55483ca6498399",
+      "binary": {
+        "url": "https://github.com/MillzyDev/NDK-tinyxml2/releases/download/v10.0.0/libtinyxml2.so",
+        "name": "libtinyxml2.so",
+        "sha256": "839e298cb4d61b75f7b1233dd087295b4cf67c1891bc6a99a7fbd0aed4636a8a"
+      }
+    },
+    "gif-lib@5.2.2": {
+      "id": "gif-lib",
+      "version": "5.2.2",
+      "shared_dir": "shared",
+      "compile_options": {},
+      "repo": "https://github.com/RedBrumbler/gif-lib-QPM.git",
+      "commit": "019805d88c61f150f74655a98a9f50f240d54b35"
+    },
+    "fmt@11.0.2": {
+      "id": "fmt",
+      "version": "11.0.2",
+      "shared_dir": "fmt/include",
+      "compile_options": {
+        "systemIncludes": [
+          "fmt/include/"
+        ],
+        "cppFlags": [
+          "-DFMT_HEADER_ONLY"
+        ]
+      },
+      "repo": "https://github.com/Fernthedev/fmt-qpm.git",
+      "commit": "eb4e30be15dc7f1e91145092ef1987b3510bc453"
+    },
+    "beatsaber-hook@8.2.1": {
+      "id": "beatsaber-hook",
+      "version": "8.2.1",
+      "shared_dir": "shared",
+      "compile_options": {
+        "cppFlags": [
+          "-Wno-extra-qualification"
+        ]
+      },
+      "repo": "https://github.com/QuestPackageManager/beatsaber-hook.git",
+      "commit": "59ea0626b5ed980bf299330575aea5236aa0f0c3"
+    },
+    "libil2cpp@0.5.0": {
+      "id": "libil2cpp",
+      "version": "0.5.0",
+      "shared_dir": "il2cpp",
+      "compile_options": {
+        "systemIncludes": [
+          "il2cpp/external/baselib/Include",
+          "il2cpp/external/baselib/Platforms/Android/Include"
+        ]
+      },
+      "archive": {
+        "url": "https://cdn.frozenalex.com/libil2cpp_0.5.0.zip",
+        "sha256": "331dd3964cb44762477f34a0e2234286095e1632cf3665d5fe19bb8967444f5a"
+      },
+      "archive_tree_sha256": "e67d8a619d3acd6a3cfa465333dc695d6e88f50dd7908eab67147f2ac92ee2a1"
+    },
+    "scotland2@0.1.7": {
+      "id": "scotland2",
+      "version": "0.1.7",
+      "shared_dir": "shared",
+      "compile_options": {},
+      "repo": "https://github.com/sc2ad/scotland2.git",
+      "commit": "2680804c7fb80c6d0c3ce3a819d7701cd940122a",
+      "binary": {
+        "url": "https://github.com/sc2ad/scotland2/releases/download/v0.1.7/libsl2.so",
+        "name": "libsl2.so",
+        "sha256": "3c34627ede42c9281a0d28147bc222424c5dc451263a14c7a9ab6a88331890fe"
+      }
+    },
+    "flamingo@1.2.1": {
+      "id": "flamingo",
+      "version": "1.2.1",
+      "shared_dir": "shared",
+      "compile_options": {},
+      "repo": "https://github.com/QuestPackageManager/Flamingo.git",
+      "commit": "62e275572b2fb4937e18ffec6365057d4543f2b8",
+      "binary": {
+        "url": "https://github.com/QuestPackageManager/Flamingo/releases/download/v1.2.1/libflamingo.so",
+        "name": "libflamingo.so",
+        "sha256": "654cfe34d5a3f2bbe550eb9dfb4aa8d48a8b770583fe60069ce45d990bddedbe"
+      }
+    },
+    "beatsaber-hook@8.1.0": {
+      "id": "beatsaber-hook",
+      "version": "8.1.0",
+      "shared_dir": "shared",
+      "compile_options": {
+        "cppFlags": [
+          "-Wno-extra-qualification"
+        ]
+      },
+      "repo": "https://github.com/QuestPackageManager/beatsaber-hook.git",
+      "commit": "e15e6272ec3f6327023169792d4b6d6ef425f691"
+    },
+    "mod-scripts@1.0.2": {
+      "id": "mod-scripts",
+      "version": "1.0.2",
+      "shared_dir": "shared",
+      "compile_options": {},
+      "repo": "https://github.com/Metalit/quest-mod-scripts.git",
+      "commit": "ca636b6ef2afbde08f13d4956b379607f63767e7"
+    },
+    "song-details@1.0.5": {
+      "id": "song-details",
+      "version": "1.0.5",
+      "shared_dir": "shared",
+      "compile_options": {},
+      "repo": "https://github.com/bsq-ports/SongDetails.git",
+      "commit": "9d5ba7840a713bf08f428384abcd0d9ec66d44a4",
+      "binary": {
+        "url": "https://github.com/bsq-ports/SongDetails/releases/download/v1.0.5/libsongdetails.so",
+        "name": "libsongdetails.so",
+        "sha256": "74f41f4a2b053320e719a37cdf48c71f164528ea6671a15e3a374080ddda6457"
+      }
+    },
+    "metacore@2.0.3": {
+      "id": "metacore",
+      "version": "2.0.3",
+      "shared_dir": "shared",
+      "compile_options": {},
+      "repo": "https://github.com/Metalit/MetaCore.git",
+      "commit": "a75b1ce9f2a4cec25f32e9807939d50895063fee"
+    },
+    "reflectcpp@0.25.0": {
+      "id": "reflectcpp",
+      "version": "0.25.0",
+      "shared_dir": "include",
+      "compile_options": {},
+      "repo": "https://github.com/kodenamekrak/reflectcpp-qpm.git",
+      "commit": "8b26bf7758cb42078ac24b685e8b2865ba660e31",
+      "binary": {
+        "url": "https://github.com/kodenamekrak/reflectcpp-qpm/releases/download/v0.25.0/libreflectcpp.so",
+        "name": "libreflectcpp.so",
+        "sha256": "00b2d46f97fe63b22108ac479a4c2c42ed02004e146950b8d3dd405e74a1af0e"
+      }
+    },
+    "web-utils@0.6.9": {
+      "id": "web-utils",
+      "version": "0.6.9",
+      "shared_dir": "shared",
+      "compile_options": {},
+      "repo": "https://github.com/bsq-ports/WebUtils.git",
+      "commit": "c3fac5c2063e606b77b823d75f7d2960ea522699",
+      "binary": {
+        "url": "https://github.com/bsq-ports/WebUtils/releases/download/v0.6.9/libweb-utils.so",
+        "name": "libweb-utils.so",
+        "sha256": "51097d6a7b460ffd0564a7b77691008a9d56384bf7cfd883472a684f9a5ba5bd"
+      }
+    },
+    "bs-cordl@4500.1.0": {
+      "id": "bs-cordl",
+      "version": "4500.1.0",
+      "local_generated": true,
+      "compile_options": {
+        "includePaths": [
+          "include"
+        ],
+        "cppFeatures": [],
+        "cppFlags": [
+          "-fdeclspec",
+          "-DUNITY_6",
+          "-DHAS_CODEGEN",
+          "-Wno-invalid-offsetof"
+        ]
+      }
+    },
+    "sombrero@0.1.43": {
+      "id": "sombrero",
+      "version": "0.1.43",
+      "shared_dir": "shared",
+      "compile_options": {},
+      "repo": "https://github.com/Fernthedev/sombrero-quest.git",
+      "commit": "eb50bd773f4928dbe06752b1d9f8d96968eb2f15"
+    },
+    "cpp-semver@0.1.2": {
+      "id": "cpp-semver",
+      "version": "0.1.2",
+      "shared_dir": "shared",
+      "compile_options": {},
+      "repo": "https://github.com/RedBrumbler/cpp-semver.git",
+      "commit": "4d1832ff77ea1deb97f2e26787cd7c0ad79c6310"
+    },
+    "songcore@1.3.2": {
+      "id": "songcore",
+      "version": "1.3.2",
+      "shared_dir": "shared",
+      "compile_options": {},
+      "repo": "https://github.com/raineaeternal/Quest-SongCore.git",
+      "commit": "73c9bab2d752e19160916d1a2c68daaa9b8a68e8"
+    },
+    "conditional-dependencies@0.3.0": {
+      "id": "conditional-dependencies",
+      "version": "0.3.0",
+      "shared_dir": "shared",
+      "compile_options": {},
+      "repo": "https://github.com/RedBrumbler/ConditionalDependencies.git",
+      "commit": "323f84b9488265139284332259663c4fe5e32a00"
+    },
+    "config-utils@3.0.0": {
+      "id": "config-utils",
+      "version": "3.0.0",
+      "shared_dir": "shared",
+      "compile_options": {
+        "cppFlags": [
+          "-DREFLECT_CPP_C_ARRAYS_OR_INHERITANCE"
+        ]
+      },
+      "repo": "https://github.com/darknight1050/config-utils.git",
+      "commit": "bf804d00915cf5882a96392f55ebc6dcc9965f8a"
+    },
+    "bsml@0.5.8": {
+      "id": "bsml",
+      "version": "0.5.8",
+      "shared_dir": "shared",
+      "compile_options": {},
+      "repo": "https://github.com/bsq-ports/Quest-BSML.git",
+      "commit": "6902cedfa169d8d60a4f763e48d7302bcc811b9c"
+    },
+    "boost-regex@1.80.0": {
+      "id": "boost-regex",
+      "version": "1.80.0",
+      "shared_dir": "regex/include",
+      "compile_options": {
+        "systemIncludes": [
+          "regex/include/"
+        ]
+      },
+      "repo": "https://github.com/Fernthedev/boost-regex-qpm.git",
+      "commit": "f18b48919102273b85174077bbffb4d533fbe890"
+    },
+    "beatsaverplusplus@0.2.4": {
+      "id": "beatsaverplusplus",
+      "version": "0.2.4",
+      "shared_dir": "shared",
+      "compile_options": {},
+      "repo": "https://github.com/bsq-ports/BeatSaverPlusPlus.git",
+      "commit": "a406d13f5bf9a68161692ccb9ff6aae0bcda815c",
+      "binary": {
+        "url": "https://github.com/bsq-ports/BeatSaverPlusPlus/releases/download/v0.2.4/libbeatsaverplusplus.so",
+        "name": "libbeatsaverplusplus.so",
+        "sha256": "3fde470b614073f304781d37a491f92bfc22abc503d610fd35d6c5f67bc0a1c9"
+      }
+    },
+    "metacore-bs@1.0.0": {
+      "id": "metacore-bs",
+      "version": "1.0.0",
+      "shared_dir": "shared",
+      "compile_options": {},
+      "repo": "https://github.com/Metalit/MetaCoreBS.git",
+      "commit": "62ae476ac0c9b2ed63c29bf00c8f20c935cde676",
+      "binary": {
+        "url": "https://github.com/Metalit/MetaCoreBS/releases/download/v1.0.0/libmetacore-bs.so",
+        "name": "libmetacore-bs.so",
+        "sha256": "668e74c7edfb5c1345b21298829d96460edb9aa7312da281d4177b8aff332454"
+      }
+    },
+    "playlistcore@1.6.0": {
+      "id": "playlistcore",
+      "version": "1.6.0",
+      "shared_dir": "shared",
+      "compile_options": {},
+      "repo": "https://github.com/Metalit/PlaylistCore.git",
+      "commit": "cb382e2d67f959d6eeae3efb25871e12024f4bd6",
+      "binary": {
+        "url": "https://github.com/Metalit/PlaylistCore/releases/download/v1.6.0/libplaylistcore.so",
+        "name": "libplaylistcore.so",
+        "sha256": "ae58d6a5a91b3ad728531bdf598601467332316c8773f6bf2d3b0c2a938017e6"
+      }
+    },
+    "rapidjson-macros@3.0.0": {
+      "id": "rapidjson-macros",
+      "version": "3.0.0",
+      "shared_dir": "shared",
+      "compile_options": {},
+      "repo": "https://github.com/Metalit/RapidjsonMacros.git",
+      "commit": "f3a4f961ade276fcf29ed1d218619ddd0acfc4f8"
+    },
+    "libcurl@7.78.0": {
+      "id": "libcurl",
+      "version": "7.78.0",
+      "shared_dir": "shared",
+      "compile_options": {},
+      "repo": "https://github.com/darknight1050/openssl-curl-android.git",
+      "commit": "a079bdcdf8b4ecd4a44baa32fbd7efa96a5e6641",
+      "binary": {
+        "url": "https://github.com/darknight1050/openssl-curl-android/releases/download/v7.78.0/libcurl.a",
+        "name": "libcurl.a",
+        "sha256": "4c19c42982f5c512337ddb9f2e035fee256b9de3e5f0269877a0e1ef1ae24102"
+      }
+    },
+    "playlistcore@1.7.0": {
+      "id": "playlistcore",
+      "version": "1.7.0",
+      "shared_dir": "shared",
+      "compile_options": {},
+      "repo": "https://github.com/Metalit/PlaylistCore.git",
+      "commit": "fddb3efae2356acd910a6ab72ae411dd97a47fa3",
+      "binary": {
+        "url": "https://github.com/Metalit/PlaylistCore/releases/download/v1.7.0/libplaylistcore.so",
+        "name": "libplaylistcore.so",
+        "sha256": "9af367e36ad624f53d1f1f7e8d4cde579f2847c7ddf8d2935e0a072e776113ab"
+      }
+    }
+  },
+  "pending": {
+    "CongXinJian": "Candidate still under runtime review; final patch intentionally not captured."
+  },
+  "generator": {
+    "repo": "https://github.com/QuestPackageManager/cordl",
+    "commit": "458e5d94a79ccb9c534eeb6729e0e8128b0984fc",
+    "patch": {
+      "path": "patches/cordl-metadata39.patch",
+      "sha256": "8593a3868cf7b6e49706169b135a48ac5a1559c271267cd7ad9bb46ba1001c6f"
+    },
+    "brocolib_repo": "https://github.com/Fernthedev/brocolib",
+    "brocolib_commit": "618b38b1fd6d697474c93079c74198eae9475c74",
+    "source_file_hashes": {
+      "Cargo.toml": "42a0cc6d85da4cd11a71085d2d1c1399819115f98dde77c649af892bae050613",
+      "Cargo.lock": "6067cdfe8c38e187e30271e49d2e29d1d020f9362fc0037930941286432c4cb6",
+      "src/generate/offsets/offsets_31.rs": "4c81270179eb2a272c871ce90743f5afa71bde3ce2b7b8b9aac0e6555694ab4a",
+      "src/generate/cpp/cpp_context_collection.rs": "4265aef96816efa84b4aa3b52248275901cde7290e75cac8691a19250f758986"
+    },
+    "additional_patches": [
+      {
+        "path": "patches/cordl-deterministic-output.patch",
+        "sha256": "4039372e39c6cf6e48d1cb8805a50441dca3fd72dbc54a522e568accbcd5065e"
+      }
+    ]
+  },
+  "game_files": {
+    "assets/bin/Data/Managed/Metadata/global-metadata.dat": {
+      "size": 21174436,
+      "sha256": "627e697b7128cdc1a5c3b0845509a7b7e467aeee3e4e5c9c7a44c330aed0c428"
+    },
+    "lib/arm64-v8a/libil2cpp.so": {
+      "size": 130194448,
+      "sha256": "40ea9b5d5ded459437dd3396ae006eeef0118a555d742cc35d0ce835d4aa8cea"
+    },
+    "lib/arm64-v8a/libunity.so": {
+      "size": 24494160,
+      "sha256": "8bb74a4968303d36897d9a25b638da37a5bb11b206377ad116afdb0020cb398e"
+    }
+  },
+  "required_local_dependencies": {
+    "songcore": {
+      "binary": "libsongcore.so",
+      "sha256": "33c424a6312f92d2cd13462ec84c95500ffa3f5a95886353995ab432246e3775",
+      "version": "1.3.2+local.1451"
+    },
+    "beatsaber-hook": {
+      "binary": "libbeatsaber-hook.so",
+      "sha256": "1c2917bc271616b752eebc4b050d676340c133f05d3e8772365ab938eab0644e",
+      "version": "8.2.1+local.1451.2"
+    }
+  },
+  "headers_sentinels": {
+    "GlobalNamespace/zzzz__VRController_def.hpp": "114f396ddf0673e2922604ab6121ab43f35d36c4996597957ccb598b53d256cf",
+    "GlobalNamespace/zzzz__BeatmapData_def.hpp": "69700e07c3e76559ecb1db34ef75bf47a2949fb1e867c69963696a521bfd4032",
+    "GlobalNamespace/zzzz__BeatmapKey_def.hpp": "720305ef39e27703a044822c22dd244de42bdf3fa38274ac1d4b05ba9253aa13",
+    "UnityEngine/zzzz__Vector3_def.hpp": "29d4020129b683098b0bc593b1e98e7b98db88eefd500359cd854bc924e8d1c0"
+  },
+  "tools": {
+    "ndk": {
+      "url": "https://dl.google.com/android/repository/android-ndk-r27c-linux.zip",
+      "sha256": "59c2f6dc96743b5daf5d1626684640b20a6bd2b1d85b13156b90333741bad5cc"
+    },
+    "llvm": {
+      "url": "https://github.com/llvm/llvm-project/releases/download/llvmorg-22.1.8/LLVM-22.1.8-Linux-X64.tar.xz",
+      "sha256": "df0e1ecf16caf3489a272a5eea4eec9b0d82878f6477fa309504f918a0006384"
+    }
+  },
+  "recipe_files": {
+    "build.py": "5434585f6dd4eb996be8a5b8f0b969dbe666b746059f9f3db33dd40256dd9791",
+    "clang_ndk.py": "20c507ef23fd488cb5fc47f362b822629a3bc8add2bda5b5234f4f810a2a2d22",
+    "bootstrap.py": "65865303392291a351a4e28d6350e98b1b60c281850a29ca5edaaf830f57b104",
+    "integrity.py": "db11540db48300d2a9e0861e2b1a5edbde2a79f0412e3d0f2c015f79f710c3da"
+  },
+  "headers_tree_sha256": [
+    "d96e6d3c9039acf152342edfbe48d18ca1fb96af45a16307eda9757abaf7a2a1"
+  ],
+  "clang_version": "22.1.8"
+}

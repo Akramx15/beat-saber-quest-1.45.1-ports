@@ -1,0 +1,213 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 3bfb9b6..fb1a7c7 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -48,0 +49 @@ endif()
++
+@@ -64,0 +66,3 @@ add_compile_definitions(MOD_ID="${MOD_ID}")
++if(NOT DEFINED MAKE_DOCS)
++    set(MAKE_DOCS 0)
++endif()
+@@ -106,0 +111,48 @@ add_custom_command(
++
++option(BSML_PORT_PRECOMPILED_HEADERS "Cache common headers for the local Quest port" ON)
++if(BSML_PORT_PRECOMPILED_HEADERS)
++    target_precompile_headers(${COMPILE_ID} PRIVATE
++        "$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/include/port-precompiled.hpp>")
++endif()
++
++option(BSML_PORT_UNITY_BUILD "Batch source parsing for the local Quest port" ON)
++if(BSML_PORT_UNITY_BUILD)
++    set_target_properties(${COMPILE_ID} PROPERTIES UNITY_BUILD ON UNITY_BUILD_BATCH_SIZE 4)
++    file(GLOB bsml_port_creation_files "${SOURCE_DIR}/BSML-Lite/Creation/*.cpp")
++    set_source_files_properties(${bsml_port_creation_files} PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
++endif()
++
++option(BSML_PORT_LIMIT_LINK_JOBS "Bound linker memory use for the local Quest port" ON)
++if(BSML_PORT_LIMIT_LINK_JOBS)
++    target_link_options(${COMPILE_ID} PRIVATE -Wl,--thinlto-jobs=2 -Wl,--threads=2)
++endif()
++
++# Never let an upstream debug sibling mask the exact local runtime dependency.
++get_target_property(port_link_libraries ${COMPILE_ID} LINK_LIBRARIES)
++set(port_runtime_libraries)
++foreach(port_library IN LISTS port_link_libraries)
++    get_filename_component(port_filename "${port_library}" NAME)
++    if(port_filename MATCHES "\\.debug\\.so$" OR port_filename STREQUAL "libgif-lib.a")
++        continue()
++    elseif(port_filename STREQUAL "libbeatsaber-hook.so")
++        set(port_library "${CMAKE_CURRENT_SOURCE_DIR}/../../core-qmods/native/beatsaber-hook-1451/libbeatsaber-hook.so")
++    endif()
++    list(APPEND port_runtime_libraries "${port_library}")
++endforeach()
++list(REMOVE_DUPLICATES port_runtime_libraries)
++set_property(TARGET ${COMPILE_ID} PROPERTY LINK_LIBRARIES "${port_runtime_libraries}")
++target_link_options(${COMPILE_ID} PRIVATE -Wl,--no-undefined -Wl,--fatal-warnings)
++
++# QPM's release gif archive was stripped of its symbol table and cannot resolve
++# DGif* calls. Compile the cached unmodified source as a private static library.
++get_filename_component(BSML_GIF_SHARED "${EXTERN_DIR}/includes/gif-lib/shared" REALPATH)
++get_filename_component(BSML_GIF_ROOT "${BSML_GIF_SHARED}" DIRECTORY)
++add_library(bsml_gif_local STATIC
++    "${BSML_GIF_ROOT}/src/dgif_lib.c" "${BSML_GIF_ROOT}/src/egif_lib.c"
++    "${BSML_GIF_ROOT}/src/gif_err.c" "${BSML_GIF_ROOT}/src/gif_font.c"
++    "${BSML_GIF_ROOT}/src/gif_hash.c" "${BSML_GIF_ROOT}/src/gifalloc.c"
++    "${BSML_GIF_ROOT}/src/openbsd-reallocarray.c")
++set_target_properties(bsml_gif_local PROPERTIES POSITION_INDEPENDENT_CODE ON INTERPROCEDURAL_OPTIMIZATION FALSE UNITY_BUILD OFF)
++target_include_directories(bsml_gif_local PRIVATE "${BSML_GIF_ROOT}/include" "${BSML_GIF_SHARED}")
++target_compile_options(bsml_gif_local PRIVATE -std=c99 -fvisibility=hidden)
++target_link_libraries(${COMPILE_ID} PRIVATE bsml_gif_local)
+diff --git a/src/BSML-Lite/Creation/Image.cpp b/src/BSML-Lite/Creation/Image.cpp
+index 4cf8ef5..bac8382 100644
+--- a/src/BSML-Lite/Creation/Image.cpp
++++ b/src/BSML-Lite/Creation/Image.cpp
+@@ -83 +83 @@ namespace BSML::Lite {
+-        if (UnityEngine::ImageConversion::LoadImage(texture, bytes, false)) {
++        if (UnityEngine::ImageConversion::LoadImage(texture, bytes)) {
+diff --git a/src/BSML.cpp b/src/BSML.cpp
+index f38cb32..ade69b5 100644
+--- a/src/BSML.cpp
++++ b/src/BSML.cpp
+@@ -8,2 +8 @@
+-extern "C" void load();
+-extern "C" void late_load();
++#include "Initialization.hpp"
+@@ -13 +12 @@ namespace BSML {
+-        load();
++        Internal::Initialize();
+@@ -17,2 +16,2 @@ namespace BSML {
+-        load();
+-        late_load();
++        Internal::Initialize();
++        Internal::LateInitialize();
+diff --git a/src/BSML/Settings/UI/ModSettingsFlowCoordinator.cpp b/src/BSML/Settings/UI/ModSettingsFlowCoordinator.cpp
+index 15431af..fd3d29f 100644
+--- a/src/BSML/Settings/UI/ModSettingsFlowCoordinator.cpp
++++ b/src/BSML/Settings/UI/ModSettingsFlowCoordinator.cpp
+@@ -11,0 +12 @@
++#include "GlobalNamespace/MainFlowCoordinator.hpp"
+@@ -102,2 +103,9 @@ namespace BSML {
+-        // make ur mods not crash on soft restart lul
+-        UnityEngine::Resources::FindObjectsOfTypeAll<GlobalNamespace::MenuTransitionsHelper*>().front()->RestartGame(nullptr);
++        // MenuTransitionsHelper is a DI service (System.Object) in 1.45.1.
++        // Discover its live Unity-owned coordinator, then use the injected service.
++        auto main = UnityEngine::Resources::FindObjectsOfTypeAll<GlobalNamespace::MainFlowCoordinator*>()
++            .front_or_default([](auto candidate) { return candidate && candidate->_menuTransitionsHelper; });
++        if (!main) {
++            ERROR("Cannot apply mod settings: main menu transition service is unavailable");
++            return;
++        }
++        main->_menuTransitionsHelper->RestartGame(nullptr);
+diff --git a/src/BSML/TypeHandlers/ProgressBarHandler.cpp b/src/BSML/TypeHandlers/ProgressBarHandler.cpp
+index fa62a4b..b5a222d 100644
+--- a/src/BSML/TypeHandlers/ProgressBarHandler.cpp
++++ b/src/BSML/TypeHandlers/ProgressBarHandler.cpp
+@@ -4 +4 @@ namespace BSML {
+-    static ProgressBarHandler rawImageHandler{};
++    static ProgressBarHandler progressBarHandler{};
+diff --git a/src/BSMLDataCache.cpp b/src/BSMLDataCache.cpp
+index 88015c8..6e4df17 100644
+--- a/src/BSMLDataCache.cpp
++++ b/src/BSMLDataCache.cpp
+@@ -6 +6,6 @@ namespace BSML::DataCache {
+-    std::map<std::string, const Entry*> dataCache;
++    static auto& GetDataCache() {
++        // Asset entries can register from another translation unit's static
++        // constructor, before this translation unit has been initialized.
++        static std::map<std::string, const Entry*> dataCache;
++        return dataCache;
++    }
+@@ -8,0 +14 @@ namespace BSML::DataCache {
++        auto& dataCache = GetDataCache();
+@@ -19,0 +26 @@ namespace BSML::DataCache {
++        auto& dataCache = GetDataCache();
+@@ -27 +34 @@ namespace BSML::DataCache {
+-}
+\ No newline at end of file
++}
+diff --git a/src/Helpers/utilities.cpp b/src/Helpers/utilities.cpp
+index ea05895..d1c0726 100644
+--- a/src/Helpers/utilities.cpp
++++ b/src/Helpers/utilities.cpp
+@@ -63,0 +64,3 @@ namespace BSML::Utilities {
++        spriteCache->Remove(name);
++        sprite = nullptr;
++
+@@ -66 +69 @@ namespace BSML::Utilities {
+-            if (x->name.size() == 0)
++            if (!x || !x->m_CachedPtr.m_value || x->get_name().size() == 0 || x->get_name() != name)
+@@ -68,3 +70,0 @@ namespace BSML::Utilities {
+-            UnityEngine::Sprite* a = nullptr;
+-            if(!spriteCache->TryGetValue(x->get_name(), by_ref(a)) || !a)
+-                spriteCache->Add(x->get_name(), x);
+@@ -72,2 +72,4 @@ namespace BSML::Utilities {
+-            if (x->get_name() == name)
+-                sprite = x;
++            // This dictionary is rooted for the process lifetime. Caching the
++            // entire resource snapshot also retained unrelated song artwork.
++            if (!spriteCache->ContainsKey(name)) spriteCache->Add(name, x);
++            sprite = x;
+@@ -88,0 +91,3 @@ namespace BSML::Utilities {
++        textureCache->Remove(name);
++        texture = nullptr;
++
+@@ -91 +96 @@ namespace BSML::Utilities {
+-            if (x->name.size() == 0)
++            if (!x || !x->m_CachedPtr.m_value || x->get_name().size() == 0 || x->get_name() != name)
+@@ -93,3 +97,0 @@ namespace BSML::Utilities {
+-            UnityEngine::Texture* a = nullptr;
+-            if(!textureCache->TryGetValue(x->get_name(), by_ref(a)) || !a)
+-                textureCache->Add(x->get_name(), x);
+@@ -97,2 +99,2 @@ namespace BSML::Utilities {
+-            if (x->get_name() == name)
+-                texture = x;
++            if (!textureCache->ContainsKey(name)) textureCache->Add(name, x);
++            texture = x;
+@@ -438 +440,2 @@ namespace BSML::Utilities {
+-            if (ImageConversion::LoadImage(texture, data, false))
++            // Unity 6000.3 keeps the byte-array wrapper, which forwards markNonReadable=false.
++            if (ImageConversion::LoadImage(texture, data))
+diff --git a/src/main.cpp b/src/main.cpp
+index b111ef6..0650848 100644
+--- a/src/main.cpp
++++ b/src/main.cpp
+@@ -0,0 +1 @@
++#include "Initialization.hpp"
+@@ -32 +33 @@ static bool isLateLoaded = false;
+-BSML_EXPORT_FUNC void load() {
++void BSML::Internal::Initialize() {
+@@ -48 +49,2 @@ static constexpr inline UnityEngine::HideFlags operator |(UnityEngine::HideFlags
+-BSML_EXPORT_FUNC void late_load() {
++void BSML::Internal::LateInitialize() {
++    Initialize();
+@@ -62,0 +65,4 @@ BSML_EXPORT_FUNC void late_load() {
++// Public loader symbols retain the established ABI; no internal call uses them.
++BSML_EXPORT_FUNC void load() { BSML::Internal::Initialize(); }
++BSML_EXPORT_FUNC void late_load() { BSML::Internal::LateInitialize(); }
++
+diff --git a/include/Initialization.hpp b/include/Initialization.hpp
+new file mode 100644
+--- /dev/null
++++ b/include/Initialization.hpp
+@@ -0,0 +1,7 @@
++#pragma once
++namespace BSML::Internal {
++// Loader entrypoints are globally exported and may be interposed by another mod.
++// In-library callers must bind directly to these private helpers.
++__attribute__((visibility("hidden"))) void Initialize();
++__attribute__((visibility("hidden"))) void LateInitialize();
++}
+diff --git a/include/port-precompiled.hpp b/include/port-precompiled.hpp
+new file mode 100644
+--- /dev/null
++++ b/include/port-precompiled.hpp
+@@ -0,0 +1,9 @@
++#pragma once
++// Shared parsing work for the local exact-version build; all generated
++// definitions and layout assertions remain active when this PCH is created.
++#include "logging.hpp"
++#include "UnityEngine/RectTransform.hpp"
++#include "UnityEngine/GameObject.hpp"
++#include "UnityEngine/Resources.hpp"
++#include "UnityEngine/Vector2.hpp"
++#include "UnityEngine/UI/LayoutElement.hpp"

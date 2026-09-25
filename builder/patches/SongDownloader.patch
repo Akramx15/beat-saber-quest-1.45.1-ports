@@ -1,0 +1,211 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index af2dabe..f19a01b 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -102,0 +103,15 @@ endforeach()
++
++# Optional exact-game bindings for the local 1.45.1 port.
++if(BEAT_SABER_CODEGEN_INCLUDE)
++    target_include_directories(${COMPILE_ID} BEFORE PRIVATE "${BEAT_SABER_CODEGEN_INCLUDE}")
++    target_link_options(${COMPILE_ID} PRIVATE -Wl,--thinlto-jobs=2 -Wl,--threads=2)
++endif()
++
++# Exact-target candidates must resolve against the local game ports. QPM's
++# debug DSOs share SONAMEs with their release siblings and must not shadow them.
++if(BEAT_SABER_CODEGEN_INCLUDE)
++    get_target_property(local_link_libraries ${COMPILE_ID} LINK_LIBRARIES)
++    list(FILTER local_link_libraries EXCLUDE REGEX "\\.debug\\.so$")
++    set_property(TARGET ${COMPILE_ID} PROPERTY LINK_LIBRARIES ${local_link_libraries})
++    target_link_options(${COMPILE_ID} PRIVATE -Wl,--no-undefined)
++endif()
+diff --git a/include/CustomTypes/DownloadSongsSearchViewController.hpp b/include/CustomTypes/DownloadSongsSearchViewController.hpp
+index d42ac33..0b19165 100644
+--- a/include/CustomTypes/DownloadSongsSearchViewController.hpp
++++ b/include/CustomTypes/DownloadSongsSearchViewController.hpp
+@@ -37 +37 @@ namespace SongDownloader {
+-        UnityEngine::GameObject* gameObject;
++        UnityEngine::GameObject* gameObject = nullptr;
+@@ -40 +40 @@ namespace SongDownloader {
+-        HMUI::ImageView* coverImageView;
++        HMUI::ImageView* coverImageView = nullptr;
+@@ -41,0 +42,4 @@ namespace SongDownloader {
++        UnityW<UnityEngine::Sprite> ownedCover;
++        uint64_t coverRequest = 0;
++
++        void ApplyCoverImage(std::vector<uint8_t> const& bytes);
+@@ -79,0 +84,2 @@ namespace SongDownloader {
++        void ClearCover();
++
+@@ -110,0 +117,2 @@ public:
++    DECLARE_OVERRIDE_METHOD_MATCH(void, OnDestroy, &HMUI::ViewController::OnDestroy);
++
+diff --git a/include/ModConfig.hpp b/include/ModConfig.hpp
+index 1636766..5c2795c 100644
+--- a/include/ModConfig.hpp
++++ b/include/ModConfig.hpp
+@@ -8 +8 @@ DECLARE_CONFIG(ModConfig) {
+-    CONFIG_VALUE(ListType_ScoreSaber, std::string, "ListType_ScoreSaber", "Top Trending", "What Type of Information to display!");
++    CONFIG_VALUE(ListType_ScoreSaber, std::string, "ListType_ScoreSaber", "Trending", "What Type of Information to display!");
+diff --git a/src/CustomTypes/SearchEntry.cpp b/src/CustomTypes/SearchEntry.cpp
+index e4cb8d6..06b5a02 100644
+--- a/src/CustomTypes/SearchEntry.cpp
++++ b/src/CustomTypes/SearchEntry.cpp
+@@ -5,0 +6 @@
++#include "UnityEngine/Texture2D.hpp"
+@@ -15,0 +17,32 @@ SearchEntry::SearchEntry(GameObject* _gameObject, TextMeshProUGUI* _line1Compone
++void SearchEntry::ClearCover() {
++    ++coverRequest;
++    // The initial artwork belongs to the cloned game UI; release only images
++    // this row created from a download.
++    if (!ownedCover) return;
++    if (UnityW<HMUI::ImageView>(coverImageView)) coverImageView->set_sprite(nullptr);
++    auto texture = ownedCover->get_texture();
++    Object::Destroy(ownedCover.ptr());
++    if (texture) Object::Destroy(texture);
++    ownedCover = nullptr;
++}
++
++void SearchEntry::ApplyCoverImage(std::vector<uint8_t> const& bytes) {
++    if (bytes.empty()) return;
++    ArrayW<uint8_t> spriteArray(bytes);
++    auto sprite = ArrayToSprite(spriteArray);
++    if (!sprite) return;
++    ClearCover();
++    ownedCover = sprite;
++    coverImageView->set_sprite(sprite);
++    coverImageView->set_enabled(true);
++}
++
++void DownloadSongsSearchViewController::OnDestroy() {
++    for (auto& row : searchEntries) row.ClearCover();
++    // Resolve the base metadata directly: the generated virtual wrapper would
++    // dispatch back to this override.
++    cordl_internals::RunMethodRethrow<void>(
++        static_cast<HMUI::ViewController*>(this),
++        i2c::metadata_getter<&HMUI::ViewController::OnDestroy>::method_info());
++}
++
+@@ -71,0 +105 @@ void SearchEntry::SetBeatmap(const BeatSaver::Beatmap& _map) {
++    ClearCover();
+@@ -73,13 +107,6 @@ void SearchEntry::SetBeatmap(const BeatSaver::Beatmap& _map) {
+-    BeatSaver::API::GetCoverImageAsync(map, [this, currentSearchIndex](std::vector<uint8_t> bytes) {
+-        if (currentSearchIndex == DownloadSongsSearchViewController::searchIndex) {
+-            BSML::MainThreadScheduler::Schedule([this, currentSearchIndex, bytes] {
+-                if (currentSearchIndex == DownloadSongsSearchViewController::searchIndex) {
+-                    std::vector<uint8_t> data = bytes;
+-
+-                    ArrayW<uint8_t> spriteArray(data);
+-                    Sprite* sprite = ArrayToSprite(spriteArray);
+-                    coverImageView->set_sprite(sprite);
+-                    coverImageView->set_enabled(true);
+-                }
+-                });
+-        }
++    const auto request = coverRequest;
++    UnityW<GameObject> owner = gameObject;
++    BeatSaver::API::GetCoverImageAsync(map, [this, owner, request, currentSearchIndex](std::vector<uint8_t> bytes) {
++        BSML::MainThreadScheduler::Schedule([this, owner, request, currentSearchIndex, bytes = std::move(bytes)] {
++            if (owner && request == coverRequest && currentSearchIndex == DownloadSongsSearchViewController::searchIndex)
++                ApplyCoverImage(bytes);
+@@ -86,0 +114 @@ void SearchEntry::SetBeatmap(const BeatSaver::Beatmap& _map) {
++    });
+@@ -146,0 +175 @@ void SearchEntry::SetBeatmap(const ScoreSaber::Leaderboard& _song) {
++    ClearCover();
+@@ -148,13 +177,6 @@ void SearchEntry::SetBeatmap(const ScoreSaber::Leaderboard& _song) {
+-    ScoreSaber::API::GetCoverImageAsync(SSsong, [this, currentSearchIndex](std::vector<uint8_t> bytes) {
+-        if (currentSearchIndex == DownloadSongsSearchViewController::searchIndex) {
+-            BSML::MainThreadScheduler::Schedule([this, currentSearchIndex, bytes] {
+-                if (currentSearchIndex == DownloadSongsSearchViewController::searchIndex) {
+-                    std::vector<uint8_t> data = bytes;
+-
+-                    ArrayW<uint8_t> spriteArray(data);
+-                    Sprite* sprite = ArrayToSprite(spriteArray);
+-                    coverImageView->set_sprite(sprite);
+-                    coverImageView->set_enabled(true);
+-                }
+-                });
+-        }
++    const auto request = coverRequest;
++    UnityW<GameObject> owner = gameObject;
++    ScoreSaber::API::GetCoverImageAsync(SSsong, [this, owner, request, currentSearchIndex](std::vector<uint8_t> bytes) {
++        BSML::MainThreadScheduler::Schedule([this, owner, request, currentSearchIndex, bytes = std::move(bytes)] {
++            if (owner && request == coverRequest && currentSearchIndex == DownloadSongsSearchViewController::searchIndex)
++                ApplyCoverImage(bytes);
+@@ -161,0 +184 @@ void SearchEntry::SetBeatmap(const ScoreSaber::Leaderboard& _song) {
++    });
+@@ -220,0 +244 @@ void SearchEntry::Disable() {
++    ClearCover();
+diff --git a/src/Main.cpp b/src/Main.cpp
+index a5f3465..511b800 100644
+--- a/src/Main.cpp
++++ b/src/Main.cpp
+@@ -1,34 +1,35 @@
+-#include "beatsaber-hook/shared/api.hpp"
+-#include "_config.h"
+-
+-#include "custom-types/shared/register.hpp"
+-
+-#include "bsml/shared/BSML.hpp"
+-
+-#include "CustomLogger.hpp"
+-#include "ModConfig.hpp"
+-
+-#include "CustomTypes/DownloadSongsFlowCoordinator.hpp"
+-
+-modloader::ModInfo modInfo{MOD_ID, VERSION, VERSION_LONG};
+-
+-SONGDOWNLOADER_EXPORT_FUNC void setup(CModInfo* info) {
+-    info->id = "SongDownloader";
+-    info->version = VERSION;
+-    info->version_long = VERSION_LONG;
+-
+-    getModConfig().Init(modInfo);
+-    
+-    // BeastSaber no longer has an api for songs
+-    if(getModConfig().Service.GetValue() == "BeastSaber")
+-        getModConfig().Service.SetValue("BeatSaver");
+-}
+-
+-SONGDOWNLOADER_EXPORT_FUNC void late_load() {
+-    LOG_INFO("Starting SongDownloader installation...");
+-    i2c::functions::initialize();
+-    BSML::Init();
+-    custom_types::Register::AutoRegister();
+-    BSML::Register::RegisterMainMenu<SongDownloader::DownloadSongsFlowCoordinator*>("SongDownloader", "More Songs");
+-    LOG_INFO("Successfully installed SongDownloader!");
+-}
++#include "beatsaber-hook/shared/api.hpp"
++#include "_config.h"
++
++#include "custom-types/shared/register.hpp"
++
++#include "bsml/shared/BSML.hpp"
++
++#include "CustomLogger.hpp"
++#include "ModConfig.hpp"
++
++#include "CustomTypes/DownloadSongsFlowCoordinator.hpp"
++
++static constexpr auto localVersion = "0.8.7+local.1451.2";
++modloader::ModInfo modInfo{MOD_ID, localVersion, VERSION_LONG};
++
++SONGDOWNLOADER_EXPORT_FUNC void setup(CModInfo* info) {
++    info->id = "SongDownloader";
++    info->version = localVersion;
++    info->version_long = VERSION_LONG;
++
++    getModConfig().Init(modInfo);
++    
++    // BeastSaber no longer has an api for songs
++    if(getModConfig().Service.GetValue() == "BeastSaber")
++        getModConfig().Service.SetValue("BeatSaver");
++}
++
++SONGDOWNLOADER_EXPORT_FUNC void late_load() {
++    LOG_INFO("Starting SongDownloader installation...");
++    i2c::functions::initialize();
++    BSML::Init();
++    custom_types::Register::AutoRegister();
++    BSML::Register::RegisterMainMenu<SongDownloader::DownloadSongsFlowCoordinator*>("SongDownloader", "More Songs");
++    LOG_INFO("Successfully installed SongDownloader!");
++}

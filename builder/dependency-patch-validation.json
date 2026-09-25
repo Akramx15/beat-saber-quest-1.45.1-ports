@@ -1,0 +1,22 @@
+{
+  "CustomJSONData sombrero@0.1.43": {
+    "commit": "eb50bd773f4928dbe06752b1d9f8d96968eb2f15",
+    "patch_sha256": "fa9ae31443c858be31ea4df921139d5fb16bee6a9651dff18618fe0d91c26381",
+    "result": "pass"
+  },
+  "Tracks sombrero@0.1.43": {
+    "commit": "eb50bd773f4928dbe06752b1d9f8d96968eb2f15",
+    "patch_sha256": "fa9ae31443c858be31ea4df921139d5fb16bee6a9651dff18618fe0d91c26381",
+    "result": "pass"
+  },
+  "NoodleExtensions sombrero@0.1.43": {
+    "commit": "eb50bd773f4928dbe06752b1d9f8d96968eb2f15",
+    "patch_sha256": "ff20e5cd40265911b34ce73913fb833c4c538548db41b456ec3e274c6bd7b7bc",
+    "result": "pass"
+  },
+  "Chroma sombrero@0.1.43": {
+    "commit": "eb50bd773f4928dbe06752b1d9f8d96968eb2f15",
+    "patch_sha256": "ff20e5cd40265911b34ce73913fb833c4c538548db41b456ec3e274c6bd7b7bc",
+    "result": "pass"
+  }
+}

@@ -1,0 +1,1858 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 07e6a63..16ff484 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -19,0 +20,17 @@ project(${COMPILE_ID})
++# Android's compiler setup can shadow cache values with its LLVM18 tools.
++# Archive the LLVM22 bitcode with the matching host tools after project() runs.
++find_program(CHROMA_LLVM_AR NAMES llvm-ar-22 REQUIRED)
++find_program(CHROMA_LLVM_RANLIB NAMES llvm-ranlib-22 llvm-ranlib REQUIRED)
++set(CMAKE_AR "${CHROMA_LLVM_AR}")
++set(CMAKE_RANLIB "${CHROMA_LLVM_RANLIB}")
++set(CMAKE_C_COMPILER_AR "${CHROMA_LLVM_AR}")
++set(CMAKE_CXX_COMPILER_AR "${CHROMA_LLVM_AR}")
++set(CMAKE_C_COMPILER_RANLIB "${CHROMA_LLVM_RANLIB}")
++set(CMAKE_CXX_COMPILER_RANLIB "${CHROMA_LLVM_RANLIB}")
++# IPO archive rules capture absolute compiler-tool paths during project().
++foreach(language C CXX)
++    set(CMAKE_${language}_ARCHIVE_CREATE_IPO "\"${CHROMA_LLVM_AR}\" qc <TARGET> <LINK_FLAGS> <OBJECTS>")
++    set(CMAKE_${language}_ARCHIVE_APPEND_IPO "\"${CHROMA_LLVM_AR}\" q <TARGET> <LINK_FLAGS> <OBJECTS>")
++    set(CMAKE_${language}_ARCHIVE_FINISH_IPO "\"${CHROMA_LLVM_RANLIB}\" <TARGET>")
++endforeach()
++
+@@ -21,2 +38,2 @@ project(${COMPILE_ID})
+-set(CMAKE_CXX_STANDARD 20)
+-set(CMAKE_CXX_STANDARD_REQUIRED 20)
++set(CMAKE_CXX_STANDARD 23)
++set(CMAKE_CXX_STANDARD_REQUIRED ON)
+@@ -75,0 +93,19 @@ include(extern.cmake)
++# QPM globs debug/release libraries with identical SONAMEs. Select one actual runtime library.
++get_target_property(port_link_libraries ${COMPILE_ID} LINK_LIBRARIES)
++set(port_runtime_libraries)
++foreach(port_library IN LISTS port_link_libraries)
++    get_filename_component(port_filename "${port_library}" NAME)
++    if(port_filename MATCHES "\\.debug\\.so$")
++        continue()
++    elseif(port_filename STREQUAL "libbeatsaber-hook.so")
++        set(port_library "${CMAKE_CURRENT_SOURCE_DIR}/../../core-qmods/native/beatsaber-hook-1451/libbeatsaber-hook.so")
++    elseif(port_filename STREQUAL "libbsml.so")
++        set(port_library "${CMAKE_CURRENT_SOURCE_DIR}/../../core-qmods/native/bsml-1451/libbsml.so")
++    elseif(port_filename STREQUAL "libsongcore.so")
++        set(port_library "${CMAKE_CURRENT_SOURCE_DIR}/../../core-qmods/native/songcore-1451/libsongcore.so")
++    endif()
++    list(APPEND port_runtime_libraries "${port_library}")
++endforeach()
++list(REMOVE_DUPLICATES port_runtime_libraries)
++set_property(TARGET ${COMPILE_ID} PROPERTY LINK_LIBRARIES "${port_runtime_libraries}")
++
+@@ -96 +132,31 @@ add_custom_command(TARGET ${COMPILE_ID} POST_BUILD
+-include(assets_include.cmake)
+\ No newline at end of file
++include(assets_include.cmake)
++
++if(NOT DEFINED BEAT_SABER_CODEGEN_INCLUDE)
++        message(FATAL_ERROR "Use build-port.py with exact 1.45.1 generated headers")
++endif()
++target_include_directories(${COMPILE_ID} BEFORE PRIVATE "${BEAT_SABER_CODEGEN_INCLUDE}")
++foreach(local_dependency custom-json-data tracks)
++        target_link_libraries(${COMPILE_ID} PRIVATE
++                "${CMAKE_CURRENT_SOURCE_DIR}/../../core-qmods/native/${local_dependency}-1451/lib${local_dependency}.so")
++endforeach()
++target_link_libraries(${COMPILE_ID} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../../core-qmods/native/flamingo/libflamingo.so")
++target_link_options(${COMPILE_ID} PRIVATE -Wl,--no-undefined -Wl,--thinlto-jobs=2 -Wl,--threads=2)
++
++# config-utils 3 uses reflectcpp's compiled JSON backend; QPM exports its headers only.
++get_filename_component(REFLECTCPP_INCLUDE_DIR "${EXTERN_DIR}/includes/reflectcpp/include" REALPATH)
++get_filename_component(REFLECTCPP_SOURCE_ROOT "${REFLECTCPP_INCLUDE_DIR}" DIRECTORY)
++add_library(chroma_reflectcpp STATIC
++    "${REFLECTCPP_SOURCE_ROOT}/src/rfl/internal/strings/strings.cpp"
++    "${REFLECTCPP_SOURCE_ROOT}/src/rfl/json/Writer.cpp"
++    "${REFLECTCPP_SOURCE_ROOT}/src/yyjson.c")
++set_source_files_properties("${REFLECTCPP_SOURCE_ROOT}/src/yyjson.c" PROPERTIES LANGUAGE CXX)
++set_target_properties(chroma_reflectcpp PROPERTIES POSITION_INDEPENDENT_CODE ON)
++target_include_directories(chroma_reflectcpp PRIVATE "${REFLECTCPP_INCLUDE_DIR}" "${REFLECTCPP_INCLUDE_DIR}/rfl/thirdparty")
++target_compile_options(chroma_reflectcpp PRIVATE -fvisibility=hidden)
++target_link_libraries(${COMPILE_ID} PRIVATE chroma_reflectcpp)
++
++# Small unity batches avoid repeatedly parsing the exact generated API in 111 translation units.
++option(CHROMA_PORT_UNITY "Compile Chroma in small unity batches" ON)
++if(CHROMA_PORT_UNITY)
++    set_target_properties(${COMPILE_ID} PROPERTIES UNITY_BUILD ON UNITY_BUILD_BATCH_SIZE 3)
++endif()
+diff --git a/assets_include.cmake b/assets_include.cmake
+index 2ff1cef..512403c 100644
+--- a/assets_include.cmake
++++ b/assets_include.cmake
+@@ -15 +15 @@ set(ASSET_HEADER_DATA
+-#include \"beatsaber-hook/shared/utils/typedefs.h\"
++#include \"beatsaber-hook/shared/arrayw.hpp\"
+@@ -33 +33 @@ struct IncludedAsset {
+-        return { reinterpret_cast<char*>(array->_values), array->get_Length() };
++        return { reinterpret_cast<char*>(array->_values), array->max_length };
+@@ -37 +37 @@ struct IncludedAsset {
+-        return { array->_values, array->get_Length() };
++        return { array->_values, array->max_length };
+@@ -42 +42 @@ struct IncludedAsset {
+-            array->klass = classof(Array<uint8_t>*);
++            array->klass = i2c::class_of<ArrayW<uint8_t>>();
+diff --git a/include/Chroma.hpp b/include/Chroma.hpp
+index 1aa77eb..feb5754 100644
+--- a/include/Chroma.hpp
++++ b/include/Chroma.hpp
+@@ -8,2 +8,11 @@
+-
+-template <auto val> using FPtrWrapper = il2cpp_utils::il2cpp_type_check::FPtrWrapper<val>;
++#include <functional>
++#include <utility>
++
++// Use the exact generated binding so the current IL2CPP calling convention is retained.
++template <auto method> struct FPtrWrapper {
++  static constexpr auto get() {
++    return []<class... Args>(Args&&... args) -> decltype(auto) {
++      return std::invoke(method, std::forward<Args>(args)...);
++    };
++  }
++};
+diff --git a/include/ChromaController.hpp b/include/ChromaController.hpp
+index 3500057..f2268ea 100644
+--- a/include/ChromaController.hpp
++++ b/include/ChromaController.hpp
+@@ -15 +15 @@ class ChromaConfig;
+-#include "beatsaber-hook/shared/config/rapidjson-utils.hpp"
++#include "beatsaber-hook/shared/rapidjson.hpp"
+diff --git a/include/ChromaHooks.hpp b/include/ChromaHooks.hpp
+index 3025d8b..4fb3ce2 100644
+--- a/include/ChromaHooks.hpp
++++ b/include/ChromaHooks.hpp
+@@ -9 +9 @@
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+@@ -14 +14,4 @@ private:
+-  inline static std::vector<std::pair<std::string, void (*)()>> installFuncs;
++  static auto& InstallFunctions() {
++    static std::vector<std::pair<std::string, void (*)()>> functions;
++    return functions;
++  }
+@@ -18 +21 @@ public:
+-    installFuncs.emplace_back(std::move(name), installFunc);
++    InstallFunctions().emplace_back(std::move(name), installFunc);
+@@ -22 +25 @@ public:
+-    std::ranges::sort(installFuncs,
++    std::ranges::sort(InstallFunctions(),
+@@ -24 +27 @@ public:
+-    for (const auto& installFunc : installFuncs) {
++    for (const auto& installFunc : InstallFunctions()) {
+@@ -37 +40 @@ public:
+-  static __ChromaRegister##func __ChromaRegisterInstance##func;
+\ No newline at end of file
++  static __ChromaRegister##func __ChromaRegisterInstance##func;
+diff --git a/include/ChromaLogger.hpp b/include/ChromaLogger.hpp
+index 896ec3b..48d665c 100644
+--- a/include/ChromaLogger.hpp
++++ b/include/ChromaLogger.hpp
+@@ -3,0 +4 @@
++#include "custom-json-data/shared/CJDLogger.h"
+diff --git a/include/assets.hpp b/include/assets.hpp
+index f389cff..4d05c63 100644
+--- a/include/assets.hpp
++++ b/include/assets.hpp
+@@ -4 +4 @@
+-#include "beatsaber-hook/shared/utils/typedefs.h"
++#include "beatsaber-hook/shared/arrayw.hpp"
+@@ -22 +22 @@ struct IncludedAsset {
+-        return { reinterpret_cast<char*>(array->_values), array->get_Length() };
++        return { reinterpret_cast<char*>(array->_values), array->max_length };
+@@ -26 +26 @@ struct IncludedAsset {
+-        return { array->_values, array->get_Length() };
++        return { array->_values, array->max_length };
+@@ -31 +31 @@ struct IncludedAsset {
+-            array->klass = classof(Array<uint8_t>*);
++            array->klass = i2c::class_of<ArrayW<uint8_t>>();
+diff --git a/include/colorizer/BombColorizer.hpp b/include/colorizer/BombColorizer.hpp
+index 2c57e40..4fdbbdc 100644
+--- a/include/colorizer/BombColorizer.hpp
++++ b/include/colorizer/BombColorizer.hpp
+@@ -32 +32 @@ public:
+-  inline static UnorderedEventCallback<GlobalNamespace::NoteControllerBase*, Sombrero::FastColor const&> BombColorChanged;
++  inline static unordered_event_callback<GlobalNamespace::NoteControllerBase*, Sombrero::FastColor const&> BombColorChanged;
+diff --git a/include/colorizer/LightColorizer.hpp b/include/colorizer/LightColorizer.hpp
+index c7247c9..619e633 100644
+--- a/include/colorizer/LightColorizer.hpp
++++ b/include/colorizer/LightColorizer.hpp
+@@ -11,0 +12 @@
++#include "lighting/LegacyLightMapping.hpp"
+@@ -26 +27 @@ private:
+-  std::array<SafePtrUnity<GlobalNamespace::SimpleColorSO>, 4> _originalColors;
++  std::array<safe_ptr<GlobalNamespace::SimpleColorSO*>, 4> _originalColors;
+@@ -42 +43 @@ public:
+-  SafePtr<List<GlobalNamespace::ILightWithId*>> LightsSafePtr;
++  safe_ptr<GlobalNamespace::LightWithIdManager_LightMapData*> lightMap;
+@@ -56,2 +57,2 @@ public:
+-  [[nodiscard]] ListW<GlobalNamespace::ILightWithId*> getLights() const {
+-    return {LightsSafePtr.ptr()};
++  [[nodiscard]] ArrayW<GlobalNamespace::ILightWithId*> getLights() const {
++    return lightMap ? lightMap->lightInstances : ArrayW<GlobalNamespace::ILightWithId*>::New();
+diff --git a/include/colorizer/NoteColorizer.hpp b/include/colorizer/NoteColorizer.hpp
+index e62a1c8..1f9c4c7 100644
+--- a/include/colorizer/NoteColorizer.hpp
++++ b/include/colorizer/NoteColorizer.hpp
+@@ -49 +49 @@ public:
+-  inline static UnorderedEventCallback<GlobalNamespace::NoteControllerBase*, Sombrero::FastColor const&,
++  inline static unordered_event_callback<GlobalNamespace::NoteControllerBase*, Sombrero::FastColor const&,
+diff --git a/include/colorizer/ObstacleColorizer.hpp b/include/colorizer/ObstacleColorizer.hpp
+index d29fcfa..0755c8f 100644
+--- a/include/colorizer/ObstacleColorizer.hpp
++++ b/include/colorizer/ObstacleColorizer.hpp
+@@ -54 +54 @@ public:
+-  inline static UnorderedEventCallback<GlobalNamespace::ObstacleControllerBase*, Sombrero::FastColor const&> ObstacleColorChanged;
++  inline static unordered_event_callback<GlobalNamespace::ObstacleControllerBase*, Sombrero::FastColor const&> ObstacleColorChanged;
+diff --git a/include/colorizer/ParticleColorizer.hpp b/include/colorizer/ParticleColorizer.hpp
+index f6e29c2..3ce4303 100644
+--- a/include/colorizer/ParticleColorizer.hpp
++++ b/include/colorizer/ParticleColorizer.hpp
+@@ -29,4 +29,4 @@ private:
+-  SafePtrUnity<GlobalNamespace::MultipliedColorSO> _highlightColor0;
+-  SafePtrUnity<GlobalNamespace::MultipliedColorSO> _highlightColor1;
+-  SafePtrUnity<GlobalNamespace::MultipliedColorSO> _lightColor0;
+-  SafePtrUnity<GlobalNamespace::MultipliedColorSO> _lightColor1;
++  safe_ptr<GlobalNamespace::MultipliedColorSO*> _highlightColor0;
++  safe_ptr<GlobalNamespace::MultipliedColorSO*> _highlightColor1;
++  safe_ptr<GlobalNamespace::MultipliedColorSO*> _lightColor0;
++  safe_ptr<GlobalNamespace::MultipliedColorSO*> _lightColor1;
+diff --git a/include/colorizer/SaberColorizer.hpp b/include/colorizer/SaberColorizer.hpp
+index 6d8eb28..a232d5b 100644
+--- a/include/colorizer/SaberColorizer.hpp
++++ b/include/colorizer/SaberColorizer.hpp
+@@ -53 +53 @@ public:
+-  inline static UnorderedEventCallback<int, GlobalNamespace::SaberModelController*, Sombrero::FastColor const&>
++  inline static unordered_event_callback<int, GlobalNamespace::SaberModelController*, Sombrero::FastColor const&>
+diff --git a/include/colorizer/SliderColorizer.hpp b/include/colorizer/SliderColorizer.hpp
+index fceff94..dcc0184 100644
+--- a/include/colorizer/SliderColorizer.hpp
++++ b/include/colorizer/SliderColorizer.hpp
+@@ -38 +38 @@ public:
+-  inline static UnorderedEventCallback<GlobalNamespace::SliderController*, Sombrero::FastColor const&,
++  inline static unordered_event_callback<GlobalNamespace::SliderController*, Sombrero::FastColor const&,
+diff --git a/include/environment_enhancements/ComponentData.hpp b/include/environment_enhancements/ComponentData.hpp
+index a8f8a89..c51608b 100644
+--- a/include/environment_enhancements/ComponentData.hpp
++++ b/include/environment_enhancements/ComponentData.hpp
+@@ -3,0 +4 @@
++#include "beatsaber-hook/shared/safeptr.hpp"
+@@ -17 +18 @@ public:
+-  SafePtrUnity<GlobalNamespace::TrackLaneRingsManager> OldTrackLaneRingsManager;
++  safe_ptr<GlobalNamespace::TrackLaneRingsManager*> OldTrackLaneRingsManager;
+@@ -19 +20 @@ public:
+-  SafePtrUnity<GlobalNamespace::TrackLaneRingsManager> NewTrackLaneRingsManager;
++  safe_ptr<GlobalNamespace::TrackLaneRingsManager*> NewTrackLaneRingsManager;
+diff --git a/include/environment_enhancements/ComponentInitializer.hpp b/include/environment_enhancements/ComponentInitializer.hpp
+index 1245f44..71f6651 100644
+--- a/include/environment_enhancements/ComponentInitializer.hpp
++++ b/include/environment_enhancements/ComponentInitializer.hpp
+@@ -3 +3,3 @@
+-#include "beatsaber-hook/shared/config/rapidjson-utils.hpp"
++#include <deque>
++
++#include "beatsaber-hook/shared/rapidjson.hpp"
+@@ -25 +27 @@ public:
+-                                                    std::vector<GameObjectInfo>& gameObjectInfos,
++                                                    std::deque<GameObjectInfo>& gameObjectInfos,
+diff --git a/include/environment_enhancements/EnvironmentEnhancementManager.hpp b/include/environment_enhancements/EnvironmentEnhancementManager.hpp
+index 76505e3..7be3425 100644
+--- a/include/environment_enhancements/EnvironmentEnhancementManager.hpp
++++ b/include/environment_enhancements/EnvironmentEnhancementManager.hpp
+@@ -2,0 +3,2 @@
++#include <deque>
++
+@@ -36 +38 @@ private:
+-  inline static std::vector<GameObjectInfo> _globalGameObjectInfos;
++  inline static std::deque<GameObjectInfo> _globalGameObjectInfos;
+@@ -38 +40 @@ private:
+-  static std::vector<ByRef<GameObjectInfo const>> LookupId(std::string_view id, LookupMethod lookupMethod);
++  static std::vector<by_ref<GameObjectInfo const>> LookupId(std::string_view id, LookupMethod lookupMethod);
+diff --git a/include/environment_enhancements/EnvironmentMaterialManager.hpp b/include/environment_enhancements/EnvironmentMaterialManager.hpp
+index 1cf6319..39b34a0 100644
+--- a/include/environment_enhancements/EnvironmentMaterialManager.hpp
++++ b/include/environment_enhancements/EnvironmentMaterialManager.hpp
+@@ -16 +16 @@ struct EnvironmentMaterialManager {
+-  inline static std::unordered_map<ShaderType, SafePtrUnity<UnityEngine::Material>> EnvironmentMaterials;
++  inline static std::unordered_map<ShaderType, safe_ptr<UnityEngine::Material*>> EnvironmentMaterials;
+@@ -22 +22 @@ struct EnvironmentMaterialManager {
+-  static SafePtrUnity<UnityEngine::Shader> waterLit;
++  static safe_ptr<UnityEngine::Shader*> waterLit;
+diff --git a/include/environment_enhancements/GeometryFactory.hpp b/include/environment_enhancements/GeometryFactory.hpp
+index 9a02b1c..bd7eb69 100644
+--- a/include/environment_enhancements/GeometryFactory.hpp
++++ b/include/environment_enhancements/GeometryFactory.hpp
+@@ -7 +7 @@
+-#include "beatsaber-hook/shared/config/rapidjson-utils.hpp"
++#include "beatsaber-hook/shared/rapidjson.hpp"
+@@ -31 +31 @@ private:
+-  SafePtrUnity<GlobalNamespace::LightWithIdManager> lightWithIDManager;
++  safe_ptr<GlobalNamespace::LightWithIdManager*> lightWithIDManager;
+diff --git a/include/environment_enhancements/MaterialsManager.hpp b/include/environment_enhancements/MaterialsManager.hpp
+index df591a6..ac9b1c5 100644
+--- a/include/environment_enhancements/MaterialsManager.hpp
++++ b/include/environment_enhancements/MaterialsManager.hpp
+@@ -30 +30 @@ struct MaterialInfo {
+-               SafePtrUnity<UnityEngine::Material> const& material, std::optional<TracksAD::TracksVector> track)
++               safe_ptr<UnityEngine::Material*> const& material, std::optional<TracksAD::TracksVector> track)
+@@ -32 +32 @@ struct MaterialInfo {
+-    CRASH_UNLESS(material.isAlive());
++    CRASH_UNLESS(static_cast<bool>(material));
+@@ -38 +38 @@ struct MaterialInfo {
+-  SafePtrUnity<UnityEngine::Material> Material;
++  safe_ptr<UnityEngine::Material*> Material;
+@@ -45 +45 @@ struct MaterialsManager {
+-  std::unordered_map<std::string_view, MaterialInfo const>
++  std::unordered_map<std::string, MaterialInfo const>
+@@ -57 +57 @@ public:
+-  inline static std::vector<SafePtrUnity<UnityEngine::Material>> createdMaterials;
++  inline static std::vector<safe_ptr<UnityEngine::Material*>> createdMaterials;
+diff --git a/include/hooks/LightWithIdManager.hpp b/include/hooks/LightWithIdManager.hpp
+index ec5ae66..cd1c2d8 100644
+--- a/include/hooks/LightWithIdManager.hpp
++++ b/include/hooks/LightWithIdManager.hpp
+@@ -12,0 +13 @@
++#include "lighting/LegacyLightMapping.hpp"
+@@ -38 +39,8 @@ struct LightIdRegisterer {
+-    auto lights = VList<GlobalNamespace::ILightWithId*>(lightWithIdManager->_lights.get(lightId));
++    if (!lightWithIdManager) { lightWithId->__SetIsUnRegistered(); return; }
++    if (UsesGroupLightMapping(lightWithId)) {
++      lightWithIdManager->UnregisterLight(lightWithId);
++      return;
++    }
++    auto* map = GetLegacyLightMap(lightWithIdManager, lightId);
++    if (!map || !map->lightInstances) { lightWithId->__SetIsUnRegistered(); return; }
++    auto lights = map->lightInstances;
+@@ -49 +57,2 @@ struct LightIdRegisterer {
+-    lights[index] = nullptr; // TODO: handle null
++    if (index < 0) { lightWithId->__SetIsUnRegistered(); return; }
++    lights[index] = nullptr; // Preserve Chroma table indices when unregistering.
+diff --git a/include/hooks/MultiplayerConnectedPlayerInstaller.hpp b/include/hooks/MultiplayerConnectedPlayerInstaller.hpp
+index 4e78888..81efb71 100644
+--- a/include/hooks/MultiplayerConnectedPlayerInstaller.hpp
++++ b/include/hooks/MultiplayerConnectedPlayerInstaller.hpp
+@@ -0,0 +1 @@
++#pragma once
+diff --git a/include/hooks/TrackLaneRingsManager.hpp b/include/hooks/TrackLaneRingsManager.hpp
+index 14c21b1..895be2a 100644
+--- a/include/hooks/TrackLaneRingsManager.hpp
++++ b/include/hooks/TrackLaneRingsManager.hpp
+@@ -0,0 +1 @@
++#pragma once
+diff --git a/include/lighting/ChromaEventData.hpp b/include/lighting/ChromaEventData.hpp
+index d902028..1557b1c 100644
+--- a/include/lighting/ChromaEventData.hpp
++++ b/include/lighting/ChromaEventData.hpp
+@@ -3 +3 @@
+-#include "beatsaber-hook/shared/config/rapidjson-utils.hpp"
++#include "beatsaber-hook/shared/rapidjson.hpp"
+@@ -98 +98 @@ constexpr ChromaEventData* getLightAD(GlobalNamespace::BeatmapEventData* beatmap
+-  auto customBeatmapEvent = il2cpp_utils::try_cast<CustomJSONData::CustomBeatmapEventData>(beatmap);
++  auto customBeatmapEvent = i2c::cast<i2c::result<CustomJSONData::CustomBeatmapEventData*>>(beatmap);
+diff --git a/include/lighting/ChromaGradientController.hpp b/include/lighting/ChromaGradientController.hpp
+index 7103fae..ce4d73b 100644
+--- a/include/lighting/ChromaGradientController.hpp
++++ b/include/lighting/ChromaGradientController.hpp
+@@ -15 +15 @@
+-#include "beatsaber-hook/shared/config/rapidjson-utils.hpp"
++#include "beatsaber-hook/shared/rapidjson.hpp"
+diff --git a/include/lighting/ChromaLightSwitchEventEffect.hpp b/include/lighting/ChromaLightSwitchEventEffect.hpp
+index 7428017..ca6e127 100644
+--- a/include/lighting/ChromaLightSwitchEventEffect.hpp
++++ b/include/lighting/ChromaLightSwitchEventEffect.hpp
+@@ -47 +47 @@ public:
+-  std::unordered_map<GlobalNamespace::ILightWithId*, SafePtr<Tween::ChromaTween>> ColorTweens;
++  std::unordered_map<GlobalNamespace::ILightWithId*, safe_ptr<Tween::ChromaTween*>> ColorTweens;
+@@ -59,2 +59,2 @@ public:
+-  UnorderedEventCallback<GlobalNamespace::BasicBeatmapEventData*> BeatmapEventDidTrigger;
+-  UnorderedEventCallback<> DidRefresh;
++  unordered_event_callback<GlobalNamespace::BasicBeatmapEventData*> BeatmapEventDidTrigger;
++  unordered_event_callback<> DidRefresh;
+diff --git a/include/lighting/ChromaRingsRotationEffect.hpp b/include/lighting/ChromaRingsRotationEffect.hpp
+index b564912..02b96b9 100644
+--- a/include/lighting/ChromaRingsRotationEffect.hpp
++++ b/include/lighting/ChromaRingsRotationEffect.hpp
+@@ -56,5 +56,2 @@ public:
+-    static auto GetRotation = il2cpp_utils::il2cpp_type_check::FPtrWrapper<&GlobalNamespace::TrackLaneRing::GetRotation>::get();
+-    if (!_trackLaneRingsManager->_rings) {
+-      ChromaLogger::Logger.warn("Rings is null why! {} ", fmt::ptr(_trackLaneRingsManager.ptr()));
+-      _trackLaneRingsManager->_rings = Array<GlobalNamespace::TrackLaneRing*>::New();
+-    }
++    static auto GetRotation = FPtrWrapper<&GlobalNamespace::TrackLaneRing::GetRotation>::get();
++    if (!_trackLaneRingsManager->_rings || _trackLaneRingsManager->_rings.empty()) return 0.0f;
+@@ -62 +59 @@ public:
+-    return GetRotation(_trackLaneRingsManager->_rings.get(0));
++    return GetRotation(_trackLaneRingsManager->_rings[0]);
+@@ -66 +63 @@ public:
+-    static auto GetDestinationRotation = il2cpp_utils::il2cpp_type_check::FPtrWrapper<&GlobalNamespace::TrackLaneRing::GetDestinationRotation>::get();
++    static auto GetDestinationRotation = FPtrWrapper<&GlobalNamespace::TrackLaneRing::GetDestinationRotation>::get();
+@@ -68,4 +65 @@ public:
+-    if (!_trackLaneRingsManager->_rings) {
+-      ChromaLogger::Logger.warn("Rings is null why! {} ", fmt::ptr(_trackLaneRingsManager.ptr()));
+-      _trackLaneRingsManager->_rings = Array<GlobalNamespace::TrackLaneRing*>::New();
+-    }
++    if (!_trackLaneRingsManager->_rings || _trackLaneRingsManager->_rings.empty()) return 0.0f;
+@@ -73 +67 @@ public:
+-    return GetDestinationRotation(_trackLaneRingsManager->_rings.get(0));
++    return GetDestinationRotation(_trackLaneRingsManager->_rings[0]);
+diff --git a/include/lighting/LightIDTableManager.hpp b/include/lighting/LightIDTableManager.hpp
+index f0ced70..9ab7b56 100644
+--- a/include/lighting/LightIDTableManager.hpp
++++ b/include/lighting/LightIDTableManager.hpp
+@@ -24 +24 @@ private:
+-  static std::unordered_map<std::string_view, EnvironmentLightDataT> environmentsToInstall;
++  static std::unordered_map<std::string_view, EnvironmentLightDataT>& PendingEnvironments();
+@@ -26 +26 @@ private:
+-  static std::unordered_map<std::string_view, EnvironmentLightDataT> lightIdTable;
++  static std::unordered_map<std::string_view, EnvironmentLightDataT>& EnvironmentTable();
+@@ -56 +56 @@ public:
+-  static __ChromaRegisterEnvironment##environment __ChromaRegisterEnvironmentInstance##environment;
+\ No newline at end of file
++  static __ChromaRegisterEnvironment##environment __ChromaRegisterEnvironmentInstance##environment;
+diff --git a/include/ui/ModifierViewController.hpp b/include/ui/ModifierViewController.hpp
+index 0931beb..2fc377b 100644
+--- a/include/ui/ModifierViewController.hpp
++++ b/include/ui/ModifierViewController.hpp
+@@ -13,2 +13 @@ DECLARE_CLASS_CODEGEN(Chroma, ModifierViewController, HMUI::ViewController) {
+-  DECLARE_OVERRIDE_METHOD(void, DidActivate2,
+-                          il2cpp_utils::FindMethodUnsafe("HMUI", "ViewController", "DidActivate", 3),
++  DECLARE_OVERRIDE_METHOD_MATCH(void, DidActivate2, &HMUI::ViewController::DidActivate,
+diff --git a/include/utils/ChromaUtils.hpp b/include/utils/ChromaUtils.hpp
+index 0d84f2c..0b7c437 100644
+--- a/include/utils/ChromaUtils.hpp
++++ b/include/utils/ChromaUtils.hpp
+@@ -201 +201 @@ static UnityEngine::Mesh* CreateTriangleMesh() {
+-  static SafePtrUnity<UnityEngine::Mesh> mesh;
++  static safe_ptr<UnityEngine::Mesh*> mesh;
+@@ -235 +235 @@ static UnityEngine::Mesh* CreateTriangleMesh() {
+-  ((ParentType) == (ChildOrInstanceType) || il2cpp_functions::class_is_assignable_from(ParentType, ChildOrInstanceType))
+\ No newline at end of file
++  ((ParentType) == (ChildOrInstanceType) || i2c::functions::class_is_assignable_from(ParentType, ChildOrInstanceType))
+\ No newline at end of file
+diff --git a/shared/BombAPI.hpp b/shared/BombAPI.hpp
+index 07909f5..3c2aac3 100644
+--- a/shared/BombAPI.hpp
++++ b/shared/BombAPI.hpp
+@@ -2,0 +3,2 @@
++#include "beatsaber-hook/shared/callback.hpp"
++
+@@ -122 +124 @@ public:
+-  using BombCallback = UnorderedEventCallback<GlobalNamespace::NoteControllerBase*, Sombrero::FastColor const&>;
++  using BombCallback = unordered_event_callback<GlobalNamespace::NoteControllerBase*, Sombrero::FastColor const&>;
+diff --git a/shared/NoteAPI.hpp b/shared/NoteAPI.hpp
+index 139cd2e..087609d 100644
+--- a/shared/NoteAPI.hpp
++++ b/shared/NoteAPI.hpp
+@@ -2,0 +3,2 @@
++#include "beatsaber-hook/shared/callback.hpp"
++
+@@ -145 +147 @@ public:
+-  using NoteCallback = UnorderedEventCallback<GlobalNamespace::NoteControllerBase*, Sombrero::FastColor const&,
++  using NoteCallback = unordered_event_callback<GlobalNamespace::NoteControllerBase*, Sombrero::FastColor const&,
+diff --git a/shared/ObstacleAPI.hpp b/shared/ObstacleAPI.hpp
+index 67485e7..1fd6331 100644
+--- a/shared/ObstacleAPI.hpp
++++ b/shared/ObstacleAPI.hpp
+@@ -2,0 +3,2 @@
++#include "beatsaber-hook/shared/callback.hpp"
++
+@@ -81 +83 @@ public:
+-  using ObstacleCallback = UnorderedEventCallback<GlobalNamespace::ObstacleControllerBase*, Sombrero::FastColor const&>;
++  using ObstacleCallback = unordered_event_callback<GlobalNamespace::ObstacleControllerBase*, Sombrero::FastColor const&>;
+diff --git a/shared/SaberAPI.hpp b/shared/SaberAPI.hpp
+index f6c0fe0..936cc22 100644
+--- a/shared/SaberAPI.hpp
++++ b/shared/SaberAPI.hpp
+@@ -3 +3,3 @@
+-#include "beatsaber-hook/shared/utils/typedefs-wrappers.hpp"
++#include "beatsaber-hook/shared/callback.hpp"
++
++#include "beatsaber-hook/shared/safeptr.hpp"
+@@ -120 +122 @@ public:
+-  using SaberCallback = UnorderedEventCallback<int, GlobalNamespace::SaberModelController*, Sombrero::FastColor const&>;
++  using SaberCallback = unordered_event_callback<int, GlobalNamespace::SaberModelController*, Sombrero::FastColor const&>;
+@@ -135,2 +137,2 @@ public:
+-  using SaberCallbackFunc =
+-      ThinVirtualLayer<void(void*, int, GlobalNamespace::SaberModelController*, Sombrero::FastColor)>;
++  // bshook 8 owns callback binding/context; consumers must use this exact signature.
++  using SaberCallbackFunc = SaberCallback::callback_t;
+diff --git a/src/ChromaComponentManager.cpp b/src/ChromaComponentManager.cpp
+index 40c69e4..c5433d7 100644
+--- a/src/ChromaComponentManager.cpp
++++ b/src/ChromaComponentManager.cpp
+@@ -172 +172 @@ void Chroma::Component::StartEvent(GlobalNamespace::BeatmapCallbacksController*
+-  auto customBeatmap = il2cpp_utils::cast<CustomJSONData::CustomBeatmapData>(beatmap);
++  auto customBeatmap = i2c::cast<CustomJSONData::CustomBeatmapData*>(beatmap);
+diff --git a/src/ChromaController.cpp b/src/ChromaController.cpp
+index 86f630b..acdf443 100644
+--- a/src/ChromaController.cpp
++++ b/src/ChromaController.cpp
+@@ -3,0 +4 @@
++#include "GameplayLifetime.hpp"
+@@ -5 +5,0 @@
+-#include "beatsaber-hook/shared/utils/logging.hpp"
+@@ -18 +18 @@
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+@@ -22,0 +23 @@
++#include "colorizer/SliderColorizer.hpp"
+@@ -53 +54 @@ ChromaController::DelayedStartEnumerator(GlobalNamespace::BeatmapObjectSpawnCont
+-  co_yield reinterpret_cast<enumeratorT>(CRASH_UNLESS(il2cpp_utils::New<UnityEngine::WaitForEndOfFrame*>()));
++  co_yield reinterpret_cast<enumeratorT>(CRASH_UNLESS(UnityEngine::WaitForEndOfFrame::New_ctor()));
+@@ -59 +60 @@ ChromaController::DelayedStartEnumerator(GlobalNamespace::BeatmapObjectSpawnCont
+-            il2cpp_utils::cast<BeatmapCallbacksController>(beatmapObjectSpawnController->_beatmapCallbacksController);
++            i2c::cast<BeatmapCallbacksController*>(beatmapObjectSpawnController->_beatmapCallbacksController);
+@@ -70 +71 @@ ChromaController::DelayedStartEnumerator(GlobalNamespace::BeatmapObjectSpawnCont
+-        if (auto customBeatmap = il2cpp_utils::try_cast<CustomJSONData::CustomBeatmapData>(beatmapData)) {
++        if (auto customBeatmap = i2c::cast<i2c::result<CustomJSONData::CustomBeatmapData*>>(beatmapData)) {
+@@ -97 +98 @@ ChromaController::DelayedStartEnumerator(GlobalNamespace::BeatmapObjectSpawnCont
+-              il2cpp_utils::ClassStandardName(reinterpret_cast<Il2CppObject*>(beatmapData)->klass).c_str());
++              i2c::class_standard_name(reinterpret_cast<Il2CppObject*>(beatmapData)->klass).c_str());
+@@ -106,0 +108,17 @@ ChromaController::DelayedStartEnumerator(GlobalNamespace::BeatmapObjectSpawnCont
++void ClearChromaGameplayReferences() {
++  CJDLogger::Logger.fmtLog<Paper::LogLevel::INF>("Clearing all data");
++  ChromaGradientController::clearInstance();
++  TrackLaneRingsManagerHolder::RingManagers.clear();
++  TrackLaneRingsManagerHolder::RingManagers.shrink_to_fit(); // Deallocate unnecessary used memory
++  Chroma::Component::ClearCoroutines();
++  LightColorizer::Reset();
++  ObstacleColorizer::Reset();
++  BombColorizer::Reset();
++  NoteColorizer::Reset();
++  SliderColorizer::Reset();
++  SaberColorizer::Reset();
++  ParticleColorizer::Reset();
++  LightIdRegisterer::Reset();
++  MaterialsManager::Reset();
++}
++
+@@ -111,13 +129 @@ void ChromaController::OnActiveSceneChanged(UnityEngine::SceneManagement::Scene
+-    CJDLogger::Logger.fmtLog<Paper::LogLevel::INF>("Clearing all data");
+-    ChromaGradientController::clearInstance();
+-    TrackLaneRingsManagerHolder::RingManagers.clear();
+-    TrackLaneRingsManagerHolder::RingManagers.shrink_to_fit(); // Deallocate unnecessary used memory
+-    Chroma::Component::ClearCoroutines();
+-    LightColorizer::Reset();
+-    ObstacleColorizer::Reset();
+-    BombColorizer::Reset();
+-    NoteColorizer::Reset();
+-    SaberColorizer::Reset();
+-    ParticleColorizer::Reset();
+-    LightIdRegisterer::Reset();
+-    MaterialsManager::Reset();
++    ClearChromaGameplayReferences();
+diff --git a/src/ChromaEvents.cpp b/src/ChromaEvents.cpp
+index 1e13744..00ab4a1 100644
+--- a/src/ChromaEvents.cpp
++++ b/src/ChromaEvents.cpp
+@@ -164 +164 @@ void CustomEventCallback(BeatmapCallbacksController* callbackController, CustomJ
+-  auto* customBeatmapData = il2cpp_utils::cast<CustomJSONData::CustomBeatmapData>(callbackController->_beatmapData);
++  auto* customBeatmapData = i2c::cast<CustomJSONData::CustomBeatmapData*>(callbackController->_beatmapData);
+diff --git a/src/ChromaObjectData.cpp b/src/ChromaObjectData.cpp
+index 9caacd0..53a8752 100644
+--- a/src/ChromaObjectData.cpp
++++ b/src/ChromaObjectData.cpp
+@@ -7 +7 @@
+-#include "beatsaber-hook/shared/config/rapidjson-utils.hpp"
++#include "beatsaber-hook/shared/rapidjson.hpp"
+@@ -30 +30 @@ void Chroma::ChromaObjectDataManager::deserialize(CustomJSONData::CustomBeatmapD
+-  debugSpamLog("Array klass: {}", il2cpp_utils::ClassStandardName(beatmapLines->klass).c_str());
++  debugSpamLog("Array klass: {}", i2c::class_standard_name(beatmapLines->klass).c_str());
+@@ -49 +49 @@ void Chroma::ChromaObjectDataManager::deserialize(CustomJSONData::CustomBeatmapD
+-      debugSpamLog("Custom note {}", il2cpp_utils::ClassStandardName(beatmapObjectData->klass).c_str());
++      debugSpamLog("Custom note {}", i2c::class_standard_name(beatmapObjectData->klass).c_str());
+@@ -62 +62 @@ void Chroma::ChromaObjectDataManager::deserialize(CustomJSONData::CustomBeatmapD
+-      debugSpamLog("Custom slider {}", il2cpp_utils::ClassStandardName(beatmapObjectData->klass).c_str());
++      debugSpamLog("Custom slider {}", i2c::class_standard_name(beatmapObjectData->klass).c_str());
+@@ -106 +106 @@ Chroma::ChromaObjectData* Chroma::getObjectAD(GlobalNamespace::BeatmapObjectData
+-  if (auto note = il2cpp_utils::try_cast<CustomJSONData::CustomNoteData>(obj)) {
++  if (auto note = i2c::cast<i2c::result<CustomJSONData::CustomNoteData*>>(obj)) {
+@@ -109 +109 @@ Chroma::ChromaObjectData* Chroma::getObjectAD(GlobalNamespace::BeatmapObjectData
+-  if (auto obstacle = il2cpp_utils::try_cast<CustomJSONData::CustomObstacleData>(obj)) {
++  if (auto obstacle = i2c::cast<i2c::result<CustomJSONData::CustomObstacleData*>>(obj)) {
+@@ -112 +112 @@ Chroma::ChromaObjectData* Chroma::getObjectAD(GlobalNamespace::BeatmapObjectData
+-  if (auto slider = il2cpp_utils::try_cast<CustomJSONData::CustomSliderData>(obj)) {
++  if (auto slider = i2c::cast<i2c::result<CustomJSONData::CustomSliderData*>>(obj)) {
+diff --git a/src/api/LightAPI.cpp b/src/api/LightAPI.cpp
+index d25fa8f..82c8b37 100644
+--- a/src/api/LightAPI.cpp
++++ b/src/api/LightAPI.cpp
+@@ -67 +67 @@ EXPOSE_API(getLightsSafe, LightMap*, GlobalNamespace::LightSwitchEventEffect* ls
+-  auto vectorOrg = ListW<ILightWithId*>(LightColorizer::GetLightColorizer(lse->_event)->getLights());
++  auto vectorOrg = LightColorizer::GetLightColorizer(lse->_event)->getLights();
+diff --git a/src/colorizer/BombColorizer.cpp b/src/colorizer/BombColorizer.cpp
+index 82e93c2..d5d3d87 100644
+--- a/src/colorizer/BombColorizer.cpp
++++ b/src/colorizer/BombColorizer.cpp
+@@ -20 +20 @@
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
++#include "beatsaber-hook/shared/members.hpp"
+diff --git a/src/colorizer/LightColorizer.cpp b/src/colorizer/LightColorizer.cpp
+index 732a30c..c43759d 100644
+--- a/src/colorizer/LightColorizer.cpp
++++ b/src/colorizer/LightColorizer.cpp
+@@ -3 +3 @@
+-#include "beatsaber-hook/shared/utils/typedefs-array.hpp"
++#include "beatsaber-hook/shared/arrayw.hpp"
+@@ -32 +32 @@ LightColorizer::LightColorizer(ChromaLightSwitchEventEffect* lightSwitchEventEff
+-    if (auto mColor = il2cpp_utils::try_cast<MultipliedColorSO>(colorSO.ptr())) {
++    if (auto mColor = i2c::cast<i2c::result<MultipliedColorSO*>>(colorSO.ptr())) {
+@@ -35 +35 @@ LightColorizer::LightColorizer(ChromaLightSwitchEventEffect* lightSwitchEventEff
+-    } else if (auto sColor = il2cpp_utils::try_cast<SimpleColorSO>(colorSO.ptr())) {
++    } else if (auto sColor = i2c::cast<i2c::result<SimpleColorSO*>>(colorSO.ptr())) {
+@@ -45,10 +45 @@ LightColorizer::LightColorizer(ChromaLightSwitchEventEffect* lightSwitchEventEff
+-  // AAAAAA PROPAGATION STUFFF
+-  auto* lights = lightManager->_lights.get(lightSwitchEventEffect->_lightsID);
+-
+-  // possible uninitialized
+-  if (lights == nullptr) {
+-    lights = System::Collections::Generic::List_1<::GlobalNamespace::ILightWithId*>::New_ctor(10);
+-    lightManager->_lights[lightSwitchEventEffect->_lightsID] = lights;
+-  }
+-
+-  LightsSafePtr.emplace(reinterpret_cast<List<GlobalNamespace::ILightWithId*>*>(lights));
++  lightMap.emplace(GetLegacyLightMap(lightManager, lightId, true));
+@@ -198 +189 @@ std::unordered_map<int, std::vector<GlobalNamespace::ILightWithId*>> const& Ligh
+-    auto monoBehaviour = il2cpp_utils::try_cast<MonoBehaviour>(light);
++    auto monoBehaviour = i2c::cast<i2c::result<MonoBehaviour*>>(light);
+@@ -209 +200 @@ std::unordered_map<int, std::vector<GlobalNamespace::ILightWithId*>> const& Ligh
+-      TrackLaneRingsManager* mngr = managers->FirstOrDefault([&](TrackLaneRingsManager* it) -> bool {
++      TrackLaneRingsManager* mngr = managers.front_or_default([&](TrackLaneRingsManager* it) -> bool {
+@@ -214 +205 @@ std::unordered_map<int, std::vector<GlobalNamespace::ILightWithId*>> const& Ligh
+-        z = 1000 + mngr->_rings->IndexOf(ring);
++        z = 1000 + mngr->_rings.index_of(ring);
+diff --git a/src/colorizer/ObstacleColorizer.cpp b/src/colorizer/ObstacleColorizer.cpp
+index 4439a4c..3fccf7e 100644
+--- a/src/colorizer/ObstacleColorizer.cpp
++++ b/src/colorizer/ObstacleColorizer.cpp
+@@ -12 +12 @@
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
++#include "beatsaber-hook/shared/members.hpp"
+@@ -27 +27 @@ ObstacleColorizer::ObstacleColorizer(GlobalNamespace::ObstacleControllerBase* ob
+-  auto trueObstacleControllerCast = il2cpp_utils::try_cast<ObstacleController>(obstacleController);
++  auto trueObstacleControllerCast = i2c::cast<i2c::result<ObstacleController*>>(obstacleController);
+@@ -59,0 +60,5 @@ int _tintColorID() {
++int _mainColorID() {
++  static auto id = UnityEngine::Shader::PropertyToID("_Color");
++  return id;
++}
++
+@@ -80 +85 @@ void ObstacleColorizer::Refresh() {
+-  auto obstacleController = il2cpp_utils::try_cast<ObstacleController>(this->obstacleController);
++  auto obstacleController = i2c::cast<i2c::result<ObstacleController*>>(this->obstacleController);
+@@ -107,0 +113,3 @@ void ObstacleColorizer::Refresh() {
++    // Textured wall cores consume _Color directly. Preserve authored HDR RGB
++    // and negative alpha exactly, matching StretchableObstacle::SetAllProperties.
++    SetColor(materialPropertyBlockController->materialPropertyBlock, _mainColorID(), color);
+diff --git a/src/colorizer/ParticleColorizer.cpp b/src/colorizer/ParticleColorizer.cpp
+index 0a387a1..ccdfe9b 100644
+--- a/src/colorizer/ParticleColorizer.cpp
++++ b/src/colorizer/ParticleColorizer.cpp
+@@ -17,4 +17,4 @@ Chroma::ParticleColorizer::ParticleColorizer(GlobalNamespace::ParticleSystemEven
+-  _lightColor0 = il2cpp_utils::cast<MultipliedColorSO>(particleSystemEventEffect->_lightColor0.ptr());
+-  _lightColor1 = il2cpp_utils::cast<MultipliedColorSO>(particleSystemEventEffect->_lightColor1.ptr());
+-  _highlightColor0 = il2cpp_utils::cast<MultipliedColorSO>(particleSystemEventEffect->_highlightColor0.ptr());
+-  _highlightColor1 = il2cpp_utils::cast<MultipliedColorSO>(particleSystemEventEffect->_highlightColor1.ptr());
++  _lightColor0 = i2c::cast<MultipliedColorSO*>(particleSystemEventEffect->_lightColor0.ptr());
++  _lightColor1 = i2c::cast<MultipliedColorSO*>(particleSystemEventEffect->_lightColor1.ptr());
++  _highlightColor0 = i2c::cast<MultipliedColorSO*>(particleSystemEventEffect->_highlightColor0.ptr());
++  _highlightColor1 = i2c::cast<MultipliedColorSO*>(particleSystemEventEffect->_highlightColor1.ptr());
+diff --git a/src/environment_enhancements/ComponentInitializer.cpp b/src/environment_enhancements/ComponentInitializer.cpp
+index 6549a4f..77edd32 100644
+--- a/src/environment_enhancements/ComponentInitializer.cpp
++++ b/src/environment_enhancements/ComponentInitializer.cpp
+@@ -35,0 +36 @@
++#include "System/Collections/Generic/IEnumerable_1.hpp"
+@@ -39 +40 @@
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
++#include "beatsaber-hook/shared/members.hpp"
+@@ -48 +49 @@
+-#include "beatsaber-hook/shared/utils/typedefs-disposal.hpp"
++#include "beatsaber-hook/shared/safeptr.hpp"
+@@ -52 +53 @@
+-#include "beatsaber-hook/shared/utils/il2cpp-utils-boxing.hpp"
++#include "beatsaber-hook/shared/types.hpp"
+@@ -59 +60 @@ GameObjectInfo const& Chroma::ComponentInitializer::InitializeComponents(UnityEn
+-                                                                         std::vector<GameObjectInfo>& gameObjectInfos,
++                                                                         std::deque<GameObjectInfo>& gameObjectInfos,
+@@ -67,2 +68,2 @@ GameObjectInfo const& Chroma::ComponentInitializer::InitializeComponents(UnityEn
+-    auto* rootComp = rootComponents.get(i);
+-    auto* otherComp = otherComponents.get(i);
++    auto* rootComp = rootComponents[i];
++    auto* otherComp = otherComponents[i];
+@@ -72 +73 @@ GameObjectInfo const& Chroma::ComponentInitializer::InitializeComponents(UnityEn
+-    if (auto transformController = il2cpp_utils::try_cast<Tracks::GameObjectTrackController>(rootComp)) {
++    if (auto transformController = i2c::cast<i2c::result<Tracks::GameObjectTrackController*>>(rootComp)) {
+@@ -76 +77 @@ GameObjectInfo const& Chroma::ComponentInitializer::InitializeComponents(UnityEn
+-    if (auto lightWithIdMonoBehaviour = il2cpp_utils::try_cast<LightWithIdMonoBehaviour>(rootComp)) {
++    if (auto lightWithIdMonoBehaviour = i2c::cast<i2c::result<LightWithIdMonoBehaviour*>>(rootComp)) {
+@@ -80 +81 @@ GameObjectInfo const& Chroma::ComponentInitializer::InitializeComponents(UnityEn
+-    if (auto lightsWithIds = il2cpp_utils::try_cast<LightWithIds>(rootComp)) {
++    if (auto lightsWithIds = i2c::cast<i2c::result<LightWithIds*>>(rootComp)) {
+@@ -82,5 +83,6 @@ GameObjectInfo const& Chroma::ComponentInitializer::InitializeComponents(UnityEn
+-        auto enumerator = il2cpp_utils::Unbox<System::Array::InternalEnumerator_1<ILightWithId*>>(
+-          reinterpret_cast<Il2CppObject*>(lightsWithIds.value()->lightWithIds->GetEnumerator()));
+-        while (enumerator.MoveNext()) {
+-          auto* light = enumerator.get_Current();
+-          LightIdRegisterer::MarkForTableRegister(light);
++        // Managed code owns enumeration/disposal: an interface enumerator may
++        // box a value type, which runtime_invoke cannot use as interface this.
++        ListW<LightWithIds::LightWithId*> snapshot(
++            System::Collections::Generic::List_1<LightWithIds::LightWithId*>::New_ctor(lightsWithIds.value()->lightWithIds));
++        for (auto* light : snapshot) {
++          if (light) LightIdRegisterer::MarkForTableRegister(light->i___GlobalNamespace__ILightWithId());
+@@ -88 +89,0 @@ GameObjectInfo const& Chroma::ComponentInitializer::InitializeComponents(UnityEn
+-        enumerator.Dispose();
+@@ -92,2 +93,2 @@ GameObjectInfo const& Chroma::ComponentInitializer::InitializeComponents(UnityEn
+-    if (auto trackLaneRing = il2cpp_utils::try_cast<TrackLaneRing>(rootComp)) {
+-      auto* originalTrackLaneRing = il2cpp_utils::try_cast<TrackLaneRing>(otherComp).value();
++    if (auto trackLaneRing = i2c::cast<i2c::result<TrackLaneRing*>>(rootComp)) {
++      auto* originalTrackLaneRing = i2c::cast<i2c::result<TrackLaneRing*>>(otherComp).value();
+@@ -106,0 +108,2 @@ GameObjectInfo const& Chroma::ComponentInitializer::InitializeComponents(UnityEn
++        // Only the original owner may supply a cloned ring manager.
++        if (!manager || !manager->_rings || !manager->_rings.contains(originalTrackLaneRing)) continue;
+@@ -140 +143 @@ GameObjectInfo const& Chroma::ComponentInitializer::InitializeComponents(UnityEn
+-            managerToAdd->_rings = Array<GlobalNamespace::TrackLaneRing*>::New(trackLaneRing.value());
++            managerToAdd->_rings = ArrayW<UnityW<GlobalNamespace::TrackLaneRing>>({UnityW(trackLaneRing.value())});
+@@ -148 +151,2 @@ GameObjectInfo const& Chroma::ComponentInitializer::InitializeComponents(UnityEn
+-    if (auto trackLaneRingsPositionStepEffectSpawner = il2cpp_utils::try_cast<TrackLaneRingsPositionStepEffectSpawner>(rootComp)) {
++    if (auto trackLaneRingsPositionStepEffectSpawner = i2c::cast<i2c::result<TrackLaneRingsPositionStepEffectSpawner*>>(rootComp)) {
++      auto* originalSpawner = i2c::cast<TrackLaneRingsPositionStepEffectSpawner*>(otherComp);
+@@ -149,0 +154 @@ GameObjectInfo const& Chroma::ComponentInitializer::InitializeComponents(UnityEn
++        if (manager != originalSpawner->_trackLaneRingsManager.ptr()) continue;
+@@ -173 +178 @@ GameObjectInfo const& Chroma::ComponentInitializer::InitializeComponents(UnityEn
+-    if (auto trackLaneRingsRotationEffectSpawner = il2cpp_utils::try_cast<TrackLaneRingsRotationEffectSpawner>(rootComp)) {
++    if (auto trackLaneRingsRotationEffectSpawner = i2c::cast<i2c::result<TrackLaneRingsRotationEffectSpawner*>>(rootComp)) {
+@@ -176 +181 @@ GameObjectInfo const& Chroma::ComponentInitializer::InitializeComponents(UnityEn
+-    if (auto spectrogram = il2cpp_utils::try_cast<Spectrogram>(rootComp)) {
++    if (auto spectrogram = i2c::cast<i2c::result<Spectrogram*>>(rootComp)) {
+@@ -179,2 +184,2 @@ GameObjectInfo const& Chroma::ComponentInitializer::InitializeComponents(UnityEn
+-    if (auto lightPairRotationEventEffect = il2cpp_utils::try_cast<LightPairRotationEventEffect>(rootComp)) {
+-      auto originalLightPairRotationEventEffect = il2cpp_utils::try_cast<LightPairRotationEventEffect>(otherComp).value();
++    if (auto lightPairRotationEventEffect = i2c::cast<i2c::result<LightPairRotationEventEffect*>>(rootComp)) {
++      auto originalLightPairRotationEventEffect = i2c::cast<i2c::result<LightPairRotationEventEffect*>>(otherComp).value();
+@@ -190 +195 @@ GameObjectInfo const& Chroma::ComponentInitializer::InitializeComponents(UnityEn
+-    } else if (auto particleSystemEventEffect = il2cpp_utils::try_cast<ParticleSystemEventEffect>(rootComp)) {
++    } else if (auto particleSystemEventEffect = i2c::cast<i2c::result<ParticleSystemEventEffect*>>(rootComp)) {
+@@ -193 +198 @@ GameObjectInfo const& Chroma::ComponentInitializer::InitializeComponents(UnityEn
+-    } else if (auto mirror = il2cpp_utils::try_cast<Mirror>(rootComp)) {
++    } else if (auto mirror = i2c::cast<i2c::result<Mirror*>>(rootComp)) {
+@@ -280 +285 @@ static void InitializeTubeBloomPrePassLights(rapidjson::Value const& data, std::
+-    auto tubeCast = il2cpp_utils::try_cast<TubeBloomPrePassLight>(comp);
++    auto tubeCast = i2c::cast<i2c::result<TubeBloomPrePassLight*>>(comp);
+@@ -308 +313 @@ static void InitializeFog(rapidjson::Value const& data, std::span<UnityEngine::C
+-    auto fogCast = il2cpp_utils::try_cast<BloomFogEnvironment>(comp);
++    auto fogCast = i2c::cast<i2c::result<BloomFogEnvironment*>>(comp);
+@@ -359 +364 @@ static void InitializeLights(rapidjson::Value const& data, std::span<UnityEngine
+-    if (auto castedLights = il2cpp_utils::try_cast<LightWithIds>(comp)) {
++    if (auto castedLights = i2c::cast<i2c::result<LightWithIds*>>(comp)) {
+@@ -364,11 +369,6 @@ static void InitializeLights(rapidjson::Value const& data, std::span<UnityEngine
+-      // TODO: Casting and method calling safety
+-      auto enumerator = il2cpp_utils::Unbox<System::Array::InternalEnumerator_1<ILightWithId*>>(
+-        reinterpret_cast<Il2CppObject*>(castedLights.value()->lightWithIds->GetEnumerator()));
+-
+-      // MEMORY LEAK YAY
+-      // TODO: Fix
+-      //        auto dispose = bs_hook::Disposable(enumerator->i_IDisposable());
+-
+-      while (enumerator.MoveNext()) {
+-        auto* e = enumerator.get_Current();
+-        lightWithIds.emplace_back(e);
++      // Snapshot any IEnumerable implementation using its managed constructor,
++      // then traverse ListW without boxed interface dispatch from native code.
++      ListW<LightWithIds::LightWithId*> snapshot(
++          System::Collections::Generic::List_1<LightWithIds::LightWithId*>::New_ctor(castedLights.value()->lightWithIds));
++      for (auto* light : snapshot) {
++        if (light) lightWithIds.emplace_back(light->i___GlobalNamespace__ILightWithId());
+@@ -376,3 +376 @@ static void InitializeLights(rapidjson::Value const& data, std::span<UnityEngine
+-
+-      enumerator.Dispose();
+-    } else if (auto castedMonoLight = il2cpp_utils::try_cast<LightWithIdMonoBehaviour>(comp)) {
++    } else if (auto castedMonoLight = i2c::cast<i2c::result<LightWithIdMonoBehaviour*>>(comp)) {
+@@ -402 +400 @@ static void InitializeLights(rapidjson::Value const& data, std::span<UnityEngine
+-    auto monoBehaviourCast = il2cpp_utils::try_cast<LightWithIdMonoBehaviour>(lightWithId);
++    auto monoBehaviourCast = i2c::cast<i2c::result<LightWithIdMonoBehaviour*>>(lightWithId);
+@@ -405,0 +404,3 @@ static void InitializeLights(rapidjson::Value const& data, std::span<UnityEngine
++      // Match native SetLightId, after unregistering from the previous mapping.
++      monoBehaviourCast.value()->_groupId = -1;
++      monoBehaviourCast.value()->_elementId = -1;
+@@ -407 +408 @@ static void InitializeLights(rapidjson::Value const& data, std::span<UnityEngine
+-    auto lightWithIdsCast = il2cpp_utils::try_cast<LightWithIds::LightWithId>(lightWithId);
++    auto lightWithIdsCast = i2c::cast<i2c::result<LightWithIds::LightWithId*>>(lightWithId);
+@@ -445 +446 @@ void ComponentInitializer::InitializeCustomComponents(UnityEngine::GameObject* g
+-  SafePtr<Array<UnityEngine::Component*>> arr((Array<UnityEngine::Component*>*)comps);
++  safe_ptr<ArrayW<UnityEngine::Component*>> arr(comps);
+diff --git a/src/environment_enhancements/EnvironmentEnhancementManager.cpp b/src/environment_enhancements/EnvironmentEnhancementManager.cpp
+index 35de815..9ed71ae 100644
+--- a/src/environment_enhancements/EnvironmentEnhancementManager.cpp
++++ b/src/environment_enhancements/EnvironmentEnhancementManager.cpp
+@@ -41 +41 @@ using ChromaRegex = boost::regex;
+-std::vector<ByRef<GameObjectInfo const>> Chroma::EnvironmentEnhancementManager::LookupId(std::string_view const id,
++std::vector<by_ref<GameObjectInfo const>> Chroma::EnvironmentEnhancementManager::LookupId(std::string_view const id,
+@@ -43 +43 @@ std::vector<ByRef<GameObjectInfo const>> Chroma::EnvironmentEnhancementManager::
+-  std::vector<ByRef<GameObjectInfo const>> ret;
++  std::vector<by_ref<GameObjectInfo const>> ret;
+@@ -141 +141 @@ void EnvironmentEnhancementManager::GetAllGameObjects() {
+-    auto* gameObject = gameObjectsAll.get(i);
++    auto* gameObject = gameObjectsAll[i];
+@@ -182,3 +181,0 @@ void EnvironmentEnhancementManager::GetAllGameObjects() {
+-  // Shrink if necessary
+-  _globalGameObjectInfos.shrink_to_fit();
+-
+@@ -186,5 +183,3 @@ void EnvironmentEnhancementManager::GetAllGameObjects() {
+-    // print objects
+-    std::thread([] {
+-      // copy
+-      auto objectsToPrint = std::vector<GameObjectInfo>(_globalGameObjectInfos);
+-
++    // Snapshot on the game thread before duplication changes the catalog.
++    auto objectsToPrint = std::vector<GameObjectInfo>(_globalGameObjectInfos.begin(), _globalGameObjectInfos.end());
++    std::thread([objectsToPrint = std::move(objectsToPrint)]() mutable {
+@@ -266 +261 @@ void EnvironmentEnhancementManager::Init(CustomJSONData::CustomBeatmapData* cust
+-    std::vector<ByRef<GameObjectInfo const>> foundObjects;
++    std::vector<by_ref<GameObjectInfo const>> foundObjects;
+@@ -315 +310 @@ void EnvironmentEnhancementManager::Init(CustomJSONData::CustomBeatmapData* cust
+-      auto goInfo = ByRef<GameObjectInfo const>(_globalGameObjectInfos.emplace_back(geometryFactory.Create(geometryMember->value)));
++      auto goInfo = by_ref<GameObjectInfo const>(_globalGameObjectInfos.emplace_back(geometryFactory.Create(geometryMember->value)));
+@@ -330 +325 @@ void EnvironmentEnhancementManager::Init(CustomJSONData::CustomBeatmapData* cust
+-        ChromaLogger::Logger.info("{}", o.heldRef.FullID.c_str());
++        ChromaLogger::Logger.info("{}", (*o).FullID.c_str());
+@@ -345 +340 @@ void EnvironmentEnhancementManager::Init(CustomJSONData::CustomBeatmapData* cust
+-    std::vector<ByRef<GameObjectInfo const>> gameObjectInfos;
++    std::vector<by_ref<GameObjectInfo const>> gameObjectInfos;
+@@ -350 +345 @@ void EnvironmentEnhancementManager::Init(CustomJSONData::CustomBeatmapData* cust
+-        auto const& gameObjectInfo = gameObjectInfoRef.heldRef;
++        auto const& gameObjectInfo = (*gameObjectInfoRef);
+@@ -390 +385 @@ void EnvironmentEnhancementManager::Init(CustomJSONData::CustomBeatmapData* cust
+-      auto const& gameObjectInfo = gameObjectInfoRef.heldRef;
++      auto const& gameObjectInfo = (*gameObjectInfoRef);
+diff --git a/src/environment_enhancements/EnvironmentMaterialManager.cpp b/src/environment_enhancements/EnvironmentMaterialManager.cpp
+index 274daff..642c073 100644
+--- a/src/environment_enhancements/EnvironmentMaterialManager.cpp
++++ b/src/environment_enhancements/EnvironmentMaterialManager.cpp
+@@ -3,0 +4 @@
++#include "System/String.hpp"
+@@ -7,0 +9,2 @@
++#include "UnityEngine/ResourceManagement/ResourceProviders/SceneReleaseMode.hpp"
++#include "UnityEngine/ResourceManagement/AsyncOperations/AsyncOperationStatus.hpp"
+@@ -11 +14 @@
+-SafePtrUnity<UnityEngine::Shader> Chroma::EnvironmentMaterialManager::waterLit;
++safe_ptr<UnityEngine::Shader*> Chroma::EnvironmentMaterialManager::waterLit;
+@@ -26 +29,2 @@ custom_types::Helpers::Coroutine Chroma::EnvironmentMaterialManager::Activate()
+-      return UnityEngine::AddressableAssets::Addressables::LoadSceneAsync(reinterpret_cast<System::String*>(static_cast<Il2CppString*>(StringW(environmentName))), UnityEngine::SceneManagement::LoadSceneMode::Additive, true, 100);
++      return UnityEngine::AddressableAssets::Addressables::LoadSceneAsync(static_cast<System::String*>(StringW(environmentName)), UnityEngine::SceneManagement::LoadSceneMode::Additive, true, 100,
++          UnityEngine::ResourceManagement::ResourceProviders::SceneReleaseMode::ReleaseSceneWhenSceneUnloaded);
+@@ -34 +38 @@ custom_types::Helpers::Coroutine Chroma::EnvironmentMaterialManager::Activate()
+-    if (n.m_InternalOp == nullptr) {
++    if (!n.IsValid()) {
+@@ -38 +42 @@ custom_types::Helpers::Coroutine Chroma::EnvironmentMaterialManager::Activate()
+-    while (!n.IsDone) {
++    while (n.IsValid() && !n.IsDone) {
+@@ -40,0 +45,4 @@ custom_types::Helpers::Coroutine Chroma::EnvironmentMaterialManager::Activate()
++    if (!n.IsValid() || n.Status != UnityEngine::ResourceManagement::AsyncOperations::AsyncOperationStatus::Succeeded) {
++      ChromaLogger::Logger.warn("Environment scene load failed; skipping its material collection");
++      continue;
++    }
+@@ -47 +55 @@ custom_types::Helpers::Coroutine Chroma::EnvironmentMaterialManager::Activate()
+-    auto* material = environmentMaterials->FirstOrDefault([&](auto const& e) { return e->get_name() == matName; });
++    auto* material = environmentMaterials.front_or_default([&](auto const& e) { return e->get_name() == matName; });
+@@ -65 +73,7 @@ custom_types::Helpers::Coroutine Chroma::EnvironmentMaterialManager::Activate()
+-  EnvironmentMaterialManager::waterLit = UnityEngine::Object::Instantiate(UnityEngine::Resources::FindObjectsOfTypeAll<UnityEngine::Shader*>().front([&](auto const& e) { CJDLogger::Logger.fmtLog<Paper::LogLevel::INF>("shader:!!! [{}].", e->get_name()); return e->get_name() == "Custom/WaterLit"; }).value_or(nullptr));
++  auto* waterShader = UnityEngine::Resources::FindObjectsOfTypeAll<UnityEngine::Shader*>()
++      .front_or_default([](auto* shader) { return shader && shader->get_name() == "Custom/WaterLit"; });
++  if (waterShader) {
++    EnvironmentMaterialManager::waterLit = UnityEngine::Object::Instantiate(waterShader);
++  } else {
++    ChromaLogger::Logger.warn("Custom/WaterLit shader was not found in loaded environments");
++  }
+@@ -83 +97 @@ std::optional<UnityEngine::Material*> Chroma::EnvironmentMaterialManager::getMat
+-  if (!material.isAlive()) {
++  if (!static_cast<bool>(material)) {
+diff --git a/src/environment_enhancements/GameObjectInfo.cpp b/src/environment_enhancements/GameObjectInfo.cpp
+index 8e10158..a6a8837 100644
+--- a/src/environment_enhancements/GameObjectInfo.cpp
++++ b/src/environment_enhancements/GameObjectInfo.cpp
+@@ -5 +5 @@
+-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
++#include "beatsaber-hook/shared/members.hpp"
+@@ -24 +24 @@ Chroma::GameObjectInfo::GameObjectInfo(UnityEngine::GameObject* gameObject) {
+-      index = rootGameObjects->IndexOf(transformGameObject);
++      index = rootGameObjects.index_of(transformGameObject);
+diff --git a/src/environment_enhancements/GeometryFactory.cpp b/src/environment_enhancements/GeometryFactory.cpp
+index 88e4c83..f569e62 100644
+--- a/src/environment_enhancements/GeometryFactory.cpp
++++ b/src/environment_enhancements/GeometryFactory.cpp
+@@ -53 +53 @@ GeometryFactory::GeometryFactory(MaterialsManager& materialsManager, bool v2) :
+-  auto* tube = CRASH_UNLESS(Resources::FindObjectsOfTypeAll<TubeBloomPrePassLight*>())->FirstOrDefault();
++  auto* tube = CRASH_UNLESS(Resources::FindObjectsOfTypeAll<TubeBloomPrePassLight*>()).front_or_default();
+@@ -58 +58 @@ GeometryFactory::GeometryFactory(MaterialsManager& materialsManager, bool v2) :
+-  auto modelContainer = Resources::FindObjectsOfTypeAll<SaberModelContainer*>()->FirstOrDefault();
++  auto modelContainer = Resources::FindObjectsOfTypeAll<SaberModelContainer*>().front_or_default();
+diff --git a/src/environment_enhancements/MaterialsManager.cpp b/src/environment_enhancements/MaterialsManager.cpp
+index 6f9aafb..efd4641 100644
+--- a/src/environment_enhancements/MaterialsManager.cpp
++++ b/src/environment_enhancements/MaterialsManager.cpp
+@@ -111 +111 @@ UnityEngine::Material* Chroma::MaterialsManager::InstantiateSharedMaterial(Shade
+-      Resources::FindObjectsOfTypeAll<Shader*>().front([&](auto const& e) { return e->get_name() == shaderName; }).value_or(nullptr);
++      Resources::FindObjectsOfTypeAll<Shader*>().front_or_default([&](auto* shader) { return shader && shader->get_name() == shaderName; });
+@@ -217 +217 @@ std::optional<MaterialInfo> Chroma::MaterialsManager::GetMaterial(rapidjson::Val
+-    auto const* jsonStr = s.GetString();
++    std::string jsonStr(s.GetString(), s.GetSize());
+@@ -224 +224 @@ std::optional<MaterialInfo> Chroma::MaterialsManager::GetMaterial(rapidjson::Val
+-    materialsJSON.emplace(jsonStr, material);
++    materialsJSON.emplace(std::move(jsonStr), material);
+@@ -232 +232 @@ UnityEngine::Material* MaterialsManager::GetMaterialTemplate(ShaderType shaderTy
+-  static SafePtrUnity<Material> _standardMaterial;
++  static safe_ptr<Material*> _standardMaterial;
+@@ -236 +236 @@ UnityEngine::Material* MaterialsManager::GetMaterialTemplate(ShaderType shaderTy
+-  static SafePtrUnity<Material> _glowingMaterial;
++  static safe_ptr<Material*> _glowingMaterial;
+@@ -241 +241 @@ UnityEngine::Material* MaterialsManager::GetMaterialTemplate(ShaderType shaderTy
+-  static SafePtrUnity<Material> _opaqueLightMaterial;
++  static safe_ptr<Material*> _opaqueLightMaterial;
+@@ -246 +246 @@ UnityEngine::Material* MaterialsManager::GetMaterialTemplate(ShaderType shaderTy
+-  static SafePtrUnity<Material> _transparentLightMaterial;
++  static safe_ptr<Material*> _transparentLightMaterial;
+@@ -251 +251 @@ UnityEngine::Material* MaterialsManager::GetMaterialTemplate(ShaderType shaderTy
+-  static SafePtrUnity<Material> _baseWaterMaterial;
++  static safe_ptr<Material*> _baseWaterMaterial;
+@@ -256,3 +256,3 @@ UnityEngine::Material* MaterialsManager::GetMaterialTemplate(ShaderType shaderTy
+-  CJDLogger::Logger.fmtLog<Paper::LogLevel::INF>("Material templates {} {} {} {}", _standardMaterial.isAlive(),
+-                                                 _opaqueLightMaterial.isAlive(), _transparentLightMaterial.isAlive(),
+-                                                 _baseWaterMaterial.isAlive());
++  CJDLogger::Logger.fmtLog<Paper::LogLevel::INF>("Material templates {} {} {} {}", static_cast<bool>(_standardMaterial),
++                                                 static_cast<bool>(_opaqueLightMaterial), static_cast<bool>(_transparentLightMaterial),
++                                                 static_cast<bool>(_baseWaterMaterial));
+@@ -289 +289 @@ void MaterialsManager::Reset() {
+-    if (!m || !m.isAlive()) {
++    if (!m || !static_cast<bool>(m)) {
+diff --git a/src/hooks/BeatmapDataTransformHelper.cpp b/src/hooks/BeatmapDataTransformHelper.cpp
+index 197044c..49830f7 100644
+--- a/src/hooks/BeatmapDataTransformHelper.cpp
++++ b/src/hooks/BeatmapDataTransformHelper.cpp
+@@ -11 +11,3 @@
+-#include "GlobalNamespace/EnvironmentEffectsFilterPreset.hpp"
++#include "GlobalNamespace/BeatmapKey.hpp"
++#include "GlobalNamespace/PlayerSpecificSettings.hpp"
++#include "GlobalNamespace/EnvironmentInfoSO.hpp"
+@@ -23,5 +25,3 @@ MAKE_HOOK_MATCH(BeatmapDataTransformHelper_CreateTransformedBeatmapData,
+-                ::GlobalNamespace::IReadonlyBeatmapData* beatmapData, ::GlobalNamespace::BeatmapLevel* beatmapLevel,
+-                ::GlobalNamespace::GameplayModifiers* gameplayModifiers, bool leftHanded,
+-                ::GlobalNamespace::EnvironmentEffectsFilterPreset environmentEffectsFilterPreset,
+-                ::GlobalNamespace::EnvironmentIntensityReductionOptions* environmentIntensityReductionOptions,
+-                ::ByRef<::BeatSaber::Settings::Settings> settings) {
++                IReadonlyBeatmapData* beatmapData, BeatmapKey beatmapKey, BeatmapLevel* beatmapLevel,
++                GameplayModifiers* gameplayModifiers, PlayerSpecificSettings* playerSpecificSettings,
++                EnvironmentInfoSO* environmentInfo, bool screenDisplacementEffects) {
+@@ -29,2 +29,2 @@ MAKE_HOOK_MATCH(BeatmapDataTransformHelper_CreateTransformedBeatmapData,
+-      beatmapData, beatmapLevel, gameplayModifiers, leftHanded, environmentEffectsFilterPreset,
+-      environmentIntensityReductionOptions, settings);
++      beatmapData, beatmapKey, beatmapLevel, gameplayModifiers, playerSpecificSettings,
++      environmentInfo, screenDisplacementEffects);
+@@ -37 +37 @@ MAKE_HOOK_MATCH(BeatmapDataTransformHelper_CreateTransformedBeatmapData,
+-  if (auto customBeatmap = il2cpp_utils::try_cast<CustomJSONData::CustomBeatmapData>(result)) {
++  if (auto customBeatmap = i2c::cast<i2c::result<CustomJSONData::CustomBeatmapData*>>(result)) {
+diff --git a/src/hooks/BeatmapObjectCallbackController.cpp b/src/hooks/BeatmapObjectCallbackController.cpp
+index 6e1bf4e..6b1c132 100644
+--- a/src/hooks/BeatmapObjectCallbackController.cpp
++++ b/src/hooks/BeatmapObjectCallbackController.cpp
+@@ -18 +18 @@ custom_types::Helpers::Coroutine updateCoroutines(BeatmapCallbacksController* se
+-  IL2CPP_CATCH_HANDLER(while (true) {
++  PAPER_IL2CPP_CATCH_HANDLER(while (true) {
+@@ -30,0 +31,2 @@ MAKE_HOOK_MATCH(BeatmapObjectCallbackController_Start, &BeatmapCallbacksControll
++    auto* updater = UnityEngine::Resources::FindObjectsOfTypeAll<BeatmapCallbacksUpdater*>().front_or_default();
++    if (!updater) return;
+@@ -32 +34 @@ MAKE_HOOK_MATCH(BeatmapObjectCallbackController_Start, &BeatmapCallbacksControll
+-    UnityEngine::Resources::FindObjectsOfTypeAll<BeatmapCallbacksUpdater*>().get(0)->StartCoroutine(
++    updater->StartCoroutine(
+diff --git a/src/hooks/EnvironmentComponent/LightWithIdManager.cpp b/src/hooks/EnvironmentComponent/LightWithIdManager.cpp
+index 3317232..c8a36cf 100644
+--- a/src/hooks/EnvironmentComponent/LightWithIdManager.cpp
++++ b/src/hooks/EnvironmentComponent/LightWithIdManager.cpp
+@@ -25 +25 @@ MAKE_HOOK_MATCH(LightWithIdManager_RegisterLight, &LightWithIdManager::RegisterL
+-  if (!ChromaController::GetChromaLegacy() && !ChromaController::DoChromaHooks()) {
++  if ((!ChromaController::GetChromaLegacy() && !ChromaController::DoChromaHooks()) || UsesGroupLightMapping(lightWithId)) {
+@@ -47,9 +47,3 @@ MAKE_HOOK_MATCH(LightWithIdManager_RegisterLight, &LightWithIdManager::RegisterL
+-  // [] does not bound check, use get()
+-  auto& lights = self->_lights.get(lightId);
+-  if (lights == nullptr) {
+-    lights = System::Collections::Generic::List_1<::GlobalNamespace::ILightWithId*>::New_ctor(10);
+-  }
+-
+-  lightWithId->__SetIsRegistered();
+-
+-  if (lights->Contains(lightWithId)) {
++  auto* map = GetLegacyLightMap(self, lightId, true);
++  if (!map) {
++    LightWithIdManager_RegisterLight(self, lightWithId);
+@@ -58,2 +52,4 @@ MAKE_HOOK_MATCH(LightWithIdManager_RegisterLight, &LightWithIdManager::RegisterL
+-
+-  int index = lights->get_Count();
++  auto lights = map->lightInstances;
++  lightWithId->__SetIsRegistered();
++  if (std::find(lights.begin(), lights.end(), lightWithId) != lights.end()) return;
++  int index = static_cast<int>(lights.size());
+@@ -82,6 +78,5 @@ MAKE_HOOK_MATCH(LightWithIdManager_RegisterLight, &LightWithIdManager::RegisterL
+-  lights->Add(lightWithId);
+-
+-  self->____lightsToUnregister->Remove(lightWithId);
+-
+-  auto color = self->_colors.get(lightId);
+-  lightWithId->ColorWasSet(color.hasValue ? color.value : Sombrero::FastColor::clear());
++  auto appended = ArrayW<ILightWithId*>::New(lights.size() + 1);
++  std::copy(lights.begin(), lights.end(), appended.begin());
++  appended[index] = lightWithId;
++  map->lightInstances = appended;
++  lightWithId->ColorWasSet(map->hasColor ? map->color : Sombrero::FastColor::clear());
+@@ -95 +90 @@ MAKE_HOOK_MATCH(LightWithIdManager_UnregisterLight, &LightWithIdManager::Unregis
+-  if (!ChromaController::DoChromaHooks() || !Chroma::LightIdRegisterer::canUnregister) {
++  if (!ChromaController::DoChromaHooks() || !Chroma::LightIdRegisterer::canUnregister || UsesGroupLightMapping(lightWithId)) {
+@@ -124 +119 @@ MAKE_HOOK_MATCH(LightWithIdManager_LateUpdate, &LightWithIdManager::LateUpdate,
+-MAKE_HOOK_MATCH(LightWithIdManager_SetColorForId, &LightWithIdManager::SetColorForId, void, LightWithIdManager* self, int lightId,
++MAKE_HOOK_MATCH(LightWithIdManager_SetColorForId, static_cast<void (LightWithIdManager::*)(int, UnityEngine::Color)>(&LightWithIdManager::SetColorForId), void, LightWithIdManager* self, int lightId,
+@@ -138 +133,7 @@ MAKE_HOOK_MATCH(LightWithIdManager_SetColorForId, &LightWithIdManager::SetColorF
+-  self->_colors[lightId] = System::Nullable_1(true, color);
++  auto* map = GetLegacyLightMap(self, lightId, true);
++  if (!map) {
++    LightWithIdManager_SetColorForId(self, lightId, color);
++    return;
++  }
++  map->color = color;
++  map->hasColor = true;
+@@ -140 +141 @@ MAKE_HOOK_MATCH(LightWithIdManager_SetColorForId, &LightWithIdManager::SetColorF
+-  auto list = VList<GlobalNamespace::ILightWithId*>(self->_lights.get(lightId));
++  auto list = map->lightInstances;
+diff --git a/src/hooks/EnvironmentComponent/TrackLaneRingsManager.cpp b/src/hooks/EnvironmentComponent/TrackLaneRingsManager.cpp
+index 8246d21..e672f43 100644
+--- a/src/hooks/EnvironmentComponent/TrackLaneRingsManager.cpp
++++ b/src/hooks/EnvironmentComponent/TrackLaneRingsManager.cpp
+@@ -41,2 +41,2 @@ static TrackLaneRing* QueueInject(DiContainer* container, TrackLaneRing* prefab)
+-  for (auto const& i : injectables) {
+-    container->QueueForInject(i);
++  for (auto i : injectables) {
++    container->QueueForInject(i.ptr());
+diff --git a/src/hooks/Events/TrackLaneRingsRotationEffect.cpp b/src/hooks/Events/TrackLaneRingsRotationEffect.cpp
+index 2ae4123..5f5a0f5 100644
+--- a/src/hooks/Events/TrackLaneRingsRotationEffect.cpp
++++ b/src/hooks/Events/TrackLaneRingsRotationEffect.cpp
+@@ -36,2 +36,2 @@ MAKE_HOOK_MATCH(TrackLaneRingsRotationEffect_AddRingRotationEffect,
+-MAKE_HOOK_FIND_CLASS_UNSAFE_INSTANCE(ChromaRingsRotationEffect_AddRingRotationEffect, "Chroma",
+-                                     "ChromaRingsRotationEffect", "AddRingRotationEffect", void,
++MAKE_HOOK(ChromaRingsRotationEffect_AddRingRotationEffect,
++          (classof(Chroma::ChromaRingsRotationEffect*), "AddRingRotationEffect"), void,
+diff --git a/src/hooks/Events/TrackLaneRingsRotationEffectSpawner.cpp b/src/hooks/Events/TrackLaneRingsRotationEffectSpawner.cpp
+index a384a03..72267a2 100644
+--- a/src/hooks/Events/TrackLaneRingsRotationEffectSpawner.cpp
++++ b/src/hooks/Events/TrackLaneRingsRotationEffectSpawner.cpp
+@@ -115 +115 @@ MAKE_HOOK_MATCH(TrackLaneRingsRotationEffectSpawner_HandleBeatmapObjectCallbackC
+-    auto beatmapEventDataOpt = il2cpp_utils::try_cast<CustomBeatmapEventData>(beatmapEventData);
++    auto beatmapEventDataOpt = i2c::cast<i2c::result<CustomBeatmapEventData*>>(beatmapEventData);
+diff --git a/src/hooks/Mirror/MirroredNoteController.cpp b/src/hooks/Mirror/MirroredNoteController.cpp
+index 845eaf5..94b23c1 100644
+--- a/src/hooks/Mirror/MirroredNoteController.cpp
++++ b/src/hooks/Mirror/MirroredNoteController.cpp
+@@ -6,0 +7 @@
++#include "GlobalNamespace/MirroredNoteController_1.hpp"
+@@ -21,25 +22,2 @@ using namespace UnityEngine;
+-template <>
+-struct ::il2cpp_utils::il2cpp_type_check::MetadataGetter<
+-    &GlobalNamespace::MirroredNoteController_1<IGameNoteMirrorable*>::UpdatePositionAndRotation> {
+-  static constexpr std::size_t size = 0xFABC; // random garbage
+-  constexpr static std::size_t addrs = 0x260faf4; // random garbage
+-
+-  static MethodInfo const* methodInfo() {
+-    return il2cpp_utils::FindMethod(classof(GlobalNamespace::MirroredNoteController_1<IGameNoteMirrorable*>*),
+-                                    "UpdatePositionAndRotation");
+-  }
+-};
+-
+-template <>
+-struct ::il2cpp_utils::il2cpp_type_check::MetadataGetter<
+-    &GlobalNamespace::MirroredNoteController_1<INoteMirrorable*>::UpdatePositionAndRotation> {
+-  static constexpr std::size_t size = 0xFABC;     // random garbage
+-  constexpr static std::size_t addrs = 0x260faf4; // random garbage
+-
+-  static MethodInfo const* methodInfo() {
+-    return il2cpp_utils::FindMethod(classof(GlobalNamespace::MirroredNoteController_1<INoteMirrorable*>*),
+-                                    "UpdatePositionAndRotation");
+-  }
+-};
+-
+-void UpdateMirror(NoteControllerBase* noteController, GlobalNamespace::NoteControllerBase* followedNote) {
++void UpdateMirror(NoteControllerBase* noteController, NoteControllerBase* followedNote) {
++  if (!noteController || !followedNote) return;
+@@ -48,5 +26,7 @@ void UpdateMirror(NoteControllerBase* noteController, GlobalNamespace::NoteContr
+-    BombColorizer::ColorizeBomb(noteController, BombColorizer::GetBombColorizer(followedNote)->getColor());
+-  } else {
+-    if (ChromaController::DoColorizerSabers()) {
+-      NoteColorizer::ColorizeNote(noteController, NoteColorizer::GetNoteColorizer(followedNote)->getColor());
+-    }
++    auto* source = BombColorizer::GetBombColorizer(followedNote);
++    auto* target = BombColorizer::GetBombColorizer(noteController);
++    if (source && target) target->Colorize(source->getColor());
++  } else if (ChromaController::DoColorizerSabers()) {
++    auto* source = NoteColorizer::GetNoteColorizer(followedNote);
++    auto* target = NoteColorizer::GetNoteColorizer(noteController);
++    if (source && target) target->Colorize(source->getColor());
+@@ -56,24 +36,8 @@ void UpdateMirror(NoteControllerBase* noteController, GlobalNamespace::NoteContr
+-MAKE_HOOK_MATCH(MirroredNoteController_UpdatePositionAndRotationGeneric,
+-                &GlobalNamespace::MirroredNoteController_1<INoteMirrorable*>::UpdatePositionAndRotation, void,
+-                MirroredNoteController_1<INoteMirrorable*>* self) {
+-  MirroredNoteController_UpdatePositionAndRotationGeneric(self);
+-
+-  // Do nothing if Chroma shouldn't run
+-  if (!ChromaController::DoChromaHooks()) {
+-    return;
+-  }
+-
+-  UpdateMirror(self, reinterpret_cast<NoteControllerBase*>(self->followedNote));
+-}
+-
+-MAKE_HOOK_MATCH(MirroredNoteController_UpdatePositionAndRotationCubeGeneric,
+-                &GlobalNamespace::MirroredNoteController_1<IGameNoteMirrorable*>::UpdatePositionAndRotation, void,
+-                MirroredNoteController_1<IGameNoteMirrorable*>* self) {
+-  MirroredNoteController_UpdatePositionAndRotationCubeGeneric(self);
+-
+-  // Do nothing if Chroma shouldn't run
+-  if (!ChromaController::DoChromaHooks()) {
+-    return;
+-  }
+-
+-  UpdateMirror(self, reinterpret_cast<NoteControllerBase*>(self->followedNote));
++// IL2CPP shares this generic body; retain its MethodInfo argument and hook it once.
++MAKE_HOOK(MirroredNoteController_UpdatePositionAndRotation, (nullptr), void,
++          MirroredNoteController_1<Il2CppObject*>* self, MethodInfo* methodInfo) {
++  MirroredNoteController_UpdatePositionAndRotation(self, methodInfo);
++  if (!ChromaController::DoChromaHooks()) return;
++  if (!self->followedNote) return;
++  auto followedNote = i2c::cast<i2c::result<NoteControllerBase*>>(self->followedNote);
++  if (followedNote) UpdateMirror(self, *followedNote);
+@@ -83,5 +47,3 @@ void MirroredNoteControllerHook() {
+-  auto* iNoteGeneric = classof(GlobalNamespace::MirroredNoteController_1<INoteMirrorable*>*);
+-  auto* iNoteCubeGeneric = classof(GlobalNamespace::MirroredNoteController_1<IGameNoteMirrorable*>*);
+-
+-  INSTALL_HOOK(ChromaLogger::Logger, MirroredNoteController_UpdatePositionAndRotationGeneric);
+-  INSTALL_HOOK(ChromaLogger::Logger, MirroredNoteController_UpdatePositionAndRotationCubeGeneric);
++  auto* method = i2c::find_method(classof(MirroredNoteController_1<Il2CppObject*>*), {"UpdatePositionAndRotation", 0});
++  INSTALL_HOOK(ChromaLogger::Logger, MirroredNoteController_UpdatePositionAndRotation,
++               reinterpret_cast<void*>(method->methodPointer));
+@@ -90 +52 @@ void MirroredNoteControllerHook() {
+-ChromaInstallHooks(MirroredNoteControllerHook)
+\ No newline at end of file
++ChromaInstallHooks(MirroredNoteControllerHook)
+diff --git a/src/hooks/Mirror/MirroredObstacleController.cpp b/src/hooks/Mirror/MirroredObstacleController.cpp
+index f0da905..29ec70d 100644
+--- a/src/hooks/Mirror/MirroredObstacleController.cpp
++++ b/src/hooks/Mirror/MirroredObstacleController.cpp
+@@ -35,2 +35,3 @@ MAKE_HOOK_MATCH(MirroredObstacleController_UpdatePositionAndRotation,
+-  ObstacleColorizer::ColorizeObstacle(self,
+-                                      ObstacleColorizer::GetObstacleColorizer(self->_followedObstacle)->getColor());
++  auto* source = ObstacleColorizer::GetObstacleColorizer(self->_followedObstacle);
++  auto* target = ObstacleColorizer::GetObstacleColorizer(self);
++  if (source && target) target->Colorize(source->getColor());
+diff --git a/src/hooks/SceneTransition/MissionLevelScenesTransitionSetupDataSO.cpp b/src/hooks/SceneTransition/MissionLevelScenesTransitionSetupDataSO.cpp
+index 9e715e5..30e0a1f 100644
+--- a/src/hooks/SceneTransition/MissionLevelScenesTransitionSetupDataSO.cpp
++++ b/src/hooks/SceneTransition/MissionLevelScenesTransitionSetupDataSO.cpp
+@@ -2,6 +2 @@
+-
+-#include "GlobalNamespace/MissionLevelScenesTransitionSetupDataSO.hpp"
+-#include "GlobalNamespace/PlayerSpecificSettings.hpp"
+-#include "GlobalNamespace/EnvironmentsListModel.hpp"
+-#include "GlobalNamespace/BeatmapLevelSO.hpp"
+-
++#include "ChromaLogger.hpp"
+@@ -8,0 +4,4 @@
++#include "GlobalNamespace/StandardLevelScenesTransitionSetupData.hpp"
++#include "GlobalNamespace/EnvironmentsListModel.hpp"
++#include "System/ValueTuple_3.hpp"
++#include "GlobalNamespace/MissionLevelScenesTransitionSetupData.hpp"
+@@ -10 +8,0 @@
+-using namespace CustomJSONData;
+@@ -12 +9,0 @@ using namespace GlobalNamespace;
+-using namespace UnityEngine;
+@@ -15,39 +12,25 @@ using namespace Chroma;
+-MAKE_HOOK_MATCH(
+-    MissionLevelScenesTransitionSetupDataSO_Init,
+-    static_cast<void (::GlobalNamespace::MissionLevelScenesTransitionSetupDataSO::*)(
+-        ::StringW, ::ByRef<::GlobalNamespace::BeatmapKey>, ::GlobalNamespace::BeatmapLevel*,
+-        ::ArrayW<::GlobalNamespace::MissionObjective*, ::Array<::GlobalNamespace::MissionObjective*>*>,
+-        ::GlobalNamespace::ColorScheme*, ::GlobalNamespace::GameplayModifiers*,
+-        ::GlobalNamespace::PlayerSpecificSettings*, ::GlobalNamespace::EnvironmentsListModel*,
+-        ::GlobalNamespace::BeatmapLevelsModel*, ::GlobalNamespace::AudioClipAsyncLoader*,
+-        ::GlobalNamespace::SettingsManager*, ::GlobalNamespace::BeatmapDataLoader*, ::StringW)>(
+-        &::GlobalNamespace::MissionLevelScenesTransitionSetupDataSO::Init),
+-    void, MissionLevelScenesTransitionSetupDataSO* self, ::StringW missionId,
+-    ::ByRef<::GlobalNamespace::BeatmapKey> beatmapKey, ::GlobalNamespace::BeatmapLevel* beatmapLevel,
+-    ::ArrayW<::GlobalNamespace::MissionObjective*, ::Array<::GlobalNamespace::MissionObjective*>*> missionObjectives,
+-    ::GlobalNamespace::ColorScheme* overrideColorScheme, ::GlobalNamespace::GameplayModifiers* gameplayModifiers,
+-    ::GlobalNamespace::PlayerSpecificSettings* playerSpecificSettings,
+-    ::GlobalNamespace::EnvironmentsListModel* environmentsListModel,
+-    ::GlobalNamespace::BeatmapLevelsModel* beatmapLevelsModel,
+-    ::GlobalNamespace::AudioClipAsyncLoader* audioClipAsyncLoader, ::GlobalNamespace::SettingsManager* settingsManager,
+-    ::GlobalNamespace::BeatmapDataLoader* beatmapDataLoader, ::StringW backButtonText) {
+-
+-  auto customBeatmapLevel = il2cpp_utils::try_cast<SongCore::SongLoader::CustomBeatmapLevel>(beatmapLevel);
+-  if (!customBeatmapLevel) {
+-    MissionLevelScenesTransitionSetupDataSO_Init(self, missionId, beatmapKey, beatmapLevel, missionObjectives,
+-                                                 overrideColorScheme, gameplayModifiers, playerSpecificSettings,
+-                                                 environmentsListModel, beatmapLevelsModel, audioClipAsyncLoader,
+-                                                 settingsManager, beatmapDataLoader, backButtonText);
+-    return;
+-  }
+-
+-  auto environmentInfoBySerializedNameSafe = environmentsListModel->GetEnvironmentInfoBySerializedNameSafe(
+-      beatmapLevel->GetEnvironmentName(beatmapKey->beatmapCharacteristic, beatmapKey->difficulty)._environmentName);
+-
+-  // TODO: Fix environment override
+-  SceneTransitionHelper::Patch(customBeatmapLevel.value(), beatmapKey.heldRef, environmentInfoBySerializedNameSafe);
+-
+-  MissionLevelScenesTransitionSetupDataSO_Init(self, missionId, beatmapKey, beatmapLevel, missionObjectives,
+-                                               overrideColorScheme, gameplayModifiers, playerSpecificSettings,
+-                                               environmentsListModel, beatmapLevelsModel, audioClipAsyncLoader,
+-                                               settingsManager, beatmapDataLoader, backButtonText);
++MAKE_HOOK_MATCH(MissionLevelScenesTransitionSetupData_Init, &MissionLevelScenesTransitionSetupData::Init, void,
++                MissionLevelScenesTransitionSetupData* self,
++                ::StringW  missionId,
++                ::by_ref<::GlobalNamespace::BeatmapKey>  beatmapKey,
++                ::GlobalNamespace::BeatmapLevel*  beatmapLevel,
++                ::GlobalNamespace::OverrideEnvironmentSettings*  overrideEnvironmentSettings,
++                ::ArrayW<::GlobalNamespace::MissionObjective*>  missionObjectives,
++                ::GlobalNamespace::ColorScheme*  playerOverrideColorScheme,
++                bool  playerOverrideLightshowColors,
++                ::GlobalNamespace::GameplayModifiers*  gameplayModifiers,
++                ::GlobalNamespace::PlayerSpecificSettings*  playerSpecificSettings,
++                ::GlobalNamespace::EnvironmentsListModel*  environmentsListModel,
++                ::GlobalNamespace::AudioClipAsyncLoader*  audioClipAsyncLoader,
++                ::GlobalNamespace::SettingsManager*  settingsManager,
++                ::GlobalNamespace::GameplayAdditionalInformation*  gameplayAdditionalInformation,
++                ::GlobalNamespace::BeatmapDataLoader*  beatmapDataLoader,
++                ::StringW  backButtonText,
++                ::GlobalNamespace::BeatmapLevelsModel*  beatmapLevelsModel,
++                ::GlobalNamespace::IBeatmapLevelData*  beatmapLevelData) {
++  auto customBeatmapLevel = i2c::cast<i2c::result<SongCore::SongLoader::CustomBeatmapLevel*>>(beatmapLevel);
++  // Resolve the same environment before Init begins loading/transforms.
++  auto environments = StandardLevelScenesTransitionSetupData::GetEnvironmentInfo(
++      *beatmapKey, beatmapLevel, overrideEnvironmentSettings, environmentsListModel);
++  SceneTransitionHelper::Patch(customBeatmapLevel.value_or(nullptr), *beatmapKey, environments.Item2);
++  MissionLevelScenesTransitionSetupData_Init(self, missionId, beatmapKey, beatmapLevel, overrideEnvironmentSettings, missionObjectives, playerOverrideColorScheme, playerOverrideLightshowColors, gameplayModifiers, playerSpecificSettings, environmentsListModel, audioClipAsyncLoader, settingsManager, gameplayAdditionalInformation, beatmapDataLoader, backButtonText, beatmapLevelsModel, beatmapLevelData);
+@@ -56,2 +39,2 @@ MAKE_HOOK_MATCH(
+-void MissionLevelScenesTransitionSetupDataSOHook() {
+-  INSTALL_HOOK(ChromaLogger::Logger, MissionLevelScenesTransitionSetupDataSO_Init);
++void MissionLevelScenesTransitionSetupDataHook() {
++  INSTALL_HOOK(ChromaLogger::Logger, MissionLevelScenesTransitionSetupData_Init);
+@@ -59,2 +42 @@ void MissionLevelScenesTransitionSetupDataSOHook() {
+-
+-ChromaInstallHooks(MissionLevelScenesTransitionSetupDataSOHook)
+\ No newline at end of file
++ChromaInstallHooks(MissionLevelScenesTransitionSetupDataHook)
+diff --git a/src/hooks/SceneTransition/MultiplayerLevelScenesTransitionSetupDataSO.cpp b/src/hooks/SceneTransition/MultiplayerLevelScenesTransitionSetupDataSO.cpp
+index e176956..a7a6e84 100644
+--- a/src/hooks/SceneTransition/MultiplayerLevelScenesTransitionSetupDataSO.cpp
++++ b/src/hooks/SceneTransition/MultiplayerLevelScenesTransitionSetupDataSO.cpp
+@@ -4 +4 @@
+-#include "GlobalNamespace/MultiplayerLevelScenesTransitionSetupDataSO.hpp"
++#include "GlobalNamespace/MultiplayerLevelScenesTransitionSetupData.hpp"
+@@ -14,2 +14,2 @@ using namespace Chroma;
+-MAKE_HOOK_MATCH(MultiplayerLevelScenesTransitionSetupDataSO_Init, &MultiplayerLevelScenesTransitionSetupDataSO::InitAndSetupScenes,
+-                void, MultiplayerLevelScenesTransitionSetupDataSO* self) {
++MAKE_HOOK_MATCH(MultiplayerLevelScenesTransitionSetupData_Init, &MultiplayerLevelScenesTransitionSetupData::InitAndSetupScenes,
++                void, MultiplayerLevelScenesTransitionSetupData* self) {
+@@ -18 +18 @@ MAKE_HOOK_MATCH(MultiplayerLevelScenesTransitionSetupDataSO_Init, &MultiplayerLe
+-  auto customBeatmapLevel = il2cpp_utils::try_cast<SongCore::SongLoader::CustomBeatmapLevel>(self->get_beatmapLevel());
++  auto customBeatmapLevel = i2c::cast<i2c::result<SongCore::SongLoader::CustomBeatmapLevel*>>(self->get_beatmapLevel());
+@@ -20 +20 @@ MAKE_HOOK_MATCH(MultiplayerLevelScenesTransitionSetupDataSO_Init, &MultiplayerLe
+-    MultiplayerLevelScenesTransitionSetupDataSO_Init(self);
++    MultiplayerLevelScenesTransitionSetupData_Init(self);
+@@ -25 +25 @@ MAKE_HOOK_MATCH(MultiplayerLevelScenesTransitionSetupDataSO_Init, &MultiplayerLe
+-  SceneTransitionHelper::Patch(customBeatmapLevel.value(), self->beatmapKey, self->GetOrLoadMultiplayerEnvironmentInfo());
++  SceneTransitionHelper::Patch(customBeatmapLevel.value(), self->beatmapKey, self->_environmentInfo);
+@@ -27 +27 @@ MAKE_HOOK_MATCH(MultiplayerLevelScenesTransitionSetupDataSO_Init, &MultiplayerLe
+-  MultiplayerLevelScenesTransitionSetupDataSO_Init(self);
++  MultiplayerLevelScenesTransitionSetupData_Init(self);
+@@ -30,2 +30,2 @@ MAKE_HOOK_MATCH(MultiplayerLevelScenesTransitionSetupDataSO_Init, &MultiplayerLe
+-void MultiplayerLevelScenesTransitionSetupDataSOHook() {
+-  INSTALL_HOOK(ChromaLogger::Logger, MultiplayerLevelScenesTransitionSetupDataSO_Init);
++void MultiplayerLevelScenesTransitionSetupDataHook() {
++  INSTALL_HOOK(ChromaLogger::Logger, MultiplayerLevelScenesTransitionSetupData_Init);
+@@ -34 +34 @@ void MultiplayerLevelScenesTransitionSetupDataSOHook() {
+-ChromaInstallHooks(MultiplayerLevelScenesTransitionSetupDataSOHook)
+\ No newline at end of file
++ChromaInstallHooks(MultiplayerLevelScenesTransitionSetupDataHook)
+\ No newline at end of file
+diff --git a/src/hooks/SceneTransition/SceneTransitionHelper.cpp b/src/hooks/SceneTransition/SceneTransitionHelper.cpp
+index 1e6ee2c..ead7068 100644
+--- a/src/hooks/SceneTransition/SceneTransitionHelper.cpp
++++ b/src/hooks/SceneTransition/SceneTransitionHelper.cpp
+@@ -0,0 +1 @@
++#include "GlobalNamespace/BeatmapCharacteristicExtensions.hpp"
+@@ -12 +13 @@
+-#include "GlobalNamespace/BeatmapCharacteristicSO.hpp"
++#include "songcore/shared/Characteristics.hpp"
+@@ -66 +67 @@ void SceneTransitionHelper::Patch(SongCore::SongLoader::CustomBeatmapLevel* beat
+-    customDataIt = customDataIt->value.FindMember(u"customData");
++    customDataIt = doc.FindMember(u"customData");
+@@ -74 +75 @@ void SceneTransitionHelper::Patch(SongCore::SongLoader::CustomBeatmapLevel* beat
+-    environmentData = environmentData->value.FindMember(u"environment");
++    environmentData = customDataIt->value.FindMember(u"environment");
+@@ -115,2 +116,5 @@ bool SceneTransitionHelper::BasicPatch(SongCore::SongLoader::CustomBeatmapLevel*
+-  auto diff =
+-      customSaveInfo.value().get().TryGetCharacteristicAndDifficulty(key.beatmapCharacteristic->get_serializedName(), key.difficulty);
++  auto characteristic = SongCore::API::Characteristics::GetCharacteristic(key.characteristic);
++  // SongCore's registry contains custom modes; builtin modes are serialized by the game.
++  std::string characteristicName = characteristic ? std::string(characteristic->serializedName)
++      : std::string(GlobalNamespace::BeatmapCharacteristicExtensions::SerializedName(key.characteristic));
++  auto diff = customSaveInfo.value().get().TryGetCharacteristicAndDifficulty(characteristicName, key.difficulty);
+@@ -151 +155 @@ bool SceneTransitionHelper::BasicPatch(SongCore::SongLoader::CustomBeatmapLevel*
+-                                                                                                            byref(mapDifficulty));
++                                                                                                            by_ref(mapDifficulty));
+@@ -153,2 +157 @@ bool SceneTransitionHelper::BasicPatch(SongCore::SongLoader::CustomBeatmapLevel*
+-                   return mapDifficulty == key.difficulty && key.beatmapCharacteristic.isAlive() &&
+-                          x->beatmapCharacteristicName == key.beatmapCharacteristic->get_serializedName();
++                   return mapDifficulty == key.difficulty && x->beatmapCharacteristicName == characteristicName;
+@@ -160 +163 @@ bool SceneTransitionHelper::BasicPatch(SongCore::SongLoader::CustomBeatmapLevel*
+-    auto* customDifficultyBeatmap = il2cpp_utils::try_cast<SongCore::CustomJSONData::CustomDifficultyBeatmap>(saveMap).value_or(nullptr);
++    auto* customDifficultyBeatmap = i2c::cast<i2c::result<SongCore::CustomJSONData::CustomDifficultyBeatmap*>>(saveMap).value_or(nullptr);
+diff --git a/src/hooks/SceneTransition/StandardLevelScenesTransitionSetupDataSO.cpp b/src/hooks/SceneTransition/StandardLevelScenesTransitionSetupDataSO.cpp
+index a53cd19..6e698c2 100644
+--- a/src/hooks/SceneTransition/StandardLevelScenesTransitionSetupDataSO.cpp
++++ b/src/hooks/SceneTransition/StandardLevelScenesTransitionSetupDataSO.cpp
+@@ -2,15 +2 @@
+-
+-#include "custom-json-data/shared/CustomBeatmapData.h"
+-#include "GlobalNamespace/StandardLevelScenesTransitionSetupDataSO.hpp"
+-#include "GlobalNamespace/OverrideEnvironmentSettings.hpp"
+-#include "GlobalNamespace/ColorScheme.hpp"
+-#include "GlobalNamespace/GameplayModifiers.hpp"
+-#include "GlobalNamespace/PlayerSpecificSettings.hpp"
+-#include "GlobalNamespace/PracticeSettings.hpp"
+-#include "GlobalNamespace/NoteController.hpp"
+-#include "GlobalNamespace/RecordingToolManager.hpp"
+-#include "GlobalNamespace/BeatmapLevelSO.hpp"
+-#include "colorizer/NoteColorizer.hpp"
+-#include "UnityEngine/Space.hpp"
+-#include "UnityEngine/Transform.hpp"
+-
++#include "ChromaLogger.hpp"
+@@ -17,0 +4,3 @@
++#include "GlobalNamespace/StandardLevelScenesTransitionSetupData.hpp"
++#include "GlobalNamespace/EnvironmentsListModel.hpp"
++#include "System/ValueTuple_3.hpp"
+@@ -19 +7,0 @@
+-using namespace CustomJSONData;
+@@ -21 +8,0 @@ using namespace GlobalNamespace;
+-using namespace UnityEngine;
+@@ -23,12 +9,0 @@ using namespace Chroma;
+-using namespace System;
+-
+-MAKE_HOOK_MATCH(StandardLevelScenesTransitionSetupDataSO_Init,
+-                &StandardLevelScenesTransitionSetupDataSO::InitAndSetupScenes, void,
+-                StandardLevelScenesTransitionSetupDataSO* self,
+-                ::GlobalNamespace::PlayerSpecificSettings* playerSpecificSettings, ::StringW backButtonText,
+-                bool startPaused) {
+-  auto customBeatmapLevel = il2cpp_utils::try_cast<SongCore::SongLoader::CustomBeatmapLevel>(self->get_beatmapLevel());
+-  if (!customBeatmapLevel) {
+-    StandardLevelScenesTransitionSetupDataSO_Init(self, playerSpecificSettings, backButtonText, startPaused);
+-    return;
+-  }
+@@ -36,4 +11,25 @@ MAKE_HOOK_MATCH(StandardLevelScenesTransitionSetupDataSO_Init,
+-  // TODO: Fix environment override
+-  SceneTransitionHelper::Patch(customBeatmapLevel.value(), self->beatmapKey, self->targetEnvironmentInfo);
+-
+-  StandardLevelScenesTransitionSetupDataSO_Init(self, playerSpecificSettings, backButtonText, startPaused);
++MAKE_HOOK_MATCH(StandardLevelScenesTransitionSetupData_Init, &StandardLevelScenesTransitionSetupData::Init, void,
++                StandardLevelScenesTransitionSetupData* self,
++                ::StringW  gameMode,
++                ::by_ref<::GlobalNamespace::BeatmapKey>  beatmapKey,
++                ::GlobalNamespace::BeatmapLevel*  beatmapLevel,
++                ::GlobalNamespace::OverrideEnvironmentSettings*  overrideEnvironmentSettings,
++                ::GlobalNamespace::ColorScheme*  playerOverrideColorScheme,
++                bool  playerOverrideLightshowColors,
++                ::GlobalNamespace::GameplayModifiers*  gameplayModifiers,
++                ::GlobalNamespace::PlayerSpecificSettings*  playerSpecificSettings,
++                ::GlobalNamespace::PracticeSettings*  practiceSettings,
++                ::GlobalNamespace::EnvironmentsListModel*  environmentsListModel,
++                ::GlobalNamespace::AudioClipAsyncLoader*  audioClipAsyncLoader,
++                ::GlobalNamespace::SettingsManager*  settingsManager,
++                ::GlobalNamespace::GameplayAdditionalInformation*  gameplayAdditionalInformation,
++                ::GlobalNamespace::BeatmapDataLoader*  beatmapDataLoader,
++                ::GlobalNamespace::BeatmapLevelsEntitlementModel*  beatmapLevelsEntitlementModel,
++                ::GlobalNamespace::BeatmapLevelsModel*  beatmapLevelsModel,
++                ::GlobalNamespace::IBeatmapLevelData*  beatmapLevelData) {
++  auto customBeatmapLevel = i2c::cast<i2c::result<SongCore::SongLoader::CustomBeatmapLevel*>>(beatmapLevel);
++  // Resolve the same environment before Init begins loading/transforms.
++  auto environments = StandardLevelScenesTransitionSetupData::GetEnvironmentInfo(
++      *beatmapKey, beatmapLevel, overrideEnvironmentSettings, environmentsListModel);
++  SceneTransitionHelper::Patch(customBeatmapLevel.value_or(nullptr), *beatmapKey, environments.Item2);
++  StandardLevelScenesTransitionSetupData_Init(self, gameMode, beatmapKey, beatmapLevel, overrideEnvironmentSettings, playerOverrideColorScheme, playerOverrideLightshowColors, gameplayModifiers, playerSpecificSettings, practiceSettings, environmentsListModel, audioClipAsyncLoader, settingsManager, gameplayAdditionalInformation, beatmapDataLoader, beatmapLevelsEntitlementModel, beatmapLevelsModel, beatmapLevelData);
+@@ -42,2 +38,2 @@ MAKE_HOOK_MATCH(StandardLevelScenesTransitionSetupDataSO_Init,
+-void StandardLevelScenesTransitionSetupDataSOHook() {
+-  INSTALL_HOOK(ChromaLogger::Logger, StandardLevelScenesTransitionSetupDataSO_Init);
++void StandardLevelScenesTransitionSetupDataHook() {
++  INSTALL_HOOK(ChromaLogger::Logger, StandardLevelScenesTransitionSetupData_Init);
+@@ -45,2 +41 @@ void StandardLevelScenesTransitionSetupDataSOHook() {
+-
+-ChromaInstallHooks(StandardLevelScenesTransitionSetupDataSOHook)
+\ No newline at end of file
++ChromaInstallHooks(StandardLevelScenesTransitionSetupDataHook)
+diff --git a/src/hooks/SceneTransition/TutorialScenesTransitionSetupDataSO.cpp b/src/hooks/SceneTransition/TutorialScenesTransitionSetupDataSO.cpp
+index 31db50d..5682fd8 100644
+--- a/src/hooks/SceneTransition/TutorialScenesTransitionSetupDataSO.cpp
++++ b/src/hooks/SceneTransition/TutorialScenesTransitionSetupDataSO.cpp
+@@ -5 +5 @@
+-#include "GlobalNamespace/TutorialScenesTransitionSetupDataSO.hpp"
++#include "GlobalNamespace/TutorialScenesTransitionSetupData.hpp"
+@@ -12,3 +12,4 @@ using namespace Chroma;
+-MAKE_HOOK_MATCH(TutorialScenesTransitionSetupDataSO_Init, &TutorialScenesTransitionSetupDataSO::Init, void,
+-                TutorialScenesTransitionSetupDataSO* self,
+-                GlobalNamespace::PlayerSpecificSettings* playerSpecificSettings) {
++MAKE_HOOK_MATCH(TutorialScenesTransitionSetupData_Init, &TutorialScenesTransitionSetupData::Init, void,
++                TutorialScenesTransitionSetupData* self,
++                GlobalNamespace::PlayerSpecificSettings* playerSpecificSettings,
++                GlobalNamespace::GameplayAdditionalInformation* gameplayAdditionalInformation) {
+@@ -16 +17 @@ MAKE_HOOK_MATCH(TutorialScenesTransitionSetupDataSO_Init, &TutorialScenesTransit
+-  TutorialScenesTransitionSetupDataSO_Init(self, playerSpecificSettings);
++  TutorialScenesTransitionSetupData_Init(self, playerSpecificSettings, gameplayAdditionalInformation);
+@@ -19,2 +20,2 @@ MAKE_HOOK_MATCH(TutorialScenesTransitionSetupDataSO_Init, &TutorialScenesTransit
+-void TutorialScenesTransitionSetupDataSOHook() {
+-  INSTALL_HOOK(ChromaLogger::Logger, TutorialScenesTransitionSetupDataSO_Init);
++void TutorialScenesTransitionSetupDataHook() {
++  INSTALL_HOOK(ChromaLogger::Logger, TutorialScenesTransitionSetupData_Init);
+@@ -23 +24 @@ void TutorialScenesTransitionSetupDataSOHook() {
+-ChromaInstallHooks(TutorialScenesTransitionSetupDataSOHook)
+\ No newline at end of file
++ChromaInstallHooks(TutorialScenesTransitionSetupDataHook)
+\ No newline at end of file
+diff --git a/src/hooks/SceneTransition/UnitySceneChange.cpp b/src/hooks/SceneTransition/UnitySceneChange.cpp
+index 53e7ad6..badb606 100644
+--- a/src/hooks/SceneTransition/UnitySceneChange.cpp
++++ b/src/hooks/SceneTransition/UnitySceneChange.cpp
+@@ -2,0 +3,2 @@
++#include "GameplayLifetime.hpp"
++#include "GameplaySceneLifetime.hpp"
+@@ -5,0 +8 @@
++#include "UnityEngine/SceneManagement/SceneHandle.hpp"
+@@ -19,0 +23,18 @@ MAKE_HOOK_MATCH(SceneManager_Internal_ActiveSceneChanged, &UnityEngine::SceneMan
++static GameplaySceneLifetime gameplayLifetime;
++
++MAKE_HOOK_MATCH(SceneManager_Internal_SceneLoaded, &UnityEngine::SceneManagement::SceneManager::Internal_SceneLoaded,
++                void, UnityEngine::SceneManagement::Scene scene, UnityEngine::SceneManagement::LoadSceneMode mode) {
++  if (scene.IsValid()) gameplayLifetime.Loaded(SceneManagement::SceneHandle::op_Implicit_int32_t(scene.handle), std::string(scene.name));
++  SceneManager_Internal_SceneLoaded(scene, mode);
++}
++
++MAKE_HOOK_MATCH(SceneManager_Internal_SceneUnloaded, &UnityEngine::SceneManagement::SceneManager::Internal_SceneUnloaded,
++                void, UnityEngine::SceneManagement::Scene scene) {
++  const bool unloadedGameplay = gameplayLifetime.Unloaded(SceneManagement::SceneHandle::op_Implicit_int32_t(scene.handle));
++  SceneManager_Internal_SceneUnloaded(scene);
++  if (unloadedGameplay && !gameplayLifetime.HasGameplay()) {
++    ClearChromaGameplayReferences();
++    ChromaLogger::Logger.info("Released GameCore materials and colorizers");
++  }
++}
++
+@@ -21,0 +43,2 @@ void SceneManager_Internal() {
++  INSTALL_HOOK(ChromaLogger::Logger, SceneManager_Internal_SceneLoaded);
++  INSTALL_HOOK(ChromaLogger::Logger, SceneManager_Internal_SceneUnloaded);
+diff --git a/src/hooks/colorizer/BeatmapObjectManager.cpp b/src/hooks/colorizer/BeatmapObjectManager.cpp
+index 950da2f..32674ab 100644
+--- a/src/hooks/colorizer/BeatmapObjectManager.cpp
++++ b/src/hooks/colorizer/BeatmapObjectManager.cpp
+@@ -16 +16 @@ MAKE_HOOK_MATCH(BeatmapObjectManager_NoteCutEvent, &BeatmapObjectManager::Handle
+-                BeatmapObjectManager* self, NoteController* noteController, ByRef<NoteCutInfo> noteCutInfo) {
++                BeatmapObjectManager* self, NoteController* noteController, by_ref<NoteCutInfo> noteCutInfo) {
+@@ -21 +21 @@ MAKE_HOOK_MATCH(BeatmapObjectManager_NoteCutEvent, &BeatmapObjectManager::Handle
+-  NoteColorizer::ColorizeSaber(noteController, noteCutInfo.heldRef);
++  NoteColorizer::ColorizeSaber(noteController, (*noteCutInfo));
+diff --git a/src/hooks/colorizer/BombNoteController.cpp b/src/hooks/colorizer/BombNoteController.cpp
+index 1b5a0ca..33fb8dd 100644
+--- a/src/hooks/colorizer/BombNoteController.cpp
++++ b/src/hooks/colorizer/BombNoteController.cpp
+@@ -18 +18 @@ MAKE_HOOK_MATCH(BombNoteController_Init, &BombNoteController::Init, void, BombNo
+-                ::GlobalNamespace::NoteData* noteData, ::ByRef<::GlobalNamespace::NoteSpawnData> noteSpawnData) {
++                ::GlobalNamespace::NoteData* noteData, ::by_ref<::GlobalNamespace::NoteSpawnData> noteSpawnData) {
+diff --git a/src/hooks/colorizer/BurstSliderController.cpp b/src/hooks/colorizer/BurstSliderController.cpp
+index 697bfb5..81e4ce6 100644
+--- a/src/hooks/colorizer/BurstSliderController.cpp
++++ b/src/hooks/colorizer/BurstSliderController.cpp
+@@ -50 +50 @@ MAKE_HOOK_MATCH(BurstSliderGameNoteController_Init, &BurstSliderGameNoteControll
+-                ::GlobalNamespace::NoteData* noteData, ::ByRef<::GlobalNamespace::NoteSpawnData> noteSpawnData,
++                ::GlobalNamespace::NoteData* noteData, ::by_ref<::GlobalNamespace::NoteSpawnData> noteSpawnData,
+diff --git a/src/hooks/colorizer/ColorNoteVisuals.cpp b/src/hooks/colorizer/ColorNoteVisuals.cpp
+index 9a8a0e5..db20ed9 100644
+--- a/src/hooks/colorizer/ColorNoteVisuals.cpp
++++ b/src/hooks/colorizer/ColorNoteVisuals.cpp
+@@ -25 +25 @@ MAKE_HOOK_MATCH(ColorNoteVisuals_HandleNoteControllerDidInit, &ColorNoteVisuals:
+-  auto NoteControllerCast = il2cpp_utils::try_cast<NoteController>(noteController);
++  auto NoteControllerCast = i2c::cast<i2c::result<NoteController*>>(noteController);
+diff --git a/src/hooks/colorizer/Initialize/ParticleSystemEventEffect.cpp b/src/hooks/colorizer/Initialize/ParticleSystemEventEffect.cpp
+index 6a297cd..96c46e9 100644
+--- a/src/hooks/colorizer/Initialize/ParticleSystemEventEffect.cpp
++++ b/src/hooks/colorizer/Initialize/ParticleSystemEventEffect.cpp
+@@ -24 +24 @@ using namespace custom_types::Helpers;
+-Coroutine WaitThenStartParticle(ParticleSystemEventEffect* instance, BasicBeatmapEventType eventType) {
++custom_types::Helpers::Coroutine WaitThenStartParticle(ParticleSystemEventEffect* instance, BasicBeatmapEventType eventType) {
+@@ -26 +26 @@ Coroutine WaitThenStartParticle(ParticleSystemEventEffect* instance, BasicBeatma
+-  IL2CPP_CATCH_HANDLER(
++  PAPER_IL2CPP_CATCH_HANDLER(
+diff --git a/src/hooks/colorizer/Initialize/SliderController.cpp b/src/hooks/colorizer/Initialize/SliderController.cpp
+index 11b8353..a075397 100644
+--- a/src/hooks/colorizer/Initialize/SliderController.cpp
++++ b/src/hooks/colorizer/Initialize/SliderController.cpp
+@@ -24,5 +24,2 @@ MAKE_HOOK_MATCH(SliderController_OnDestroy, &SliderController::OnDestroy, void,
+-  // Do nothing if Chroma shouldn't run
+-  if (!ChromaController::DoChromaHooks()) {
+-    return;
+-  }
+-
++  // Destruction must erase an existing entry even after scene transition has
++  // disabled Chroma. Erasing a non-Chroma slider is a harmless no-op.
+diff --git a/src/hooks/colorizer/Note/NoteCutEffectSpawner.cpp b/src/hooks/colorizer/Note/NoteCutEffectSpawner.cpp
+index bc8d3fc..3e90bb8 100644
+--- a/src/hooks/colorizer/Note/NoteCutEffectSpawner.cpp
++++ b/src/hooks/colorizer/Note/NoteCutEffectSpawner.cpp
+@@ -46 +46 @@ MAKE_HOOK_MATCH(NoteCutEffectSpawner_SpawnNoteCutEffect, &NoteCutCoreEffectsSpaw
+-                NoteCutCoreEffectsSpawner* self, ByRef<GlobalNamespace::NoteCutInfo> noteCutInfo,
++                NoteCutCoreEffectsSpawner* self, by_ref<GlobalNamespace::NoteCutInfo> noteCutInfo,
+@@ -64 +64 @@ MAKE_HOOK_MATCH(NoteCutEffectSpawner_SpawnBombCutEffect, &NoteCutCoreEffectsSpaw
+-                NoteCutCoreEffectsSpawner* self, ByRef<GlobalNamespace::NoteCutInfo> noteCutInfo,
++                NoteCutCoreEffectsSpawner* self, by_ref<GlobalNamespace::NoteCutInfo> noteCutInfo,
+@@ -112 +112 @@ MAKE_HOOK_MATCH(NoteCutCoreEffectsSpawner_HandleNoteWasCut, &NoteCutCoreEffectsS
+-                NoteCutCoreEffectsSpawner* self, NoteController* noteController, ByRef<NoteCutInfo> noteCutInfo) {
++                NoteCutCoreEffectsSpawner* self, NoteController* noteController, by_ref<NoteCutInfo> noteCutInfo) {
+diff --git a/src/hooks/colorizer/NoteController.cpp b/src/hooks/colorizer/NoteController.cpp
+index 55e9321..932db4f 100644
+--- a/src/hooks/colorizer/NoteController.cpp
++++ b/src/hooks/colorizer/NoteController.cpp
+@@ -31 +31 @@ MAKE_HOOK_MATCH(NoteController_Init, &NoteController::Init, void, NoteController
+-                ::ByRef<::GlobalNamespace::NoteSpawnData> noteSpawnData, float_t endRotation, float_t uniformScale,
++                ::by_ref<::GlobalNamespace::NoteSpawnData> noteSpawnData, float_t endRotation, float_t uniformScale,
+diff --git a/src/hooks/colorizer/Obstacle/ObstacleSaberSparklerEffectManager.cpp b/src/hooks/colorizer/Obstacle/ObstacleSaberSparklerEffectManager.cpp
+index 4a92cb9..baba86f 100644
+--- a/src/hooks/colorizer/Obstacle/ObstacleSaberSparklerEffectManager.cpp
++++ b/src/hooks/colorizer/Obstacle/ObstacleSaberSparklerEffectManager.cpp
+@@ -12 +12 @@
+-#include "GlobalNamespace/HapticFeedbackManager.hpp"
++#include "BeatSaber/Haptics/HapticFeedbackManager.hpp"
+@@ -49 +49 @@ MAKE_HOOK_MATCH(ObstacleSaberSparkleEffectManager_Update, &ObstacleSaberSparkleE
+-                                                                       byref(flag), byref(identity))) {
++                                                                       by_ref(flag), by_ref(identity))) {
+@@ -53 +53 @@ MAKE_HOOK_MATCH(ObstacleSaberSparkleEffectManager_Update, &ObstacleSaberSparkleE
+-      // SetObstacleSaberSparkleColor(self->_effects.get(i), obstacleController);
++      // SetObstacleSaberSparkleColor(self->_effects[i], obstacleController);
+diff --git a/src/hooks/colorizer/ObstacleController.cpp b/src/hooks/colorizer/ObstacleController.cpp
+index dcbd780..840665f 100644
+--- a/src/hooks/colorizer/ObstacleController.cpp
++++ b/src/hooks/colorizer/ObstacleController.cpp
+@@ -25 +25 @@ MAKE_HOOK_MATCH(ObstacleController_Init, &ObstacleController::Init, void, Obstac
+-                ::GlobalNamespace::ObstacleData* obstacleData, ::ByRef<::GlobalNamespace::ObstacleSpawnData> obstacleSpawnData) {
++                ::GlobalNamespace::ObstacleData* obstacleData, ::by_ref<::GlobalNamespace::ObstacleSpawnData> obstacleSpawnData) {
+diff --git a/src/hooks/colorizer/Saber/SaberBurnMarkArea.cpp b/src/hooks/colorizer/Saber/SaberBurnMarkArea.cpp
+index b404269..3b254d6 100644
+--- a/src/hooks/colorizer/Saber/SaberBurnMarkArea.cpp
++++ b/src/hooks/colorizer/Saber/SaberBurnMarkArea.cpp
+@@ -1,2 +0,0 @@
+-#include <cmath>
+-
+@@ -4 +1,0 @@
+-
+@@ -6,11 +2,0 @@
+-
+-#include "GlobalNamespace/BaseNoteVisuals.hpp"
+-#include "GlobalNamespace/BombNoteController.hpp"
+-#include "GlobalNamespace/MirroredBombNoteController.hpp"
+-#include "GlobalNamespace/MultiplayerConnectedPlayerBombNoteController.hpp"
+-#include "GlobalNamespace/MultiplayerConnectedPlayerNoteController.hpp"
+-#include "GlobalNamespace/TutorialNoteController.hpp"
+-#include "GlobalNamespace/SaberBurnMarkArea.hpp"
+-
+-#include "UnityEngine/LineRenderer.hpp"
+-
+@@ -17,0 +4,4 @@
++#include "GlobalNamespace/SaberBurnMarkArea.hpp"
++#include "GlobalNamespace/SettingsManager.hpp"
++#include "GlobalNamespace/SaberManager.hpp"
++#include "GlobalNamespace/ColorManager.hpp"
+@@ -24,17 +14,12 @@ using namespace UnityEngine;
+-std::array<LineRenderer*, 2> lineRenderers = { nullptr, nullptr };
+-
+-int saberBurnMarkCount = 0;
+-
+-void OnSaberColorChanged_SaberBurnMarkArea(int saberType,
+-                                           GlobalNamespace::SaberModelController* /*saberModelController*/,
+-                                           Color const& color) {
+-  float h = NAN;
+-  float s = NAN;
+-  float _ = NAN;
+-
+-  Sombrero::FastColor::RGBToHSV(color, h, s, _);
+-  Sombrero::FastColor effectColor = Sombrero::FastColor::HSVToRGB(h, s, 1);
+-  int intType = saberType;
+-  if (lineRenderers[intType]) {
+-    lineRenderers[intType]->set_startColor(effectColor);
+-    lineRenderers[intType]->set_endColor(effectColor);
++namespace {
++std::vector<safe_ptr<SaberBurnMarkArea*>> burnMarkAreas;
++
++void OnSaberColorChanged_SaberBurnMarkArea(int saberType, SaberModelController*, Color const& color) {
++  if (saberType < 0 || saberType >= 2) return;
++  float hue = 0, saturation = 0, value = 0;
++  Sombrero::FastColor::RGBToHSV(color, hue, saturation, value);
++  auto effectColor = Sombrero::FastColor::HSVToRGB(hue, saturation, 1);
++  for (auto const& area : burnMarkAreas) {
++    if (area && area->_saberColors && saberType < area->_saberColors.size()) {
++      area->_saberColors[saberType] = effectColor;
++    }
+@@ -42,0 +28 @@ void OnSaberColorChanged_SaberBurnMarkArea(int saberType,
++}
+@@ -44,14 +30,7 @@ void OnSaberColorChanged_SaberBurnMarkArea(int saberType,
+-MAKE_HOOK_MATCH(SaberBurnMarkArea_Start, &SaberBurnMarkArea::Start, void, SaberBurnMarkArea* self) {
+-  SaberBurnMarkArea_Start(self);
+-
+-  // Do nothing if Chroma shouldn't run
+-  if (!ChromaController::DoChromaHooks() || (self == nullptr)) {
+-    return;
+-  }
+-
+-  if (self->_lineRenderers && self->_lineRenderers.size() >= 2) {
+-    lineRenderers[0] = self->_lineRenderers.get(0);
+-    lineRenderers[1] = self->_lineRenderers.get(1);
+-  }
+-
+-  if (saberBurnMarkCount == 0) {
++// Unity 6 burn marks use a render texture; their shader consumes this color array.
++MAKE_HOOK_MATCH(SaberBurnMarkArea_Initialize, &SaberBurnMarkArea::Initialize, void,
++                SaberBurnMarkArea* self, SettingsManager* settingsManager,
++                SaberManager* saberManager, ColorManager* colorManager) {
++  SaberBurnMarkArea_Initialize(self, settingsManager, saberManager, colorManager);
++  if (!ChromaController::DoChromaHooks()) return;
++  if (burnMarkAreas.empty()) {
+@@ -60 +39,3 @@ MAKE_HOOK_MATCH(SaberBurnMarkArea_Start, &SaberBurnMarkArea::Start, void, SaberB
+-  saberBurnMarkCount++;
++  if (std::ranges::none_of(burnMarkAreas, [self](auto const& area) { return area == self; })) {
++    burnMarkAreas.emplace_back(self);
++  }
+@@ -64,9 +45,2 @@ MAKE_HOOK_MATCH(SaberBurnMarkArea_OnDestroy, &SaberBurnMarkArea::OnDestroy, void
+-  SaberBurnMarkArea_OnDestroy(self);
+-  // Do nothing if Chroma shouldn't run
+-  if (!ChromaController::DoChromaHooks()) {
+-    return;
+-  }
+-
+-  saberBurnMarkCount--;
+-
+-  if (saberBurnMarkCount == 0) {
++  std::erase_if(burnMarkAreas, [self](auto const& area) { return !area || area == self; });
++  if (burnMarkAreas.empty()) {
+@@ -74,0 +49 @@ MAKE_HOOK_MATCH(SaberBurnMarkArea_OnDestroy, &SaberBurnMarkArea::OnDestroy, void
++  SaberBurnMarkArea_OnDestroy(self);
+@@ -78 +53 @@ void SaberBurnMarkAreaHook() {
+-  INSTALL_HOOK(ChromaLogger::Logger, SaberBurnMarkArea_Start);
++  INSTALL_HOOK(ChromaLogger::Logger, SaberBurnMarkArea_Initialize);
+@@ -81,2 +56 @@ void SaberBurnMarkAreaHook() {
+-
+-ChromaInstallHooks(SaberBurnMarkAreaHook)
+\ No newline at end of file
++ChromaInstallHooks(SaberBurnMarkAreaHook)
+diff --git a/src/hooks/colorizer/Saber/SaberBurnMarkSparkles.cpp b/src/hooks/colorizer/Saber/SaberBurnMarkSparkles.cpp
+index c218c5b..e460ce7 100644
+--- a/src/hooks/colorizer/Saber/SaberBurnMarkSparkles.cpp
++++ b/src/hooks/colorizer/Saber/SaberBurnMarkSparkles.cpp
+@@ -58,2 +58,2 @@ MAKE_HOOK_MATCH(SaberBurnMarkSparkles_Start, &SaberBurnMarkSparkles::Start, void
+-    burnMarksPS[0] = self->_burnMarksPS.get(0);
+-    burnMarksPS[1] = self->_burnMarksPS.get(1);
++    burnMarksPS[0] = self->_burnMarksPS[0];
++    burnMarksPS[1] = self->_burnMarksPS[1];
+diff --git a/src/hooks/colorizer/SliderController.cpp b/src/hooks/colorizer/SliderController.cpp
+index 6e4bac9..e2eabc8 100644
+--- a/src/hooks/colorizer/SliderController.cpp
++++ b/src/hooks/colorizer/SliderController.cpp
+@@ -26 +26 @@ MAKE_HOOK_MATCH(SliderController_Init, &SliderController::Init, void, SliderCont
+-                ::ByRef<::GlobalNamespace::SliderSpawnData> sliderSpawnData, float_t noteUniformScale, float_t randomValue) {
++                ::by_ref<::GlobalNamespace::SliderSpawnData> sliderSpawnData, float_t noteUniformScale, float_t randomValue) {
+diff --git a/src/lighting/ChromaEventData.cpp b/src/lighting/ChromaEventData.cpp
+index 9e0d602..a592fa6 100644
+--- a/src/lighting/ChromaEventData.cpp
++++ b/src/lighting/ChromaEventData.cpp
+@@ -26 +26 @@ void Chroma::ChromaEventDataManager::deserialize(CustomJSONData::CustomBeatmapDa
+-    auto customBeatmapEvent = il2cpp_utils::try_cast<CustomJSONData::CustomBeatmapEventData>(beatmapEvent);
++    auto customBeatmapEvent = i2c::cast<i2c::result<CustomJSONData::CustomBeatmapEventData*>>(beatmapEvent);
+@@ -198 +198 @@ void Chroma::ChromaEventDataManager::deserialize(CustomJSONData::CustomBeatmapDa
+-    auto basicBeatmapEventDataOpt = il2cpp_utils::try_cast<CustomJSONData::CustomBeatmapEventData>(beatmapEventData);
++    auto basicBeatmapEventDataOpt = i2c::cast<i2c::result<CustomJSONData::CustomBeatmapEventData*>>(beatmapEventData);
+diff --git a/src/lighting/ChromaFogController.cpp b/src/lighting/ChromaFogController.cpp
+index 90c4606..6f7d24f 100644
+--- a/src/lighting/ChromaFogController.cpp
++++ b/src/lighting/ChromaFogController.cpp
+@@ -52 +52 @@ void ChromaFogController::Awake() {
+-    bloomFog = fogs.get(0);
++    bloomFog = fogs[0];
+diff --git a/src/lighting/ChromaLightSwitchEventEffect.cpp b/src/lighting/ChromaLightSwitchEventEffect.cpp
+index 7591b91..d01d5d0 100644
+--- a/src/lighting/ChromaLightSwitchEventEffect.cpp
++++ b/src/lighting/ChromaLightSwitchEventEffect.cpp
+@@ -82 +82 @@ void Chroma::ChromaLightSwitchEventEffect::CopyValues(GlobalNamespace::LightSwit
+-    if (auto multi = il2cpp_utils::try_cast<MultipliedColorSO>(so.ptr())) {
++    if (auto multi = i2c::cast<i2c::result<MultipliedColorSO*>>(so.ptr())) {
+@@ -115 +115 @@ void Chroma::ChromaLightSwitchEventEffect::HandleEvent(GlobalNamespace::BasicBea
+-  auto beatmapEventDataOpt = il2cpp_utils::try_cast<CustomJSONData::CustomBeatmapEventData>(beatmapEventData);
++  auto beatmapEventDataOpt = i2c::cast<i2c::result<CustomJSONData::CustomBeatmapEventData*>>(beatmapEventData);
+@@ -184,2 +184,2 @@ void Chroma::ChromaLightSwitchEventEffect::OnDestroy() {
+-      il2cpp_utils::il2cpp_type_check::MetadataGetter<&LightSwitchEventEffect::OnDestroy>::methodInfo();
+-  il2cpp_utils::RunMethodRethrow<void, false>(this, LightSwitchEventEffect_OnDestroy);
++      i2c::metadata_getter<&LightSwitchEventEffect::OnDestroy>::method_info();
++  i2c::run_method<void>(this, LightSwitchEventEffect_OnDestroy);
+@@ -230 +230 @@ void ChromaLightSwitchEventEffect::Refresh(bool hard, std::optional<std::vector<
+-      auto previousEventOpt = il2cpp_utils::try_cast<CustomJSONData::CustomBeatmapEventData>(previousEvent);
++      auto previousEventOpt = i2c::cast<i2c::result<CustomJSONData::CustomBeatmapEventData*>>(previousEvent);
+@@ -245 +245 @@ void ChromaLightSwitchEventEffect::Refresh(bool hard, std::optional<std::vector<
+-        nextSameTypeEvent = il2cpp_utils::try_cast<BasicBeatmapEventData>(tempNextSameTypeEvent).value_or(nullptr);
++        nextSameTypeEvent = i2c::cast<i2c::result<BasicBeatmapEventData*>>(tempNextSameTypeEvent).value_or(nullptr);
+@@ -251 +251 @@ void ChromaLightSwitchEventEffect::Refresh(bool hard, std::optional<std::vector<
+-        nextSameTypeEvent = il2cpp_utils::try_cast<BasicBeatmapEventData>(tempNextSameTypeEvent).value_or(nullptr);
++        nextSameTypeEvent = i2c::cast<i2c::result<BasicBeatmapEventData*>>(tempNextSameTypeEvent).value_or(nullptr);
+@@ -264 +264 @@ void ChromaLightSwitchEventEffect::Refresh(bool hard, std::optional<std::vector<
+-      previousEventOpt = il2cpp_utils::try_cast<CustomJSONData::CustomBeatmapEventData>(nextSameTypeEvent);
++      previousEventOpt = i2c::cast<i2c::result<CustomJSONData::CustomBeatmapEventData*>>(nextSameTypeEvent);
+@@ -309 +309 @@ void ChromaLightSwitchEventEffect::Refresh(bool hard, std::optional<std::vector<
+-      _tweeningManager->ResumeTween(tween, this, false);
++      _tweeningManager->ResumeTween(tween, this);
+@@ -364 +364 @@ void ChromaLightSwitchEventEffect::Refresh(bool hard, std::optional<std::vector<
+-        _tweeningManager->RestartTween(tween, this, false);
++        _tweeningManager->RestartTween(tween, this);
+@@ -387 +387 @@ void ChromaLightSwitchEventEffect::Refresh(bool hard, std::optional<std::vector<
+-        _tweeningManager->RestartTween(tween, this, false);
++        _tweeningManager->RestartTween(tween, this);
+diff --git a/src/lighting/ChromaRingsRotationEffect.cpp b/src/lighting/ChromaRingsRotationEffect.cpp
+index 718ac24..e990598 100644
+--- a/src/lighting/ChromaRingsRotationEffect.cpp
++++ b/src/lighting/ChromaRingsRotationEffect.cpp
+@@ -26 +26 @@ void ChromaRingsRotationEffect::SetNewRingManager(GlobalNamespace::TrackLaneRing
+-  this->_trackLaneRingsManager = _trackLaneRingsManager;
++  this->_trackLaneRingsManager = trackLaneRingsManager;
+@@ -56 +56 @@ void ChromaRingsRotationEffect::FixedUpdate() {
+-      _trackLaneRingsManager->_rings = ArrayW<UnityW<GlobalNamespace::TrackLaneRing>>();
++      return; // Wait until the manager has created its rings.
+@@ -70 +70 @@ void ChromaRingsRotationEffect::FixedUpdate() {
+-        SetDestRotation(rings.get(num),
++        SetDestRotation(rings.at(num),
+diff --git a/src/lighting/LegacyLightHelper.cpp b/src/lighting/LegacyLightHelper.cpp
+index e99a4f9..4903554 100644
+--- a/src/lighting/LegacyLightHelper.cpp
++++ b/src/lighting/LegacyLightHelper.cpp
+@@ -25 +25 @@ void LegacyLightHelper::Activate(std::span<GlobalNamespace::BasicBeatmapEventDat
+-      ChromaLogger::Logger.debug("Beatmap data: {} not what expected", il2cpp_utils::ClassStandardName(d->klass).c_str());
++      ChromaLogger::Logger.debug("Beatmap data: {} not what expected", i2c::class_standard_name(d->klass).c_str());
+diff --git a/src/lighting/LightIDTableManager.cpp b/src/lighting/LightIDTableManager.cpp
+index 24ea84a..bc648da 100644
+--- a/src/lighting/LightIDTableManager.cpp
++++ b/src/lighting/LightIDTableManager.cpp
+@@ -10 +10,5 @@ bool LightIDTableManager::installed = false;
+-std::unordered_map<std::string_view, EnvironmentLightDataT> LightIDTableManager::environmentsToInstall;
++// Environment registrants may run before this translation unit's initialization.
++std::unordered_map<std::string_view, EnvironmentLightDataT>& LightIDTableManager::PendingEnvironments() {
++  static std::unordered_map<std::string_view, EnvironmentLightDataT> entries;
++  return entries;
++}
+@@ -12 +16,4 @@ std::unordered_map<std::string_view, EnvironmentLightDataT> LightIDTableManager:
+-std::unordered_map<std::string_view, EnvironmentLightDataT> LightIDTableManager::lightIdTable;
++std::unordered_map<std::string_view, EnvironmentLightDataT>& LightIDTableManager::EnvironmentTable() {
++  static std::unordered_map<std::string_view, EnvironmentLightDataT> entries;
++  return entries;
++}
+@@ -16 +23 @@ void Chroma::LightIDTableManager::InitTable() {
+-  for (auto& data : environmentsToInstall) {
++  for (auto& data : PendingEnvironments()) {
+@@ -18 +25 @@ void Chroma::LightIDTableManager::InitTable() {
+-    lightIdTable.emplace(data);
++    EnvironmentTable().emplace(data);
+@@ -24 +31 @@ void LightIDTableManager::SetEnvironment(std::string_view environmentName) {
+-  auto it = lightIdTable.find(environmentName);
++  auto it = EnvironmentTable().find(environmentName);
+@@ -26 +33 @@ void LightIDTableManager::SetEnvironment(std::string_view environmentName) {
+-  if (it == lightIdTable.end()) {
++  if (it == EnvironmentTable().end()) {
+@@ -72 +79 @@ void LightIDTableManager::AddEnvironment(InstallEnvironmentFunc environmentData)
+-    lightIdTable.try_emplace(environmentData.first, environmentData.second);
++    EnvironmentTable().try_emplace(environmentData.first, environmentData.second);
+@@ -74 +81 @@ void LightIDTableManager::AddEnvironment(InstallEnvironmentFunc environmentData)
+-    environmentsToInstall.try_emplace(environmentData.first, environmentData.second);
++    PendingEnvironments().try_emplace(environmentData.first, environmentData.second);
+diff --git a/src/main.cpp b/src/main.cpp
+index 0ace45e..d7b0e6b 100644
+--- a/src/main.cpp
++++ b/src/main.cpp
+@@ -7,4 +7,3 @@
+-#include "beatsaber-hook/shared/config/rapidjson-utils.hpp"
+-#include "beatsaber-hook/shared/utils/logging.hpp" // Required for ChromaLogger
+-#include "beatsaber-hook/shared/config/config-utils.hpp"
+-#include "beatsaber-hook/shared/utils/il2cpp-functions.hpp"
++#include "beatsaber-hook/shared/rapidjson.hpp"
++#include "beatsaber-hook/shared/config.hpp"
++#include "beatsaber-hook/shared/api.hpp"
+@@ -52 +51 @@ extern "C" void late_load() {
+-  il2cpp_functions::Init();
++  i2c::functions::initialize();
+diff --git a/include/GameplayLifetime.hpp b/include/GameplayLifetime.hpp
+new file mode 100644
+--- /dev/null
++++ b/include/GameplayLifetime.hpp
+@@ -0,0 +1,3 @@
++#pragma once
++// Internal per-game cleanup; persistent donor material templates are preserved.
++void ClearChromaGameplayReferences();
+diff --git a/include/GameplaySceneLifetime.hpp b/include/GameplaySceneLifetime.hpp
+new file mode 100644
+--- /dev/null
++++ b/include/GameplaySceneLifetime.hpp
+@@ -0,0 +1,19 @@
++#pragma once
++#include <optional>
++#include <string_view>
++
++// Scene names may no longer be available during the unload callback. Match the
++// handle captured while GameCore was loaded, ignoring additive environments.
++class GameplaySceneLifetime {
++  std::optional<int> gameplayHandle;
++public:
++  void Loaded(int handle, std::string_view name) {
++    if (name == "GameCore") gameplayHandle = handle;
++  }
++  bool HasGameplay() const { return gameplayHandle.has_value(); }
++  bool Unloaded(int handle) {
++    if (!gameplayHandle || *gameplayHandle != handle) return false;
++    gameplayHandle.reset();
++    return true;
++  }
++};
+diff --git a/include/lighting/LegacyLightMapping.hpp b/include/lighting/LegacyLightMapping.hpp
+new file mode 100644
+--- /dev/null
++++ b/include/lighting/LegacyLightMapping.hpp
+@@ -0,0 +1,24 @@
++#pragma once
++
++#include "GlobalNamespace/ILightWithId.hpp"
++#include "GlobalNamespace/LightWithIdManager.hpp"
++
++namespace Chroma {
++// The 1.45.1 native manager keeps legacy IDs and group/element IDs in separate
++// maps. Chroma's legacy per-light indices must not alter the group map.
++inline bool UsesGroupLightMapping(GlobalNamespace::ILightWithId* light) {
++  return light->get_groupId() != -1 && light->get_elementId() != -1;
++}
++
++inline GlobalNamespace::LightWithIdManager_LightMapData* GetLegacyLightMap(
++    GlobalNamespace::LightWithIdManager* manager, int lightId, bool initialize = false) {
++  if (!manager || !manager->_oldMapping || lightId < 0 || lightId >= manager->_oldMapping.size())
++    return nullptr;
++  auto*& data = manager->_oldMapping[lightId];
++  if (!data && initialize)
++    data = GlobalNamespace::LightWithIdManager_LightMapData::New_ctor();
++  if (data && initialize && !data->lightInstances)
++    data->lightInstances = ArrayW<GlobalNamespace::ILightWithId*>::New();
++  return data;
++}
++}

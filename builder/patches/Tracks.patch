@@ -1,0 +1,272 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index b0b545f..33fcd7b 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -9,2 +9,2 @@ project(${COMPILE_ID})
+-set(CMAKE_CXX_STANDARD 20)
+-set(CMAKE_CXX_STANDARD_REQUIRED 20)
++set(CMAKE_CXX_STANDARD 23)
++set(CMAKE_CXX_STANDARD_REQUIRED ON)
+@@ -17,2 +17,2 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebI
+-        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+-        add_compile_options(-O3 -flto)
++        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION FALSE)
++        add_compile_options(-O3)
+@@ -20 +20,3 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebI
+-        set(TRACKS_RS_LINK_PATH ${CMAKE_CURRENT_SOURCE_DIR}/tracks_rs_link/target/aarch64-linux-android/release/)
++        if(NOT DEFINED TRACKS_RS_LINK_PATH)
++            set(TRACKS_RS_LINK_PATH ${CMAKE_CURRENT_BINARY_DIR}/rust/aarch64-linux-android/release)
++        endif()
+@@ -76,0 +79,12 @@ include(extern.cmake)
++get_target_property(port_link_libraries ${COMPILE_ID} LINK_LIBRARIES)
++list(FILTER port_link_libraries EXCLUDE REGEX "(^|/)(debug_[^/]*|[^/]*\\.debug)\\.so$")
++set_property(TARGET ${COMPILE_ID} PROPERTY LINK_LIBRARIES "")
++foreach(port_library IN LISTS port_link_libraries)
++    get_filename_component(port_name "${port_library}" NAME)
++    if(port_name STREQUAL "libbeatsaber-hook.so")
++        set(port_library "${CMAKE_CURRENT_SOURCE_DIR}/../../core-qmods/native/beatsaber-hook-1451/${port_name}")
++    elseif(port_name STREQUAL "libsongcore.so")
++        set(port_library "${CMAKE_CURRENT_SOURCE_DIR}/../../core-qmods/native/songcore-1451/${port_name}")
++    endif()
++    target_link_libraries(${COMPILE_ID} PRIVATE "${port_library}")
++endforeach()
+@@ -96 +110,12 @@ add_custom_command(TARGET ${COMPILE_ID} POST_BUILD
+-)
+\ No newline at end of file
++)
++# Exact game headers and the locally ported CJD are required for this source port.
++if(NOT DEFINED BEAT_SABER_CODEGEN_INCLUDE)
++    message(FATAL_ERROR "Use build-port.py or specify exact 1.45.1 generated headers")
++endif()
++set(CJD_PORT_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../CustomJSONData" CACHE PATH "Local CustomJSONData 1.45.1 source")
++set(CJD_PORT_LIBRARY "${CMAKE_CURRENT_SOURCE_DIR}/../../core-qmods/native/custom-json-data-1451/libcustom-json-data.so" CACHE FILEPATH "Local CustomJSONData 1.45.1 binary")
++file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/local-includes/custom-json-data")
++file(CREATE_LINK "${CJD_PORT_ROOT}/shared" "${CMAKE_CURRENT_BINARY_DIR}/local-includes/custom-json-data/shared" SYMBOLIC)
++target_include_directories(${COMPILE_ID} BEFORE PRIVATE "${BEAT_SABER_CODEGEN_INCLUDE}" "${CMAKE_CURRENT_BINARY_DIR}/local-includes")
++target_link_libraries(${COMPILE_ID} PRIVATE "${CJD_PORT_LIBRARY}")
++target_link_options(${COMPILE_ID} PRIVATE -Wl,--no-undefined)
+diff --git a/shared/Animation/GameObjectTrackController.hpp b/shared/Animation/GameObjectTrackController.hpp
+index a1e51a4..f4ffc89 100644
+--- a/shared/Animation/GameObjectTrackController.hpp
++++ b/shared/Animation/GameObjectTrackController.hpp
+@@ -1,0 +2 @@
++#include "beatsaber-hook/shared/callback.hpp"
+@@ -25,3 +26,3 @@ struct GameObjectTrackControllerData {
+-  UnorderedEventCallback<> PositionUpdate;
+-  UnorderedEventCallback<> ScaleUpdate;
+-  UnorderedEventCallback<> RotationUpdate;
++  unordered_event_callback<> PositionUpdate;
++  unordered_event_callback<> ScaleUpdate;
++  unordered_event_callback<> RotationUpdate;
+diff --git a/shared/Animation/PointDefinition.h b/shared/Animation/PointDefinition.h
+index f8b470e..8d1478e 100644
+--- a/shared/Animation/PointDefinition.h
++++ b/shared/Animation/PointDefinition.h
+@@ -8 +8 @@
+-#include "beatsaber-hook/shared/config/rapidjson-utils.hpp"
++#include "beatsaber-hook/shared/rapidjson.hpp"
+diff --git a/shared/Animation/Track.h b/shared/Animation/Track.h
+index da65e6b..f0aa96b 100644
+--- a/shared/Animation/Track.h
++++ b/shared/Animation/Track.h
+@@ -13 +13 @@
+-#include "beatsaber-hook/shared/utils/typedefs-wrappers.hpp"
++#include "beatsaber-hook/shared/types.hpp"
+diff --git a/shared/Json.h b/shared/Json.h
+index e0f6dfa..7532e2f 100644
+--- a/shared/Json.h
++++ b/shared/Json.h
+@@ -7 +7 @@
+-// #include "beatsaber-hook/shared/config/rapidjson-utils.hpp"
++// #include "beatsaber-hook/shared/rapidjson.hpp"
+diff --git a/shared/StaticHolders.hpp b/shared/StaticHolders.hpp
+index 44bcd5a..79c4db1 100644
+--- a/shared/StaticHolders.hpp
++++ b/shared/StaticHolders.hpp
+@@ -1,0 +2 @@
++#include "beatsaber-hook/shared/safeptr.hpp"
+@@ -6 +7 @@ struct __attribute__((visibility("default"))) TracksStatic {
+-  static SafePtr<GlobalNamespace::BpmController> bpmController;
++  static safe_ptr<GlobalNamespace::BpmController*> bpmController;
+diff --git a/shared/TLogger.h b/shared/TLogger.h
+index 2faa1a6..302ec43 100644
+--- a/shared/TLogger.h
++++ b/shared/TLogger.h
+@@ -2 +2 @@
+-#include "beatsaber-hook/shared/utils/logging.hpp"
++#include "beatsaber-hook/shared/utils.hpp"
+diff --git a/shared/VariableMovementHelper.hpp b/shared/VariableMovementHelper.hpp
+index 544b9e1..ce66ad3 100644
+--- a/shared/VariableMovementHelper.hpp
++++ b/shared/VariableMovementHelper.hpp
+@@ -10 +10 @@ template<typename Concrete>
+-struct BS_HOOKS_HIDDEN VariableMovementWrapper {
++struct __attribute__((visibility("hidden"))) VariableMovementWrapper {
+@@ -15 +15 @@ struct BS_HOOKS_HIDDEN VariableMovementWrapper {
+-    concrete = il2cpp_utils::try_cast<Concrete>(variable).value_or(nullptr);
++    concrete = i2c::cast<i2c::result<Concrete*>>(variable).value_or(nullptr);
+diff --git a/src/Animation/Events.cpp b/src/Animation/Events.cpp
+index 297b8b7..076c543 100644
+--- a/src/Animation/Events.cpp
++++ b/src/Animation/Events.cpp
+@@ -1 +1 @@
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+@@ -11 +11 @@
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+@@ -44 +44 @@ void Events::UpdateCoroutines(BeatmapCallbacksController* callbackController) {
+-  auto customBeatmapData = il2cpp_utils::cast<CustomJSONData::CustomBeatmapData>(callbackController->_beatmapData);
++  auto customBeatmapData = i2c::cast<CustomJSONData::CustomBeatmapData*>(callbackController->_beatmapData);
+@@ -75 +75 @@ void CustomEventCallback(BeatmapCallbacksController* callbackController,
+-  auto* customBeatmapData = il2cpp_utils::cast<CustomJSONData::CustomBeatmapData>(callbackController->_beatmapData);
++  auto* customBeatmapData = i2c::cast<CustomJSONData::CustomBeatmapData*>(callbackController->_beatmapData);
+diff --git a/src/Animation/GameObjectTrackController.cpp b/src/Animation/GameObjectTrackController.cpp
+index 4565e3e..58b37e7 100644
+--- a/src/Animation/GameObjectTrackController.cpp
++++ b/src/Animation/GameObjectTrackController.cpp
+@@ -164 +164 @@ void GameObjectTrackController::UpdateData(bool force) {
+-      il2cpp_utils::il2cpp_type_check::FPtrWrapper<&UnityEngine::Transform::set_position>::get();
++      [](UnityEngine::Transform* self, UnityEngine::Vector3 value) { self->set_position(value); };
+@@ -166 +166 @@ void GameObjectTrackController::UpdateData(bool force) {
+-      il2cpp_utils::il2cpp_type_check::FPtrWrapper<&UnityEngine::Transform::set_localPosition>::get();
++      [](UnityEngine::Transform* self, UnityEngine::Vector3 value) { self->set_localPosition(value); };
+@@ -168 +168 @@ void GameObjectTrackController::UpdateData(bool force) {
+-      il2cpp_utils::il2cpp_type_check::FPtrWrapper<&UnityEngine::Transform::set_rotation>::get();
++      [](UnityEngine::Transform* self, UnityEngine::Quaternion value) { self->set_rotation(value); };
+@@ -170 +170 @@ void GameObjectTrackController::UpdateData(bool force) {
+-      il2cpp_utils::il2cpp_type_check::FPtrWrapper<&UnityEngine::Transform::set_localRotation>::get();
++      [](UnityEngine::Transform* self, UnityEngine::Quaternion value) { self->set_localRotation(value); };
+@@ -172 +172 @@ void GameObjectTrackController::UpdateData(bool force) {
+-      il2cpp_utils::il2cpp_type_check::FPtrWrapper<&UnityEngine::Transform::set_localScale>::get();
++      [](UnityEngine::Transform* self, UnityEngine::Vector3 value) { self->set_localScale(value); };
+diff --git a/src/Hooks/BaseProviderHooks.cpp b/src/Hooks/BaseProviderHooks.cpp
+index bda8148..ae843a5 100644
+--- a/src/Hooks/BaseProviderHooks.cpp
++++ b/src/Hooks/BaseProviderHooks.cpp
+@@ -4 +4,2 @@
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "GameplayLifetime.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+@@ -37,3 +38,13 @@ using namespace UnityEngine;
+-static SafePtr<CustomBeatmapData> tempCustomBeatmap;
+-static SafePtr<PlayerSpecificSettings> tempPlayerSpecificSettings;
+-static SafePtr<VariableMovementDataProvider> tempVariableMovementDataProvider;
++static safe_ptr<CustomBeatmapData*> tempCustomBeatmap;
++static safe_ptr<PlayerSpecificSettings*> tempPlayerSpecificSettings;
++static safe_ptr<VariableMovementDataProvider*> tempVariableMovementDataProvider;
++
++void ClearTracksGameplayReferences() {
++  const int rootCount = int(bool(tempCustomBeatmap)) + int(bool(tempPlayerSpecificSettings)) +
++      int(bool(tempVariableMovementDataProvider));
++  tempCustomBeatmap = nullptr;
++  tempPlayerSpecificSettings = nullptr;
++  tempVariableMovementDataProvider = nullptr;
++  ClearTracksCallbackReferences();
++  Paper::ConstLoggerContext("Tracks | GameplayLifetime").info("Released GameCore references: baseRoots={}", rootCount);
++}
+@@ -52 +63 @@ MAKE_HOOK_MATCH(GameplayCoreInstaller_InstallBindings, &GlobalNamespace::Gamepla
+-  auto customBeatmapOpt = il2cpp_utils::try_cast<CustomJSONData::CustomBeatmapData>(beatmap);
++  auto customBeatmapOpt = i2c::cast<i2c::result<CustomJSONData::CustomBeatmapData*>>(beatmap);
+diff --git a/src/Hooks/BeatmapObjectCallbackController.cpp b/src/Hooks/BeatmapObjectCallbackController.cpp
+index 30b0604..caa2b10 100644
+--- a/src/Hooks/BeatmapObjectCallbackController.cpp
++++ b/src/Hooks/BeatmapObjectCallbackController.cpp
+@@ -3 +3 @@
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+@@ -11,0 +12 @@
++#include "GameplayLifetime.hpp"
+@@ -26 +27 @@ custom_types::Helpers::Coroutine updateCoroutines(BeatmapCallbacksController* se
+-  IL2CPP_CATCH_HANDLER(while (true) {
++  PAPER_IL2CPP_CATCH_HANDLER(while (true) {
+@@ -34 +35,6 @@ BeatmapCallbacksController* controller;
+-SafePtr<BpmController> TracksStatic::bpmController;
++safe_ptr<BpmController*> TracksStatic::bpmController;
++
++void ClearTracksCallbackReferences() {
++  controller = nullptr;
++  TracksStatic::bpmController = nullptr;
++}
+@@ -42 +48 @@ MAKE_HOOK_MATCH(BeatmapObjectCallbackController_Start, &BeatmapCallbacksControll
+-    if (auto customBeatmap = il2cpp_utils::try_cast<CustomJSONData::CustomBeatmapData>(self->_beatmapData)) {
++    if (auto customBeatmap = i2c::cast<i2c::result<CustomJSONData::CustomBeatmapData*>>(self->_beatmapData)) {
+@@ -48 +54 @@ MAKE_HOOK_MATCH(BeatmapObjectCallbackController_Start, &BeatmapCallbacksControll
+-      UnityEngine::Resources::FindObjectsOfTypeAll<BeatmapCallbacksUpdater*>().get(0)->StartCoroutine(
++      UnityEngine::Resources::FindObjectsOfTypeAll<BeatmapCallbacksUpdater*>()[0]->StartCoroutine(
+@@ -56 +62 @@ MAKE_HOOK_MATCH(BeatmapObjectCallbackController_Start, &BeatmapCallbacksControll
+-MAKE_HOOK_FIND_INSTANCE(BpmController_ctor, classof(BpmController*), ".ctor", void, BpmController* self,
++MAKE_HOOK_MATCH(BpmController_ctor, &BpmController::_ctor, void, BpmController* self,
+diff --git a/src/Hooks/UnitySceneChange.cpp b/src/Hooks/UnitySceneChange.cpp
+index 19b0eb7..6c3455a 100644
+--- a/src/Hooks/UnitySceneChange.cpp
++++ b/src/Hooks/UnitySceneChange.cpp
+@@ -2 +2,3 @@
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
++#include "GameplayLifetime.hpp"
++#include "GameplaySceneLifetime.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
+@@ -8,0 +11 @@
++#include "UnityEngine/SceneManagement/SceneHandle.hpp"
+@@ -16,0 +20,2 @@ using namespace UnityEngine;
++static GameplaySceneLifetime gameplayLifetime;
++
+@@ -19,0 +25 @@ MAKE_HOOK_MATCH(SceneManager_Internal_SceneLoaded, &UnityEngine::SceneManagement
++  if (scene.IsValid()) gameplayLifetime.Loaded(UnityEngine::SceneManagement::SceneHandle::op_Implicit_int32_t(scene.handle), std::string(scene.name));
+@@ -26,0 +33,7 @@ MAKE_HOOK_MATCH(SceneManager_Internal_SceneLoaded, &UnityEngine::SceneManagement
++MAKE_HOOK_MATCH(SceneManager_Internal_SceneUnloaded, &UnityEngine::SceneManagement::SceneManager::Internal_SceneUnloaded,
++                void, UnityEngine::SceneManagement::Scene scene) {
++  const bool unloadedGameplay = gameplayLifetime.Unloaded(UnityEngine::SceneManagement::SceneHandle::op_Implicit_int32_t(scene.handle));
++  SceneManager_Internal_SceneUnloaded(scene);
++  if (unloadedGameplay && !gameplayLifetime.HasGameplay()) ClearTracksGameplayReferences();
++}
++
+@@ -29,0 +43 @@ void InstallSceneManagerHooks() {
++  INSTALL_HOOK(logger, SceneManager_Internal_SceneUnloaded);
+diff --git a/src/TimeSourceHelper.cpp b/src/TimeSourceHelper.cpp
+index 2be1e82..13593a6 100644
+--- a/src/TimeSourceHelper.cpp
++++ b/src/TimeSourceHelper.cpp
+@@ -7 +7 @@ float TimeSourceHelper::getSongTime(GlobalNamespace::IAudioTimeSource* timeSourc
+-  static auto* timeSyncControllerClass = classof(AudioTimeSyncController*);
++  static auto* timeSyncControllerClass = i2c::class_of<AudioTimeSyncController*>();
+diff --git a/src/main.cpp b/src/main.cpp
+index 0f18539..463ff55 100644
+--- a/src/main.cpp
++++ b/src/main.cpp
+@@ -14 +14 @@ extern "C" void setup(CModInfo* info) {
+-  info->version = VERSION;
++  info->version = "2.5.4+local.1451"; // Upstream qpm metadata still says 2.5.2 on the v2.5.4 tag.
+diff --git a/include/GameplayLifetime.hpp b/include/GameplayLifetime.hpp
+new file mode 100644
+--- /dev/null
++++ b/include/GameplayLifetime.hpp
+@@ -0,0 +1,4 @@
++#pragma once
++// Internal scene-lifetime cleanup; no exported mod API changes.
++void ClearTracksGameplayReferences();
++void ClearTracksCallbackReferences();
+diff --git a/include/GameplaySceneLifetime.hpp b/include/GameplaySceneLifetime.hpp
+new file mode 100644
+--- /dev/null
++++ b/include/GameplaySceneLifetime.hpp
+@@ -0,0 +1,19 @@
++#pragma once
++#include <optional>
++#include <string_view>
++
++// Scene names may no longer be available during the unload callback. Match the
++// handle captured while GameCore was loaded, ignoring additive environments.
++class GameplaySceneLifetime {
++  std::optional<int> gameplayHandle;
++public:
++  void Loaded(int handle, std::string_view name) {
++    if (name == "GameCore") gameplayHandle = handle;
++  }
++  bool HasGameplay() const { return gameplayHandle.has_value(); }
++  bool Unloaded(int handle) {
++    if (!gameplayHandle || *gameplayHandle != handle) return false;
++    gameplayHandle.reset();
++    return true;
++  }
++};

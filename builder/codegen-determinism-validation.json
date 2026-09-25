@@ -1,0 +1,10 @@
+{
+  "fresh_source_build": true,
+  "exact_own_APK": true,
+  "complete_tree_sha256_runs": [
+    "d96e6d3c9039acf152342edfbe48d18ca1fb96af45a16307eda9757abaf7a2a1",
+    "d96e6d3c9039acf152342edfbe48d18ca1fb96af45a16307eda9757abaf7a2a1"
+  ],
+  "file_count": 45820,
+  "equal": true
+}
