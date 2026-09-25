@@ -49,9 +49,7 @@
   "lateModFiles": [
     "libsongdownloader.so"
   ],
-  "libraryFiles": [
-    "libsongdownloader.so"
-  ],
+  "libraryFiles": [],
   "fileCopies": [],
   "copyExtensions": []
 }

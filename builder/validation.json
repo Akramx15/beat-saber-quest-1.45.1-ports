@@ -2,12 +2,12 @@
   "schema": 1,
   "target_game": "1.45.1_27839",
   "experimental": true,
-  "complete_clean_build_pass": false,
+  "complete_clean_build_pass": true,
   "runtime_tested_portable_outputs": false,
   "host_tests": {
-    "passed": 21,
+    "passed": 23,
     "failed": 0,
-    "scope": "Source/header/dependency integrity, safe archive paths, compiler launch arguments, fingerprints, atomic native installation and real two-process cache serialization."
+    "scope": "Source/header/dependency integrity, safe archive paths, compiler launch arguments, fingerprints, atomic native installation, two-process cache serialization, and exactly one native registration in each manifest."
   },
   "source_reconstruction": {
     "targets": 12,
@@ -32,54 +32,213 @@
   },
   "builds": {
     "Quest-BSML": {
-      "state": "fresh_Android_compile_and_strict_link_passed_initial_receipt_pending_final_seal"
+      "state": "fresh_Android_compile_strict_link_and_corrected_package_receipt_passed",
+      "receipt": {
+        "version": "0.5.8+local.1451",
+        "native_sha256": {
+          "libbsml.so": "69da60256a4dad5655023fb6b986dd7f336efc11808cdf4817bdcb67bc6ea73d"
+        },
+        "inputs_sha256": "8d73d3cc6dd31838e46b2d1f050d7a425c59dc3de7995cb2f7b299e85821bed0",
+        "headers_tree_sha256": "d96e6d3c9039acf152342edfbe48d18ca1fb96af45a16307eda9757abaf7a2a1"
+      }
     },
     "MetaCore-1451": {
-      "state": "fresh_Android_target_compile_and_strict_link_passed",
-      "packaging": "initial run reached packaging before recipe fingerprint was sealed; final receipt pending"
+      "state": "fresh_Android_compile_strict_link_and_corrected_package_receipt_passed",
+      "receipt": {
+        "version": "2.0.3+local.1451",
+        "native_sha256": {
+          "libmetacore.so": "15f8cf7750ef20e890102c1b7d28feb142a5c148bcb53fac86eee4ff36aade4d"
+        },
+        "inputs_sha256": "74ffefd0b521982d99e2d67e55f769c80fb49d74245e8da7ac989f2ee2def42e",
+        "headers_tree_sha256": "d96e6d3c9039acf152342edfbe48d18ca1fb96af45a16307eda9757abaf7a2a1"
+      }
     },
     "metacore-bs-1451": {
-      "state": "not_yet_clean_built"
+      "state": "fresh_Android_compile_strict_link_and_corrected_package_receipt_passed",
+      "receipt": {
+        "version": "1.0.0+local.1451",
+        "native_sha256": {
+          "libmetacore-bs.so": "45352bc3d1cb33278abf89171c695c2da2496fa054d8612700d480f7c5430eb6"
+        },
+        "inputs_sha256": "233f0152544a0bdca6b7f077ed5c23dbe51430f1b1770477fb3aa4793ac462fe",
+        "headers_tree_sha256": "d96e6d3c9039acf152342edfbe48d18ca1fb96af45a16307eda9757abaf7a2a1"
+      }
     },
     "UnicodeQuest": {
-      "state": "fresh_Android_build_and_initial_QMOD_passed_final_receipt_pending"
+      "state": "fresh_Android_compile_strict_link_and_corrected_package_receipt_passed",
+      "receipt": {
+        "version": "0.1.8+local.1451",
+        "native_sha256": {
+          "libunicode.so": "43958f4befd5d55527032874ca920becd831ad478a1337e7aa774d9a2abd98af"
+        },
+        "inputs_sha256": "e3d564390c43f5e7bc9591d824d21c83bf99ed5c43c87571612be3a90469c931",
+        "headers_tree_sha256": "d96e6d3c9039acf152342edfbe48d18ca1fb96af45a16307eda9757abaf7a2a1"
+      }
     },
     "CustomJSONData": {
-      "state": "fresh_Android_build_and_initial_QMOD_passed_final_receipt_pending"
+      "state": "fresh_Android_compile_strict_link_and_corrected_package_receipt_passed",
+      "receipt": {
+        "version": "0.24.5+local.1451",
+        "native_sha256": {
+          "libcustom-json-data.so": "1bebcae42611e7588fbbbdccdb4ce629ca5747c9e328e583f0b3130adbe8b2e6"
+        },
+        "inputs_sha256": "da8a941afde8db5b3629a5c02ac97ba7b2c9fb589d477ca287aa378c71922bf2",
+        "headers_tree_sha256": "d96e6d3c9039acf152342edfbe48d18ca1fb96af45a16307eda9757abaf7a2a1"
+      }
     },
     "Tracks": {
-      "state": "fresh_Android_Rust_and_native_build_passed_initial_receipt_pending_final_seal"
+      "state": "fresh_Android_compile_strict_link_and_corrected_package_receipt_passed",
+      "receipt": {
+        "version": "2.5.4+local.1451.3",
+        "native_sha256": {
+          "libtracks.so": "b1d697cda215ba1b8b36538a42c85727c661dda5e0aaa4695ce6ceac47255793"
+        },
+        "inputs_sha256": "8c0da32f6149dd3e388a29660147116fb22259628abf63c92cd729aba05c1c29",
+        "headers_tree_sha256": "d96e6d3c9039acf152342edfbe48d18ca1fb96af45a16307eda9757abaf7a2a1"
+      }
     },
     "NoodleExtensions": {
-      "state": "fresh_native_build_in_progress"
+      "state": "fresh_Android_compile_strict_link_and_corrected_package_receipt_passed",
+      "receipt": {
+        "version": "1.6.3+local.1451.4",
+        "native_sha256": {
+          "libnoodleextensions.so": "6c5c022c3433bada571bcf168368f6daaadc235fd9270e090969418e3df185f0"
+        },
+        "inputs_sha256": "21b53eb61018989a785807bd88f0e7375cbf83b5a757bab522b10a76c108a900",
+        "headers_tree_sha256": "d96e6d3c9039acf152342edfbe48d18ca1fb96af45a16307eda9757abaf7a2a1"
+      }
     },
     "Chroma": {
-      "state": "not_yet_clean_built"
+      "state": "fresh_Android_compile_strict_link_and_corrected_package_receipt_passed",
+      "build_parallelism_note": "The initial single-job compile was stopped after its other parallel target builds finished. All old build processes exited before the same generated CMake target resumed with two jobs, unchanged sources, flags, toolchain and header tree. Final packaging uses the unchanged sealed recipe.",
+      "receipt": {
+        "version": "2.10.3+local.1451",
+        "native_sha256": {
+          "libchroma.so": "20a61e984b3cfc7601c8288626a32b624fcc9adc1e1957f47e46295b8d3fb448"
+        },
+        "inputs_sha256": "7210bae26f19b0665c1cc8f8d90ddc84af1cd3f78d383907efc406a5a6aef054",
+        "headers_tree_sha256": "d96e6d3c9039acf152342edfbe48d18ca1fb96af45a16307eda9757abaf7a2a1"
+      }
     },
     "PlaylistCore-1451": {
-      "state": "not_yet_clean_built"
+      "state": "fresh_Android_compile_strict_link_and_corrected_package_receipt_passed",
+      "receipt": {
+        "version": "1.7.1+local.1451",
+        "native_sha256": {
+          "libplaylistcore.so": "152245336869c4f5c4b1c230c50bd7b9b2ec3da278ae32d76a3e495da578fb53"
+        },
+        "inputs_sha256": "cab9da10bcaf9dabfa5634a0367b0cee04f4ce3c8ee183a5a778752fb9f32a49",
+        "headers_tree_sha256": "d96e6d3c9039acf152342edfbe48d18ca1fb96af45a16307eda9757abaf7a2a1"
+      }
     },
     "BetterSongList": {
-      "state": "not_yet_clean_built"
+      "state": "fresh_Android_compile_strict_link_and_corrected_package_receipt_passed",
+      "receipt": {
+        "version": "0.1.0+local.1451.2",
+        "native_sha256": {
+          "libbsl.so": "bf0089c0a276f52fbfa040e64fc6e51073a405a006490cbdf09d3002e827ce86"
+        },
+        "inputs_sha256": "86063d9112509bccd0f83a5bdbdfde28a5087df218c61ae5c4fd85ff0e8fac24",
+        "headers_tree_sha256": "d96e6d3c9039acf152342edfbe48d18ca1fb96af45a16307eda9757abaf7a2a1"
+      }
     },
     "SongDownloader": {
-      "state": "not_yet_clean_built"
+      "state": "fresh_Android_compile_strict_link_and_corrected_package_receipt_passed",
+      "receipt": {
+        "version": "0.8.7+local.1451.3",
+        "native_sha256": {
+          "libsongdownloader.so": "82efe72a1cd5a4cfa6e38c622a5ad5da635170053ed96e079b8f2b8f53da0363"
+        },
+        "inputs_sha256": "dd39bdbc07bd5659bfad3b52acdad2052ea977caeaa7473bc7d38a8cc2f39629",
+        "headers_tree_sha256": "d96e6d3c9039acf152342edfbe48d18ca1fb96af45a16307eda9757abaf7a2a1"
+      }
     },
     "CongXinJian": {
-      "state": "portable_clean_build_pending",
+      "state": "fresh_Android_compile_strict_link_and_corrected_package_receipt_passed",
       "frozen_v5_local_startup": "40_seconds_alive_no_fatal",
-      "physical_calibration": "pending"
+      "physical_calibration": {
+        "AutoPos": "one_user_confirmed_direction_and_position_correct",
+        "AutoRot": "pending",
+        "return_from_gameplay": "pending",
+        "portable_output_runtime": "not_tested"
+      },
+      "receipt": {
+        "version": "0.1.0+local.1451.5",
+        "native_sha256": {
+          "libCongXinJian.so": "f47bda1bf62cc6d8e5c4cea74b132b14cd220d31a485739c9fc5f51c6d37398e"
+        },
+        "inputs_sha256": "46e61ebe822528ef6473cf55f2a68cf80ba0463c5dad14fd62101d704ba5e83b",
+        "headers_tree_sha256": "d96e6d3c9039acf152342edfbe48d18ca1fb96af45a16307eda9757abaf7a2a1"
+      }
     }
   },
   "bootstrap": {
     "ndk_archive_sha256_verified": true,
     "official_ndk_35_symlink_targets_checked": true,
     "tool_archive_extraction_on_WSL_tested": false,
-    "llvm_archive_downloaded_in_this_validation": false
+    "llvm_archive_downloaded_in_this_validation": false,
+    "llvm_archive_root_verified_by_bounded_range": "LLVM-22.1.8-Linux-X64",
+    "llvm_partial_download_bytes": 65536
   },
   "limitations": [
     "No portable output has been installed or runtime-tested on a headset.",
     "Windows WSL execution and the optional full toolchain bootstrap have not been end-to-end tested.",
-    "CongXinJian v5 has bounded startup validation; physical calibration and rebuilt output runtime remain unverified."
-  ]
+    "CongXinJian v5 has bounded startup and user-reported AutoPos validation; AutoRot, return-from-gameplay, and portable-output runtime remain unverified."
+  ],
+  "report_scope": "This report contains current results. Validation notes sealed inside the immutable build lock describe its preparation-time status.",
+  "validation_method": "Targets are compiled from pinned public source checkouts in a separate validation workspace. After sealing all twelve targets, Ninja incrementally refreshes final outputs and receipts against the same complete deterministic header tree; unchanged objects are reused only through normal build dependency tracking.",
+  "completed_target_count": 12,
+  "final_receipt_count": 12,
+  "packaging_regression": "Removed duplicate library registrations from eight late-mod manifests, preserving the load folder observed in working local deployment. Recipe preflight now requires its one built native to be registered exactly once; duplicate, missing, wrong and malformed registrations are rejected.",
+  "native_bytes_unchanged_by_packaging_fix": true,
+  "installer_full_closure": {
+    "state": "passed_independent_actual_installer_and_ELF_name_checks",
+    "package_count": 28,
+    "native_count": 29,
+    "local_build_receipt_count": 12,
+    "evidence_sha256": "900a2d43b6a168a8b55619a83a029a058f88de4bc36b6b1482f78c8f0f1094f2",
+    "profiles": {
+      "core": {
+        "passed": true,
+        "packages": 9,
+        "native_files": 9,
+        "direct_needed_edges": 66,
+        "missing_edges": 0
+      },
+      "online-experimental": {
+        "passed": true,
+        "packages": 27,
+        "native_files": 28,
+        "direct_needed_edges": 284,
+        "missing_edges": 0
+      },
+      "practice": {
+        "passed": true,
+        "packages": 26,
+        "native_files": 27,
+        "direct_needed_edges": 268,
+        "missing_edges": 0
+      },
+      "recommended": {
+        "passed": true,
+        "packages": 25,
+        "native_files": 26,
+        "direct_needed_edges": 258,
+        "missing_edges": 0
+      },
+      "all-packages": {
+        "passed": true,
+        "packages": 28,
+        "native_files": 29,
+        "direct_needed_edges": 294,
+        "missing_edges": 0
+      }
+    },
+    "limits": [
+      "Host archive, ARM64 format, manifest dependency versions and direct ELF dependency names only.",
+      "No rebuilt native was installed or runtime-tested by this check.",
+      "Observed Android library names do not prove namespace access, symbols, ABI or dynamic loading compatibility.",
+      "No all-mod compatibility, gameplay, multiplayer or automatic controller-calibration guarantee."
+    ]
+  }
 }

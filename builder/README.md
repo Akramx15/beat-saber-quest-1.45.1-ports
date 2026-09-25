@@ -1,12 +1,12 @@
 # Experimental Quest 1.45.1 local builder
 
-Build these experimental ports on your own computer from pinned public upstream sources plus narrow patches. This folder contains no game APK, generated game headers, mod binaries, private logs, or headset information. A successful build is **not** a claim that every mod works. The local ports have limited Quest3 runtime checks; upstream-supported game versions have not been retested with these changes.
+Build these experimental ports on your own computer from pinned public upstream sources plus narrow patches. This folder contains no game APK, generated game headers, mod binaries, private logs, or headset information. A successful build is **not** a claim that every mod works. The local ports have limited Quest 3 runtime checks; upstream-supported game versions have not been retested with these changes.
 
 The exact target is **Beat Saber Quest 1.45.1_27839**, Scotland2. Other APK builds are rejected by hashes of the two inputs used by the generator. Keep your APK and generated headers private.
 
 ## Windows using WSL2
 
-1. Install Ubuntu24.04 under WSL2 (`wsl --install -d Ubuntu-24.04` from Windows Terminal, then complete Ubuntu account setup). Build inside the Linux home directory, not `/mnt/c`, for performance and reliable symlinks. Reserve approximately35GB of free space for sources, generated headers, compilers and build outputs.
+1. Install Ubuntu 24.04 under WSL2 (`wsl --install -d Ubuntu-24.04` from Windows Terminal, then complete Ubuntu account setup). Build inside the Linux home directory, not `/mnt/c`, for performance and reliable symlinks. Reserve approximately 35 GB of free space for sources, generated headers, compilers and build outputs.
 2. In Ubuntu install the host prerequisites:
 
    ```sh
@@ -22,16 +22,22 @@ The exact target is **Beat Saber Quest 1.45.1_27839**, Scotland2. Other APK buil
    rustup target add aarch64-linux-android --toolchain nightly-2026-09-24
    ```
 
-4. Keep the exact extracted release at `C:\Users\YourName\Downloads\ports`. Copy that release into a **new** Linux home directory, so the recipe and installer manifest remain from the same release. Replace `YourName` with your Windows account folder name:
+4. Keep the exact extracted release at `C:\Users\YourName\Downloads\ports`. Copy that release into a **new** Linux home directory, so the recipe and installer manifest remain from the same release. Replace `YourName` with your Windows account folder name. **If the Windows guide already copied this release to `$HOME/bs1451/ports`, skip the copy block below.** Otherwise, these commands stop if the destination already exists, preventing a nested `ports/ports` directory or mixing releases:
 
    ```sh
-   mkdir -p "$HOME/bs1451"
-   cp -a "/mnt/c/Users/YourName/Downloads/ports" "$HOME/bs1451/ports"
-   cd "$HOME/bs1451/ports/builder"
+   mkdir -p "$HOME/bs1451" &&
+   mkdir "$HOME/bs1451/ports" &&
+   cp -a "/mnt/c/Users/YourName/Downloads/ports/." "$HOME/bs1451/ports/"
+   ```
+
+   After the copy, or when continuing from the Windows guide, enter the builder directory:
+
+   ```sh
+   cd "$HOME/bs1451/ports/builder" &&
    chmod +x clang_ndk.py
    ```
 
-   Do not substitute a newer unpinned Git checkout. Supply Android NDKr27c and Clang22.1.8. The optional bootstrap downloads approximately0.66GB +1.94GB from the official Android and LLVM release servers, verifies pinned SHA256, and installs into your home directory:
+   Do not substitute a newer unpinned Git checkout. Supply Android NDK r27c and Clang 22.1.8. The optional bootstrap downloads approximately 0.66 GB + 1.94 GB from the official Android and LLVM release servers, verifies pinned SHA256, and installs into your home directory:
 
    ```sh
    python3 bootstrap.py --ndk --llvm
@@ -49,7 +55,7 @@ The exact target is **Beat Saber Quest 1.45.1_27839**, Scotland2. Other APK buil
    export BEAT_SABER_LLVM_RANLIB="$HOME/tools/LLVM-22.1.8-Linux-X64/bin/llvm-ranlib"
    ```
 
-   The launcher uses the Clang22 frontend and linker with **NDKr27c headers and Android runtime**, including its unwind library. It does not substitute a host C++ runtime. NDK revision must be27.2.12479018. User-supplied toolchains are checked by version/revision; this is not a claim of bitwise identity to the optional official archive. The bootstrap also records and rechecks extracted toolchain trees. QPM is not required: the runner creates CMake dependency metadata from the pinned QPM lock information without executing upstream restore scripts.
+   The launcher uses the Clang 22 frontend and linker with **NDK r27c headers and Android runtime**, including its unwind library. It does not substitute a host C++ runtime. NDK revision must be 27.2.12479018. User-supplied toolchains are checked by version/revision; this is not a claim of bitwise identity to the optional official archive. The bootstrap also records and rechecks extracted toolchain trees. QPM is not required: the runner creates CMake dependency metadata from the pinned QPM lock information without executing upstream restore scripts.
 
 5. Keep the release's sanitized `beatsaber-hook` and `songcore` QMODs in its Windows `qmods` folder. They are the two exact-build binary dependencies imported by this recipe. Their native hashes must match the lock; arbitrary releases are rejected. Other dependencies are fetched automatically with commit or SHA256 pins.
 6. Generate headers from **your own unmodified exact-version APK**. Replace the example path with your local APK:
@@ -58,7 +64,7 @@ The exact target is **Beat Saber Quest 1.45.1_27839**, Scotland2. Other APK buil
    python3 build.py generate --apk "/mnt/c/Users/YourName/Downloads/BeatSaber.apk"
    ```
 
-   This builds the pinned metadata39-compatible `cordl` generator and its `brocolib` dependency, extracts only the metadata and IL2CPP library locally, and checks the complete generated API tree against its pinned digest. It never uploads APK contents. Cpp2IL is not needed by this pipeline. If you already generated the exact headers, `--headers /your/codegen/include` can be used instead.
+   This builds the pinned metadata 39-compatible `cordl` generator and its `brocolib` dependency, extracts only the metadata and IL2CPP library locally, and checks the complete generated API tree against its pinned digest. It never uploads APK contents. Cpp2IL is not needed by this pipeline. If you already generated the exact headers, `--headers /your/codegen/include` can be used instead.
 7. Build the available targets in dependency order (one native compiler job at a time):
 
    ```sh
@@ -72,13 +78,15 @@ The exact target is **Beat Saber Quest 1.45.1_27839**, Scotland2. Other APK buil
    cp "$HOME/.cache/bs1451-builder/output/build-receipt.json" "/mnt/c/Users/YourName/Downloads/ports/qmods/"
    ```
 
-A different workspace can be selected consistently with `--work-dir "$HOME/bs1451-build"`. To build selected targets, list their names after `build`; prerequisites must already have been built/imported. `python3 build.py list` shows the current available/held targets. CongXinJian v5 is included as experimental: its frozen local build passed a bounded startup check, while physical automatic-calibration validation remains pending. Building does not install anything on a headset.
+A different workspace can be selected consistently with `--work-dir "$HOME/bs1451-build"`. To build selected targets, list their names after `build`; prerequisites must already have been built/imported. `python3 build.py list` shows the current available/held targets. CongXinJian v5 is included as experimental: its frozen local build passed a bounded startup check, and one user confirmed correct AutoPos direction and position. AutoRot and return-from-gameplay validation remain pending; the portable rebuild has not been tested on a headset. Building does not install anything on a headset.
 
 ## What is pinned and what has been tested
 
 `build-lock.json` pins upstream commits, external native release hashes, per-dependency patch hashes, exact game input hashes, generator sources, toolchain versions and output manifests. Each target has `inputs_sha256`, computed from the whole locked recipe and executable recipe file hashes. The runner validates the fingerprint, every tracked source against its Git base or reviewed patch, extra source files, extracted dependency trees, external links, and dependency native hashes before compiling. Reused generated headers must match the complete tree digest. Altering a recipe requires a new trusted release fingerprint; do not edit the lock to bypass a failed integrity check.
 
-The source reconstruction report covers every exported changed file against its pinned upstream base. See `validation.json` for actual clean-build checks and remaining gaps. Initial local port testing and a fresh portable build are distinct: compiler output may differ because of compiler patch level and anonymized source paths. Freshly rebuilt QMODs still require local runtime testing.
+All twelve native targets compiled and linked successfully in a separate Linux validation workspace. The final check passed all twelve corrected build receipts and the pack installer validation of 28 QMODs containing 29 ARM64 native libraries. All four profiles passed declared dependency-version checks and direct ELF dependency-name checks. These host checks do not establish runtime or ABI compatibility; see `validation.json` for the exact scope. The generator produced the same complete 45,820-file header tree in two independent runs. Chroma resumed its final compilation with two jobs after other builds finished; its sources, flags and toolchain stayed unchanged, and the sealed recipe performed final verification and packaging.
+
+The source reconstruction report covers every exported changed file against its pinned upstream base. See `validation.json` for the current build results and remaining gaps; preparation-time validation notes inside the immutable lock are historical. Initial local port testing and a fresh portable build are distinct: compiler output may differ because of compiler patch level and anonymized source paths. Freshly rebuilt QMODs still require local runtime testing.
 
 WSL setup and the full optional compiler bootstrap have not been tested end-to-end on Windows; the Linux native build results are listed explicitly in the validation report.
 

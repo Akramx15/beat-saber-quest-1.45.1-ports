@@ -1,6 +1,6 @@
 # Beat Saber Quest 1.45.1 — experimental ports
 
-**Review snapshot:** release packaging and controller-calibration verification are in progress. No install release has been published yet.
+**Experimental release:** use the matching [release assets](https://github.com/Akramx15/beat-saber-quest-1.45.1-ports/releases) and read the validation limits below.
 
 حزمة تجريبية لمودات **Beat Saber على Quest المستقل، الإصدار 1.45.1_27839**. بعض الوظائف جُرّبت على Quest 3، لكن هذه ليست نسخة رسمية مدعومة أو ضمانًا بأن كل المودات تعمل بالكامل. التفاصيل في [حالة الاختبارات](docs/VALIDATION.md).
 

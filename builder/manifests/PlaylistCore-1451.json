@@ -59,9 +59,7 @@
   "lateModFiles": [
     "libplaylistcore.so"
   ],
-  "libraryFiles": [
-    "libplaylistcore.so"
-  ],
+  "libraryFiles": [],
   "fileCopies": [],
   "copyExtensions": [
     {

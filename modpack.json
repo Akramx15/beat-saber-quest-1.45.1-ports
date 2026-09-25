@@ -268,7 +268,7 @@
       "filename": "bsl-0.1.0+local.1451.2.qmod",
       "local_build": {
         "target": "BetterSongList",
-        "inputs_sha256": "564316b926509cf9ac1cd32d7d5a00a8a2b92ca221331c1fc56d63799f6ba14f"
+        "inputs_sha256": "86063d9112509bccd0f83a5bdbdfde28a5087df218c61ae5c4fd85ff0e8fac24"
       },
       "upstream": "https://github.com/bsq-ports/BetterSongList.git",
       "upstream_commit": "cf1f63049d590f2f70207aa1285f9a5cf511ba38",
@@ -308,7 +308,7 @@
       "filename": "bsml-0.5.8+local.1451.qmod",
       "local_build": {
         "target": "Quest-BSML",
-        "inputs_sha256": "5b8fe936d9fefd64ee5a77fd9b5aa3d61f8781c26f3b9b09caed1232ef8c1e43"
+        "inputs_sha256": "8d73d3cc6dd31838e46b2d1f050d7a425c59dc3de7995cb2f7b299e85821bed0"
       },
       "upstream": "https://github.com/bsq-ports/Quest-BSML.git",
       "upstream_commit": "7a9cbe5b8d90061b0bac4167d21e42b24c224be4",
@@ -360,7 +360,7 @@
       "filename": "chroma-2.10.3+local.1451.qmod",
       "local_build": {
         "target": "Chroma",
-        "inputs_sha256": "3fe7c556b0e24344a3f5bb4594ba7df2521dfd3254d79b9632103a8c585a58ca"
+        "inputs_sha256": "7210bae26f19b0665c1cc8f8d90ddc84af1cd3f78d383907efc406a5a6aef054"
       },
       "upstream": "https://github.com/bsq-ports/Chroma.git",
       "upstream_commit": "e3d7419f00d7b120857edfccb0a15f202c6ebd61",
@@ -400,11 +400,11 @@
         "libCongXinJian.so": "82db6af2817ae9f89d395f185017ea916ef74e6a9441a80e4a258b9485976520"
       },
       "experimental": true,
-      "runtime_scope": "Startup observed, but user reports AutoCJN broken; active repair is pending. Do not claim offset adjustment is working.",
+      "runtime_scope": "Device v5: startup abort fixed; user confirmed manual offsets and Auto Pos direction/position. Seven Auto Rot trials across both hands and both gameplay anchors observed; user confirmation of Auto Rot and post-game menu return pending. Fresh portable rebuild has not been runtime-tested.",
       "filename": "CongXinJian-0.1.0+local.1451.5.qmod",
       "local_build": {
         "target": "CongXinJian",
-        "inputs_sha256": "1d6c22f858091b7066d829044a1192453aeb69c130bd0f0a6426523c4499b508"
+        "inputs_sha256": "46e61ebe822528ef6473cf55f2a68cf80ba0463c5dad14fd62101d704ba5e83b"
       },
       "upstream": "https://github.com/lixiangwuxian/CongXinJian.git",
       "upstream_commit": "ece4b8a01c14930bc61bdd500ba36152b869855d",
@@ -444,7 +444,7 @@
       "filename": "custom-json-data-0.24.5+local.1451.qmod",
       "local_build": {
         "target": "CustomJSONData",
-        "inputs_sha256": "536aa62fb64d94bc01706dc89922873bc0364df838e3e231934f6c568507b935"
+        "inputs_sha256": "da8a941afde8db5b3629a5c02ac97ba7b2c9fb589d477ca287aa378c71922bf2"
       },
       "upstream": "https://github.com/bsq-ports/CustomJSONData.git",
       "upstream_commit": "e1dc75604d1663e5c890102da5f615bb5198f650",
@@ -587,7 +587,7 @@
       "filename": "metacore-2.0.3+local.1451.qmod",
       "local_build": {
         "target": "MetaCore-1451",
-        "inputs_sha256": "38ad7197284c8c8e3af6db58d293715521bc2d67f105c8df6ca974eff17cd2be"
+        "inputs_sha256": "74ffefd0b521982d99e2d67e55f769c80fb49d74245e8da7ac989f2ee2def42e"
       },
       "upstream": "https://github.com/Metalit/MetaCore.git",
       "upstream_commit": "906b9e34c6b2e6b7755432db43a9d4be3c9838d5",
@@ -639,7 +639,7 @@
       "filename": "metacore-bs-1.0.0+local.1451.qmod",
       "local_build": {
         "target": "metacore-bs-1451",
-        "inputs_sha256": "f92c80bab281a1f128663dc1294d94e09db964f93f60bab917d74ceefb7493b3"
+        "inputs_sha256": "233f0152544a0bdca6b7f077ed5c23dbe51430f1b1770477fb3aa4793ac462fe"
       },
       "upstream": "https://github.com/Metalit/MetaCoreBS.git",
       "upstream_commit": "1d092b323571b5c4c2629212d9c8b49a34fc6a27",
@@ -743,7 +743,7 @@
       "filename": "NoodleExtensions-1.6.3+local.1451.4.qmod",
       "local_build": {
         "target": "NoodleExtensions",
-        "inputs_sha256": "931471deb1ab8b2ef5757b2dd9b7744d6b806a852a92d9b0098467618c9d1f81"
+        "inputs_sha256": "21b53eb61018989a785807bd88f0e7375cbf83b5a757bab522b10a76c108a900"
       },
       "upstream": "https://github.com/bsq-ports/NoodleExtensions",
       "upstream_commit": "565e3b33c98e9536d5b7e9c78d7f96e3ab2a4fad",
@@ -822,7 +822,7 @@
       "filename": "playlistcore-1.7.1+local.1451.qmod",
       "local_build": {
         "target": "PlaylistCore-1451",
-        "inputs_sha256": "dad19e483f5bf4e1050604bed60e7ec3c884fccd8e41c9a5ac421b885ff25968"
+        "inputs_sha256": "cab9da10bcaf9dabfa5634a0367b0cee04f4ce3c8ee183a5a778752fb9f32a49"
       },
       "upstream": "https://github.com/Metalit/PlaylistCore.git",
       "upstream_commit": "5aa74ed2200870402ec6b4a5fb36e6bf8050cc7a",
@@ -988,7 +988,7 @@
       "filename": "songdownloader-0.8.7+local.1451.3.qmod",
       "local_build": {
         "target": "SongDownloader",
-        "inputs_sha256": "723787143bb17eaf9d178d2300ab34ae8c6d13919198e341c2e1c01f1c08bc17"
+        "inputs_sha256": "dd39bdbc07bd5659bfad3b52acdad2052ea977caeaa7473bc7d38a8cc2f39629"
       },
       "upstream": "https://github.com/darknight1050/SongDownloader.git",
       "upstream_commit": "17448f9e13dfabb4c05b948c3951f85e939d78ba",
@@ -1049,7 +1049,7 @@
       "filename": "tracks-2.5.4+local.1451.3.qmod",
       "local_build": {
         "target": "Tracks",
-        "inputs_sha256": "e87d50e220e77450ce8f92902a214e811b6564fc876caebbb5343c00796dd9ea"
+        "inputs_sha256": "8c0da32f6149dd3e388a29660147116fb22259628abf63c92cd729aba05c1c29"
       },
       "upstream": "https://github.com/bsq-ports/Tracks",
       "upstream_commit": "9c0f8889f9ac29eff46437a8dfdc61e61ba36354",
@@ -1085,7 +1085,7 @@
       "filename": "unicode-0.1.8+local.1451.qmod",
       "local_build": {
         "target": "UnicodeQuest",
-        "inputs_sha256": "9e0afc72bcc435a48ace75b0a6c56c445c7ef7b573dbe1c0d3052441717c06ac"
+        "inputs_sha256": "e3d564390c43f5e7bc9591d824d21c83bf99ed5c43c87571612be3a90469c931"
       },
       "upstream": "https://github.com/Metalit/UnicodeQuest.git",
       "upstream_commit": "a411756d57dd23c6d561cf008ae601447015b7b3",

@@ -5,6 +5,15 @@ import build, clang_ndk, bootstrap, integrity, subprocess
 from unittest.mock import patch
 class BuilderChecks(unittest.TestCase):
     def test_locked_recipe(self):build.verify_recipe()
+    def test_native_manifest_accepts_each_single_load_folder(self):
+        for key in ['modFiles','lateModFiles','libraryFiles']:
+            with self.subTest(folder=key):build.verify_manifest({'binary':'libtest.so'},{key:['libtest.so']})
+    def test_native_manifest_rejects_duplicate_missing_or_wrong_registration(self):
+        cases=[{'lateModFiles':['libtest.so'],'libraryFiles':['libtest.so']},
+               {'modFiles':['libtest.so','libtest.so']},{},{'modFiles':['wrong.so']},
+               {'modFiles':'libtest.so'},{'libraryFiles':[None]}]
+        for manifest in cases:
+            with self.subTest(manifest=manifest),self.assertRaises(RuntimeError):build.verify_manifest({'binary':'libtest.so'},manifest)
     def test_receipt_inputs_change_on_dependency_change(self):
         name=next(iter(build.LOCK['targets']));before=build.fingerprint(name)
         old=build.LOCK['rust_toolchain'];build.LOCK['rust_toolchain']='changed'

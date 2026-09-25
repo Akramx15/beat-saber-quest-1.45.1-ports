@@ -45,9 +45,7 @@
       "version": "^1.2.1"
     }
   ],
-  "libraryFiles": [
-    "libnoodleextensions.so"
-  ],
+  "libraryFiles": [],
   "fileCopies": [],
   "copyExtensions": [],
   "modloader": "Scotland2"

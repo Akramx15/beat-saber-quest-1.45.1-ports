@@ -48,7 +48,7 @@
       "state": "recipe_unverified_clean_build",
       "previous_local_native_sha256": "836eb0f7da607556225d3e8ed8c54fb8e1afc2991f11603722fb016e50db921d",
       "manifest_sha256": "539c7597d0e72cd05bf9f6337633b5d89d41cbc0eeb437e75b5c0a823d8e52b8",
-      "inputs_sha256": "5b8fe936d9fefd64ee5a77fd9b5aa3d61f8781c26f3b9b09caed1232ef8c1e43"
+      "inputs_sha256": "8d73d3cc6dd31838e46b2d1f050d7a425c59dc3de7995cb2f7b299e85821bed0"
     },
     "MetaCore-1451": {
       "repo": "https://github.com/Metalit/MetaCore.git",
@@ -87,7 +87,7 @@
       "state": "recipe_unverified_clean_build",
       "previous_local_native_sha256": "11803f8873e11d87b950ed1fc14d860c7802d388592c131225cbae9d1ea366bf",
       "manifest_sha256": "dde8da12aab4934c58697d0a56b8096b7fb30f97cb106acf1d361c922ff23bc5",
-      "inputs_sha256": "38ad7197284c8c8e3af6db58d293715521bc2d67f105c8df6ca974eff17cd2be"
+      "inputs_sha256": "74ffefd0b521982d99e2d67e55f769c80fb49d74245e8da7ac989f2ee2def42e"
     },
     "metacore-bs-1451": {
       "repo": "https://github.com/Metalit/MetaCoreBS.git",
@@ -131,7 +131,7 @@
       "build_after": [
         "MetaCore-1451"
       ],
-      "inputs_sha256": "f92c80bab281a1f128663dc1294d94e09db964f93f60bab917d74ceefb7493b3"
+      "inputs_sha256": "233f0152544a0bdca6b7f077ed5c23dbe51430f1b1770477fb3aa4793ac462fe"
     },
     "UnicodeQuest": {
       "repo": "https://github.com/Metalit/UnicodeQuest.git",
@@ -165,11 +165,11 @@
       ],
       "state": "recipe_unverified_clean_build",
       "previous_local_native_sha256": "f4ffc06cd2e9ff07f400a8b97e3c54c03ee084cdc8acb43dc579dc798ee411f7",
-      "manifest_sha256": "445b3254944bb63d9a84d5194c1883e0be4a6df48dfc84b7cf5083d5578f0c23",
+      "manifest_sha256": "a2bc2619d5db3abbba0b550597d8a3b84e64b7882bd713a8ba0616f613e1c723",
       "build_after": [
         "MetaCore-1451"
       ],
-      "inputs_sha256": "9e0afc72bcc435a48ace75b0a6c56c445c7ef7b573dbe1c0d3052441717c06ac"
+      "inputs_sha256": "e3d564390c43f5e7bc9591d824d21c83bf99ed5c43c87571612be3a90469c931"
     },
     "CustomJSONData": {
       "repo": "https://github.com/bsq-ports/CustomJSONData.git",
@@ -239,8 +239,8 @@
           }
         }
       },
-      "manifest_sha256": "e3bd127ed8e65a9359c65f48385daf5ba88f438bc58a1b8a8dbd050880dac389",
-      "inputs_sha256": "536aa62fb64d94bc01706dc89922873bc0364df838e3e231934f6c568507b935"
+      "manifest_sha256": "c95b4497dee2a763035bb982a70421f40d6e1bf47d07aa06dbadd2cf7839dfa2",
+      "inputs_sha256": "da8a941afde8db5b3629a5c02ac97ba7b2c9fb589d477ca287aa378c71922bf2"
     },
     "Tracks": {
       "repo": "https://github.com/bsq-ports/Tracks",
@@ -307,12 +307,12 @@
       "portable_adaptations": [
         "Rust output fallback relocated under binary directory; runner passes explicit path."
       ],
-      "manifest_sha256": "74e5c3cb5c5a8c9e001703faa55083cdadd8d19e448b35ee5f81d9d043295778",
+      "manifest_sha256": "1ceccd089e6f487481b23572f9e045526e9772b3599d491930b85e0388178d11",
       "build_after": [
         "CustomJSONData",
         "MetaCore-1451"
       ],
-      "inputs_sha256": "e87d50e220e77450ce8f92902a214e811b6564fc876caebbb5343c00796dd9ea",
+      "inputs_sha256": "8c0da32f6149dd3e388a29660147116fb22259628abf63c92cd729aba05c1c29",
       "local_header_overlays": {
         "custom-json-data": "CustomJSONData"
       }
@@ -438,13 +438,13 @@
           }
         }
       },
-      "manifest_sha256": "4ebfecc8fc1f0bf65800c31fab975aa66d72d9a3f7cbeaa1371c0f04d2f640fe",
+      "manifest_sha256": "e6244d3b8e72d6c1977676f7ffa49df49f781754b2a14d777dc4cc4095a09dcf",
       "build_after": [
         "CustomJSONData",
         "Tracks",
         "Quest-BSML"
       ],
-      "inputs_sha256": "931471deb1ab8b2ef5757b2dd9b7744d6b806a852a92d9b0098467618c9d1f81",
+      "inputs_sha256": "21b53eb61018989a785807bd88f0e7375cbf83b5a757bab522b10a76c108a900",
       "local_header_overlays": {
         "custom-json-data": "CustomJSONData",
         "tracks": "Tracks"
@@ -587,7 +587,7 @@
           }
         }
       },
-      "manifest_sha256": "773edb15664d6b44ccfd5e80bac5681678fa32033ae85aa2986bef77a39d1fa3",
+      "manifest_sha256": "0d3173e04abe71a4cbf119a879f8aac527d62f61dc27879ec1a8efedaf25af2f",
       "local_header_overlays": {
         "custom-json-data": "CustomJSONData",
         "tracks": "Tracks"
@@ -597,7 +597,7 @@
         "Tracks",
         "Quest-BSML"
       ],
-      "inputs_sha256": "3fe7c556b0e24344a3f5bb4594ba7df2521dfd3254d79b9632103a8c585a58ca"
+      "inputs_sha256": "7210bae26f19b0665c1cc8f8d90ddc84af1cd3f78d383907efc406a5a6aef054"
     },
     "PlaylistCore-1451": {
       "repo": "https://github.com/Metalit/PlaylistCore.git",
@@ -639,11 +639,11 @@
       ],
       "state": "recipe_unverified_clean_build",
       "previous_local_native_sha256": "3d76eb1f2b264e6386926c08a1f24bb00bd8b0210a3817d37022869e9c0ce6a5",
-      "manifest_sha256": "00f525e7160d3efae96dac17394338246a0e0d58c75102a5cf66f4e3d054e57a",
+      "manifest_sha256": "a1cdcd2b0bcad05bd1a480a7c3ca1d2caf687d884842e728a7c68dd4c8ed6bbf",
       "build_after": [
         "metacore-bs-1451"
       ],
-      "inputs_sha256": "dad19e483f5bf4e1050604bed60e7ec3c884fccd8e41c9a5ac421b885ff25968"
+      "inputs_sha256": "cab9da10bcaf9dabfa5634a0367b0cee04f4ce3c8ee183a5a778752fb9f32a49"
     },
     "BetterSongList": {
       "repo": "https://github.com/bsq-ports/BetterSongList.git",
@@ -690,12 +690,12 @@
       ],
       "state": "recipe_unverified_clean_build",
       "previous_local_native_sha256": "aaf3a6c376460c4ef6c8ef73b2352fd7e9fe44090a843b70ddef8dcd4e161398",
-      "manifest_sha256": "2ec6cb476bfacb2e78848e76c87e4fed00d5cdc29bfe9dcdc93bda87b2b1c3bb",
+      "manifest_sha256": "647a72870878f81cb73bad4116e7400735d7c31f32176267b4e23e07b063000e",
       "build_after": [
         "PlaylistCore-1451",
         "Quest-BSML"
       ],
-      "inputs_sha256": "564316b926509cf9ac1cd32d7d5a00a8a2b92ca221331c1fc56d63799f6ba14f"
+      "inputs_sha256": "86063d9112509bccd0f83a5bdbdfde28a5087df218c61ae5c4fd85ff0e8fac24"
     },
     "SongDownloader": {
       "repo": "https://github.com/darknight1050/SongDownloader.git",
@@ -740,12 +740,12 @@
       ],
       "state": "recipe_unverified_clean_build",
       "previous_local_native_sha256": "2f7342b7f42d5badb010e521651e4613c3365892b7d374ca18b93ca352d18593",
-      "manifest_sha256": "e522251471d9283cac93f713d9a7ac5b7ed1d173d3b56bada2a4d6c88d7174e5",
+      "manifest_sha256": "5162db3b19f2489c76be009bcc17f3331bdb08ddfad0fe6b52daef4c9fcf1794",
       "build_after": [
         "PlaylistCore-1451",
         "Quest-BSML"
       ],
-      "inputs_sha256": "723787143bb17eaf9d178d2300ab34ae8c6d13919198e341c2e1c01f1c08bc17"
+      "inputs_sha256": "dd39bdbc07bd5659bfad3b52acdad2052ea977caeaa7473bc7d38a8cc2f39629"
     },
     "CongXinJian": {
       "repo": "https://github.com/lixiangwuxian/CongXinJian.git",
@@ -812,7 +812,7 @@
         "v5 physical calibration and gameplay anchor coverage remain pending.",
         "No license grant for upstream binary/source redistribution has been established; fetch pinned upstream source locally and apply the review patch."
       ],
-      "inputs_sha256": "1d6c22f858091b7066d829044a1192453aeb69c130bd0f0a6426523c4499b508"
+      "inputs_sha256": "46e61ebe822528ef6473cf55f2a68cf80ba0463c5dad14fd62101d704ba5e83b"
     }
   },
   "dependencies": {
@@ -1245,7 +1245,7 @@
     }
   },
   "recipe_files": {
-    "build.py": "f18e07149157ddc770c4a76a0e13d44a787481ae2d317072b0b0e34acca898b2",
+    "build.py": "53b55c102f7677b47fa38fd7580a41ca86016bf156f2663825e2f3baf86fa0d8",
     "clang_ndk.py": "20c507ef23fd488cb5fc47f362b822629a3bc8add2bda5b5234f4f810a2a2d22",
     "bootstrap.py": "65865303392291a351a4e28d6350e98b1b60c281850a29ca5edaaf830f57b104",
     "integrity.py": "db11540db48300d2a9e0861e2b1a5edbde2a79f0412e3d0f2c015f79f710c3da"

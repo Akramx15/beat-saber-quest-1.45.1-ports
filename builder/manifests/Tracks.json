@@ -38,9 +38,7 @@
   "lateModFiles": [
     "libtracks.so"
   ],
-  "libraryFiles": [
-    "libtracks.so"
-  ],
+  "libraryFiles": [],
   "fileCopies": [],
   "copyExtensions": [],
   "isLibrary": true,

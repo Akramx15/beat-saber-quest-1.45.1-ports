@@ -48,9 +48,7 @@
   "lateModFiles": [
     "libchroma.so"
   ],
-  "libraryFiles": [
-    "libchroma.so"
-  ],
+  "libraryFiles": [],
   "fileCopies": [],
   "copyExtensions": []
 }

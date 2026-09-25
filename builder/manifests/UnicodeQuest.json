@@ -27,9 +27,7 @@
     }
   ],
   "modFiles": [],
-  "libraryFiles": [
-    "libunicode.so"
-  ],
+  "libraryFiles": [],
   "fileCopies": [],
   "modloader": "Scotland2",
   "lateModFiles": [

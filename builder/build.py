@@ -30,7 +30,15 @@ def verify_recipe():
         if fingerprint(name)!=t['inputs_sha256']:raise RuntimeError('Recipe fingerprint mismatch: '+name)
         check_file(ROOT/t['patch']['path'],t['patch']['sha256'])
         check_file(ROOT/t['manifest'],t['manifest_sha256'])
+        verify_manifest(t,json.loads((ROOT/t['manifest']).read_text()))
         for pin in t.get('dependency_patches',{}).values():check_file(ROOT/pin['path'],pin['sha256'])
+def verify_manifest(target,manifest):
+    natives=[]
+    for key in ['modFiles','lateModFiles','libraryFiles']:
+        entries=manifest.get(key,[])
+        if not isinstance(entries,list) or any(not isinstance(x,str) for x in entries):raise RuntimeError('Native manifest entries must be arrays of filenames: '+key)
+        natives.extend(entries)
+    if natives!=[target['binary']]:raise RuntimeError('Manifest must register its one built native exactly once: '+target['binary'])
 def run(argv,cwd=None,env=None):
     print('+',' '.join(map(str,argv)),flush=True)
     subprocess.run(list(map(str,argv)),cwd=cwd,env=env,check=True)

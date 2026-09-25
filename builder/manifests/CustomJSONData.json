@@ -34,9 +34,7 @@
   "lateModFiles": [
     "libcustom-json-data.so"
   ],
-  "libraryFiles": [
-    "libcustom-json-data.so"
-  ],
+  "libraryFiles": [],
   "fileCopies": [],
   "modloader": "Scotland2"
 }
