@@ -114,6 +114,11 @@ def read_qmod(path, entry):
         seen, total = set(), 0
         for info in z.infolist():
             mode = (info.external_attr >> 16) & 0o170000
+            # ZipInfo normalizes backslashes on Windows and truncates at NUL.
+            # Validate the archive's original spelling before that conversion.
+            if (not safe_member(info.orig_filename)
+                    or info.orig_filename != info.filename):
+                raise ValueError(f'Unsafe or normalized archive path: {info.orig_filename!r}')
             name = info.filename.rstrip('/').casefold()
             if not safe_member(info.filename) or name in seen:
                 raise ValueError(f'Unsafe or duplicate archive path: {info.filename}')

@@ -39,7 +39,14 @@ def make_qmod(directory, ident='A', version='2.0.0', deps=(), extra=(), native=N
         z.writestr('mod.json', json.dumps(mod))
         z.writestr(name, native)
         for item, data in extra:
-            z.writestr(item, data)
+            if isinstance(item, str):
+                # Encode the intended raw archive spelling on every OS, even
+                # where ZipInfo's constructor would normalize or truncate it.
+                info = zipfile.ZipInfo()
+                info.filename = info.orig_filename = item
+                z.writestr(info, data)
+            else:
+                z.writestr(item, data)
     entry = {'id': ident, 'version': version, 'filename': path.name,
              'sha256': m.digest(path.read_bytes()), 'native_sha256': {name: m.digest(native)}, 'dependencies': list(deps)}
     return path, entry
@@ -336,10 +343,32 @@ class InstallerTests(unittest.TestCase):
 
     def test_archive_traversal_case_alias_and_symlink_rejected(self):
         link=zipfile.ZipInfo('link'); link.external_attr=(0o120777<<16)
-        for item in ('../outside','/absolute','a\\b','C:stream','a/./b','CON','a.','bad\nname','MOD.JSON',link):
+        for item in ('../outside','/absolute','a\\b','C:stream','a/./b','CON','a.','bad\nname','bad\x00hidden','MOD.JSON',link):
             with self.subTest(item=str(item)):
                 p,e=make_qmod(self.root,extra=[(item,b'x')])
+                if isinstance(item, str):
+                    self.assertIn(item.encode('utf-8'), p.read_bytes())
                 with self.assertRaises(ValueError): m.read_qmod(p,e)
+
+    def test_archive_original_name_checked_before_windows_normalization(self):
+        p,e=make_qmod(self.root,extra=[('a\\b',b'x')])
+        self.assertIn(b'a\\b',p.read_bytes())
+        original_init=zipfile.ZipInfo.__init__
+        normalized=[]
+        def windows_init(info,*args,**kwargs):
+            original_init(info,*args,**kwargs)
+            info.filename=info.filename.replace('\\','/')
+            if info.orig_filename=='a\\b':
+                normalized.append(info.filename)
+        with patch.object(zipfile.ZipInfo,'__init__',windows_init):
+            with self.assertRaisesRegex(ValueError,'Unsafe or normalized'):
+                m.read_qmod(p,e)
+        self.assertEqual(normalized,['a/b'])
+
+    def test_archive_normal_forward_slash_member_accepted(self):
+        p,e=make_qmod(self.root,extra=[('assets/safe.txt',b'x')])
+        mod,_=m.read_qmod(p,e)
+        self.assertEqual(mod['id'],'A')
 
     def test_wrong_arch_and_truncated_elf_rejected(self):
         values=[b'\x7fELF',elf()[:63]]
