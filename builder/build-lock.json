@@ -48,7 +48,7 @@
       "state": "recipe_unverified_clean_build",
       "previous_local_native_sha256": "836eb0f7da607556225d3e8ed8c54fb8e1afc2991f11603722fb016e50db921d",
       "manifest_sha256": "539c7597d0e72cd05bf9f6337633b5d89d41cbc0eeb437e75b5c0a823d8e52b8",
-      "inputs_sha256": "85a42fba0efb0aced31cecd750f93588b2b2e39be9e169705efc8f0c421e4520"
+      "inputs_sha256": "5b8fe936d9fefd64ee5a77fd9b5aa3d61f8781c26f3b9b09caed1232ef8c1e43"
     },
     "MetaCore-1451": {
       "repo": "https://github.com/Metalit/MetaCore.git",
@@ -87,7 +87,7 @@
       "state": "recipe_unverified_clean_build",
       "previous_local_native_sha256": "11803f8873e11d87b950ed1fc14d860c7802d388592c131225cbae9d1ea366bf",
       "manifest_sha256": "dde8da12aab4934c58697d0a56b8096b7fb30f97cb106acf1d361c922ff23bc5",
-      "inputs_sha256": "85b9a660a2c711dbafb88b611157d6f57fe749383e2e13566e3126d3a193bc92"
+      "inputs_sha256": "38ad7197284c8c8e3af6db58d293715521bc2d67f105c8df6ca974eff17cd2be"
     },
     "metacore-bs-1451": {
       "repo": "https://github.com/Metalit/MetaCoreBS.git",
@@ -131,7 +131,7 @@
       "build_after": [
         "MetaCore-1451"
       ],
-      "inputs_sha256": "457039db4a459735de3d35a22296e32de23eb121bb8eb310e455ffdb777bd6c0"
+      "inputs_sha256": "f92c80bab281a1f128663dc1294d94e09db964f93f60bab917d74ceefb7493b3"
     },
     "UnicodeQuest": {
       "repo": "https://github.com/Metalit/UnicodeQuest.git",
@@ -169,7 +169,7 @@
       "build_after": [
         "MetaCore-1451"
       ],
-      "inputs_sha256": "66589b1972f90e5b425b51c98e92b21287ea05c8c949757f89a78c2c7e328f5e"
+      "inputs_sha256": "9e0afc72bcc435a48ace75b0a6c56c445c7ef7b573dbe1c0d3052441717c06ac"
     },
     "CustomJSONData": {
       "repo": "https://github.com/bsq-ports/CustomJSONData.git",
@@ -240,7 +240,7 @@
         }
       },
       "manifest_sha256": "e3bd127ed8e65a9359c65f48385daf5ba88f438bc58a1b8a8dbd050880dac389",
-      "inputs_sha256": "e3ee0bf4d06e05147170fbf29f02c1aff17d22a22e3aa737b626077b614500b2"
+      "inputs_sha256": "536aa62fb64d94bc01706dc89922873bc0364df838e3e231934f6c568507b935"
     },
     "Tracks": {
       "repo": "https://github.com/bsq-ports/Tracks",
@@ -312,7 +312,7 @@
         "CustomJSONData",
         "MetaCore-1451"
       ],
-      "inputs_sha256": "9cdca96d90925ea15c3e04efbfd532d536773fb40b3650138b6e6d8ca5e3327f",
+      "inputs_sha256": "e87d50e220e77450ce8f92902a214e811b6564fc876caebbb5343c00796dd9ea",
       "local_header_overlays": {
         "custom-json-data": "CustomJSONData"
       }
@@ -444,7 +444,7 @@
         "Tracks",
         "Quest-BSML"
       ],
-      "inputs_sha256": "4e3bd6bc0deafdf1981d15492476d01838e597c7f6634e7032a75de7bab30b16",
+      "inputs_sha256": "931471deb1ab8b2ef5757b2dd9b7744d6b806a852a92d9b0098467618c9d1f81",
       "local_header_overlays": {
         "custom-json-data": "CustomJSONData",
         "tracks": "Tracks"
@@ -597,7 +597,7 @@
         "Tracks",
         "Quest-BSML"
       ],
-      "inputs_sha256": "9bcc6aa4dc2d1a691afea4ceea83ed9a84bc6e7a4874c696f7ede03c92b7f19b"
+      "inputs_sha256": "3fe7c556b0e24344a3f5bb4594ba7df2521dfd3254d79b9632103a8c585a58ca"
     },
     "PlaylistCore-1451": {
       "repo": "https://github.com/Metalit/PlaylistCore.git",
@@ -643,7 +643,7 @@
       "build_after": [
         "metacore-bs-1451"
       ],
-      "inputs_sha256": "4eac0de4e4fdd7ad14abce5008b510bb2e20d0aa24323239955c027042186b23"
+      "inputs_sha256": "dad19e483f5bf4e1050604bed60e7ec3c884fccd8e41c9a5ac421b885ff25968"
     },
     "BetterSongList": {
       "repo": "https://github.com/bsq-ports/BetterSongList.git",
@@ -695,7 +695,7 @@
         "PlaylistCore-1451",
         "Quest-BSML"
       ],
-      "inputs_sha256": "a9bc9340a5a04770b5abcb6b89c762327c4b0708f6981c2389cf3c111f428752"
+      "inputs_sha256": "564316b926509cf9ac1cd32d7d5a00a8a2b92ca221331c1fc56d63799f6ba14f"
     },
     "SongDownloader": {
       "repo": "https://github.com/darknight1050/SongDownloader.git",
@@ -745,7 +745,74 @@
         "PlaylistCore-1451",
         "Quest-BSML"
       ],
-      "inputs_sha256": "0d22a0baaf9ff3b6f8e23294425bc20440622ff64c3490dd63d018b32debb35d"
+      "inputs_sha256": "723787143bb17eaf9d178d2300ab34ae8c6d13919198e341c2e1c01f1c08bc17"
+    },
+    "CongXinJian": {
+      "repo": "https://github.com/lixiangwuxian/CongXinJian.git",
+      "commit": "ece4b8a01c14930bc61bdd500ba36152b869855d",
+      "patch": {
+        "path": "patches/CongXinJian.patch",
+        "sha256": "19886ee7a40396b10a9601cd7d97e08e72d19b9182a6ad59680af463a3a0cfd0"
+      },
+      "binary": "libCongXinJian.so",
+      "target": "CongXinJian",
+      "manifest": "manifests/CongXinJian.json",
+      "qpm_info": {
+        "id": "CongXinJian",
+        "name": "CongXinJian",
+        "version": "0.1.0"
+      },
+      "source_file_hashes": {
+        "CMakeLists.txt": "c86464f48436b32fc212adb137c0d76d0bb09977ca6268448e2914bc6cedd47f",
+        "cmake/qpm.cmake": "955ec2fbcd6532746dc5880e8ff7e123a39cf8fc8f920b1cfa78ed5125b3570d",
+        "cmake/targets/quest.cmake": "ca6914da2d3286c14195569c7b6126393c0b05b716d3ec9ccd4f16491da497c5",
+        "include/config-compat.hpp": "35476d0a8979c1deab7dadd8abe9890582ac448702f3dc2d4980d10a23cd5ad6",
+        "include/config.hpp": "a65f26ccbb4e24f297eb179ff7485c9595b2e3888795b847956b37986e8ba2cf",
+        "include/gesture_controller.hpp": "d495c46d9dfadffcb6c870a34c6a27f0181725e7d42179e28e94dfa085d623de",
+        "include/gizmo_controller.hpp": "c3ed69b56e41b3e82a173de87fa71b84f3970387ef436a88ee8e33ccf01ef14b",
+        "include/main.hpp": "bdc079325047300c72bae9f10377e0a09c66758abb3a7d6c18208c5d38971de9",
+        "include/menu_scene_state.hpp": "081de2f06a9e99a15fe6aebb896e38f1ab09aae993a0274ee16dd9bbae63fbb6",
+        "include/offset_controller.hpp": "1a3b1e345bc3eeab9286939c5dacc662867e012e31aa98d2f6d52a0d95a90b29",
+        "include/saber_geometry_math.hpp": "eb5856a8bb066d492e0aa66414b408dcd3dca056e94e30ab93fece1fa1d8131b",
+        "include/tracking_space.hpp": "df131c01f09a3936de67592796413e8194326a71add94e3cfe6cbeb135553e57",
+        "include/unity_reference.hpp": "81aa3efbcadc8460a944a795c562fa6e55f8719e2502518a86e6e4ba890e4b7f",
+        "qpm.json": "f50e343f6c74425a5214d59600b20955cd6b60cf6453a2cd73b774dae1e2f658",
+        "src/gesture_controller.cpp": "b38165a228ba1020a2ed74ef04c9b740c0c95926bf89b698141c2c5322da8b78",
+        "src/gizmo_controller.cpp": "268e6c85a8029ef155a1d17d0990c6f09c4d8d5f51a39c3f559cbddc7f053047",
+        "src/hooks/scene_hooks.cpp": "29139a4554e582b3339956aed71033972f55c23b863a9ed7e188e1caec0efd22",
+        "src/hooks/vr_controller_hook.cpp": "4bb3a5d3a632a546cb18e6f43d4950995d90703259ffe0e40e87c9a91fd5c425",
+        "src/main.cpp": "1bd8512d3669d0ef91cf4d40658761b310d62a081f537dd54c21ffc95623c7b1",
+        "src/offset_controller.cpp": "f44bb8e32047b7740065facbe10af4b027be5981140173aa19ae3bc4101c7386",
+        "src/rotation_point_tracker.cpp": "7186c418f023a802428ff8db6c777db4e57b148244b0fec8274aef53154e1068",
+        "src/ui/settings_tab.cpp": "b144c5bbdb1c0715d8c8ab286bf3082870bad3a0be74afffcba49141e6c94fa4"
+      },
+      "dependencies": [
+        "custom-types@0.20.1",
+        "bs-cordl@4500.1.0",
+        "paper2_scotland2@4.8.0",
+        "tinyxml2@10.0.0",
+        "fmt@11.0.2",
+        "beatsaber-hook@8.2.1",
+        "bsml@0.5.8",
+        "scotland2@0.1.7",
+        "flamingo@1.2.1",
+        "libil2cpp@0.5.0"
+      ],
+      "state": "experimental_v5_startup_passed_physical_calibration_pending",
+      "previous_local_native_sha256": "d0f023cc52863b9fcd430edcade9bac9b8c742a1af38ae3f5b4e4f40335525aa",
+      "manifest_sha256": "3f9095963f25f1684ab36d7e98b03f8846f9a525e070c8d5bbf82f19121869f5",
+      "build_after": [
+        "Quest-BSML"
+      ],
+      "portable_adaptations": [
+        "Use runner-generated extern.cmake with the existing legacy CMake qpm.json reader; no local build-1451.py or private paths included."
+      ],
+      "validation_limits": [
+        "Frozen v5 local native build, synthetic tests and bounded 40-second startup passed; portable clean build pending.",
+        "v5 physical calibration and gameplay anchor coverage remain pending.",
+        "No license grant for upstream binary/source redistribution has been established; fetch pinned upstream source locally and apply the review patch."
+      ],
+      "inputs_sha256": "1d6c22f858091b7066d829044a1192453aeb69c130bd0f0a6426523c4499b508"
     }
   },
   "dependencies": {
@@ -1112,9 +1179,7 @@
       }
     }
   },
-  "pending": {
-    "CongXinJian": "Candidate still under runtime review; final patch intentionally not captured."
-  },
+  "pending": {},
   "generator": {
     "repo": "https://github.com/QuestPackageManager/cordl",
     "commit": "458e5d94a79ccb9c534eeb6729e0e8128b0984fc",
@@ -1180,7 +1245,7 @@
     }
   },
   "recipe_files": {
-    "build.py": "5434585f6dd4eb996be8a5b8f0b969dbe666b746059f9f3db33dd40256dd9791",
+    "build.py": "f18e07149157ddc770c4a76a0e13d44a787481ae2d317072b0b0e34acca898b2",
     "clang_ndk.py": "20c507ef23fd488cb5fc47f362b822629a3bc8add2bda5b5234f4f810a2a2d22",
     "bootstrap.py": "65865303392291a351a4e28d6350e98b1b60c281850a29ca5edaaf830f57b104",
     "integrity.py": "db11540db48300d2a9e0861e2b1a5edbde2a79f0412e3d0f2c015f79f710c3da"

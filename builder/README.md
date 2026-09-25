@@ -22,7 +22,16 @@ The exact target is **Beat Saber Quest 1.45.1_27839**, Scotland2. Other APK buil
    rustup target add aarch64-linux-android --toolchain nightly-2026-09-24
    ```
 
-4. Open this `builder` directory. Supply Android NDKr27c and Clang22.1.8. The optional bootstrap downloads approximately0.66GB +1.94GB from the official Android and LLVM release servers, verifies pinned SHA256, and installs into your home directory:
+4. Keep the exact extracted release at `C:\Users\YourName\Downloads\ports`. Copy that release into a **new** Linux home directory, so the recipe and installer manifest remain from the same release. Replace `YourName` with your Windows account folder name:
+
+   ```sh
+   mkdir -p "$HOME/bs1451"
+   cp -a "/mnt/c/Users/YourName/Downloads/ports" "$HOME/bs1451/ports"
+   cd "$HOME/bs1451/ports/builder"
+   chmod +x clang_ndk.py
+   ```
+
+   Do not substitute a newer unpinned Git checkout. Supply Android NDKr27c and Clang22.1.8. The optional bootstrap downloads approximately0.66GB +1.94GB from the official Android and LLVM release servers, verifies pinned SHA256, and installs into your home directory:
 
    ```sh
    python3 bootstrap.py --ndk --llvm
@@ -42,7 +51,7 @@ The exact target is **Beat Saber Quest 1.45.1_27839**, Scotland2. Other APK buil
 
    The launcher uses the Clang22 frontend and linker with **NDKr27c headers and Android runtime**, including its unwind library. It does not substitute a host C++ runtime. NDK revision must be27.2.12479018. User-supplied toolchains are checked by version/revision; this is not a claim of bitwise identity to the optional official archive. The bootstrap also records and rechecks extracted toolchain trees. QPM is not required: the runner creates CMake dependency metadata from the pinned QPM lock information without executing upstream restore scripts.
 
-5. Place the release's sanitized `beatsaber-hook` and `songcore` QMODs in a local folder. They are the two exact-build binary dependencies imported by this recipe. Their native hashes must match the lock; arbitrary releases are rejected. Other dependencies are fetched automatically with commit or SHA256 pins.
+5. Keep the release's sanitized `beatsaber-hook` and `songcore` QMODs in its Windows `qmods` folder. They are the two exact-build binary dependencies imported by this recipe. Their native hashes must match the lock; arbitrary releases are rejected. Other dependencies are fetched automatically with commit or SHA256 pins.
 6. Generate headers from **your own unmodified exact-version APK**. Replace the example path with your local APK:
 
    ```sh
@@ -53,18 +62,25 @@ The exact target is **Beat Saber Quest 1.45.1_27839**, Scotland2. Other APK buil
 7. Build the available targets in dependency order (one native compiler job at a time):
 
    ```sh
-   python3 build.py build --dependency-qmods "$HOME/bs1451/dependency-qmods"
+   python3 build.py build --dependency-qmods "/mnt/c/Users/YourName/Downloads/ports/qmods"
    ```
 
-   The default work directory is `$HOME/.cache/bs1451-builder`. Its `output` directory contains the QMODs and `build-receipt.json`. Use these with the pack manager's explicit local-build receipt option. The receipt records the actual complete header-tree digest and binds package versions and hashes to the release's pinned recipe fingerprint. Keep the receipt with the QMODs.
+   The default work directory is `$HOME/.cache/bs1451-builder`. Its `output` directory contains the QMODs and `build-receipt.json`. Use these with the pack manager's explicit local-build receipt option. The receipt records the actual complete header-tree digest and binds package versions and hashes to the release's pinned recipe fingerprint. Keep the receipt with the QMODs. Copy both back into the same Windows release folder:
 
-A different workspace can be selected consistently with `--work-dir "$HOME/bs1451-build"`. To build selected targets, list their names after `build`; prerequisites must already have been built/imported. `python3 build.py list` shows the current available/held targets. CongXinJian remains held until its calibration fix is frozen and tested. Building does not install anything on a headset.
+   ```sh
+   cp "$HOME/.cache/bs1451-builder/output/"*.qmod "/mnt/c/Users/YourName/Downloads/ports/qmods/"
+   cp "$HOME/.cache/bs1451-builder/output/build-receipt.json" "/mnt/c/Users/YourName/Downloads/ports/qmods/"
+   ```
+
+A different workspace can be selected consistently with `--work-dir "$HOME/bs1451-build"`. To build selected targets, list their names after `build`; prerequisites must already have been built/imported. `python3 build.py list` shows the current available/held targets. CongXinJian v5 is included as experimental: its frozen local build passed a bounded startup check, while physical automatic-calibration validation remains pending. Building does not install anything on a headset.
 
 ## What is pinned and what has been tested
 
 `build-lock.json` pins upstream commits, external native release hashes, per-dependency patch hashes, exact game input hashes, generator sources, toolchain versions and output manifests. Each target has `inputs_sha256`, computed from the whole locked recipe and executable recipe file hashes. The runner validates the fingerprint, every tracked source against its Git base or reviewed patch, extra source files, extracted dependency trees, external links, and dependency native hashes before compiling. Reused generated headers must match the complete tree digest. Altering a recipe requires a new trusted release fingerprint; do not edit the lock to bypass a failed integrity check.
 
 The source reconstruction report covers every exported changed file against its pinned upstream base. See `validation.json` for actual clean-build checks and remaining gaps. Initial local port testing and a fresh portable build are distinct: compiler output may differ because of compiler patch level and anonymized source paths. Freshly rebuilt QMODs still require local runtime testing.
+
+WSL setup and the full optional compiler bootstrap have not been tested end-to-end on Windows; the Linux native build results are listed explicitly in the validation report.
 
 The full default pack includes upstream libraries that are downloaded separately by the pack manager. This folder is a build recipe, not a complete offline dependency archive. If a pinned source or release disappears, the build stops rather than silently selecting another version.
 

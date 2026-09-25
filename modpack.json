@@ -25,7 +25,8 @@
       "unicode",
       "bsl",
       "playlistcore",
-      "songdownloader"
+      "songdownloader",
+      "CongXinJian"
     ],
     "practice": [
       "songcore",
@@ -37,6 +38,7 @@
       "bsl",
       "playlistcore",
       "songdownloader",
+      "CongXinJian",
       "PracticeTweaqs"
     ],
     "online-experimental": [
@@ -49,6 +51,7 @@
       "bsl",
       "playlistcore",
       "songdownloader",
+      "CongXinJian",
       "BeatTogether",
       "multiplayer-core"
     ]
@@ -265,7 +268,7 @@
       "filename": "bsl-0.1.0+local.1451.2.qmod",
       "local_build": {
         "target": "BetterSongList",
-        "inputs_sha256": "a9bc9340a5a04770b5abcb6b89c762327c4b0708f6981c2389cf3c111f428752"
+        "inputs_sha256": "564316b926509cf9ac1cd32d7d5a00a8a2b92ca221331c1fc56d63799f6ba14f"
       },
       "upstream": "https://github.com/bsq-ports/BetterSongList.git",
       "upstream_commit": "cf1f63049d590f2f70207aa1285f9a5cf511ba38",
@@ -305,7 +308,7 @@
       "filename": "bsml-0.5.8+local.1451.qmod",
       "local_build": {
         "target": "Quest-BSML",
-        "inputs_sha256": "85a42fba0efb0aced31cecd750f93588b2b2e39be9e169705efc8f0c421e4520"
+        "inputs_sha256": "5b8fe936d9fefd64ee5a77fd9b5aa3d61f8781c26f3b9b09caed1232ef8c1e43"
       },
       "upstream": "https://github.com/bsq-ports/Quest-BSML.git",
       "upstream_commit": "7a9cbe5b8d90061b0bac4167d21e42b24c224be4",
@@ -357,10 +360,54 @@
       "filename": "chroma-2.10.3+local.1451.qmod",
       "local_build": {
         "target": "Chroma",
-        "inputs_sha256": "9bcc6aa4dc2d1a691afea4ceea83ed9a84bc6e7a4874c696f7ede03c92b7f19b"
+        "inputs_sha256": "3fe7c556b0e24344a3f5bb4594ba7df2521dfd3254d79b9632103a8c585a58ca"
       },
       "upstream": "https://github.com/bsq-ports/Chroma.git",
       "upstream_commit": "e3d7419f00d7b120857edfccb0a15f202c6ebd61",
+      "url": null
+    },
+    {
+      "id": "CongXinJian",
+      "name": "CongXinJian",
+      "version": "0.1.0+local.1451.5",
+      "dependencies": [
+        {
+          "id": "custom-types",
+          "version": "^0.20.1"
+        },
+        {
+          "id": "paper2_scotland2",
+          "version": "^4.8.0"
+        },
+        {
+          "id": "tinyxml2",
+          "version": "^10.0.0"
+        },
+        {
+          "id": "beatsaber-hook",
+          "version": "^8.2.1"
+        },
+        {
+          "id": "bsml",
+          "version": "^0.5.8"
+        },
+        {
+          "id": "flamingo",
+          "version": "^1.2.1"
+        }
+      ],
+      "native_sha256": {
+        "libCongXinJian.so": "82db6af2817ae9f89d395f185017ea916ef74e6a9441a80e4a258b9485976520"
+      },
+      "experimental": true,
+      "runtime_scope": "Startup observed, but user reports AutoCJN broken; active repair is pending. Do not claim offset adjustment is working.",
+      "filename": "CongXinJian-0.1.0+local.1451.5.qmod",
+      "local_build": {
+        "target": "CongXinJian",
+        "inputs_sha256": "1d6c22f858091b7066d829044a1192453aeb69c130bd0f0a6426523c4499b508"
+      },
+      "upstream": "https://github.com/lixiangwuxian/CongXinJian.git",
+      "upstream_commit": "ece4b8a01c14930bc61bdd500ba36152b869855d",
       "url": null
     },
     {
@@ -397,7 +444,7 @@
       "filename": "custom-json-data-0.24.5+local.1451.qmod",
       "local_build": {
         "target": "CustomJSONData",
-        "inputs_sha256": "e3ee0bf4d06e05147170fbf29f02c1aff17d22a22e3aa737b626077b614500b2"
+        "inputs_sha256": "536aa62fb64d94bc01706dc89922873bc0364df838e3e231934f6c568507b935"
       },
       "upstream": "https://github.com/bsq-ports/CustomJSONData.git",
       "upstream_commit": "e1dc75604d1663e5c890102da5f615bb5198f650",
@@ -540,7 +587,7 @@
       "filename": "metacore-2.0.3+local.1451.qmod",
       "local_build": {
         "target": "MetaCore-1451",
-        "inputs_sha256": "85b9a660a2c711dbafb88b611157d6f57fe749383e2e13566e3126d3a193bc92"
+        "inputs_sha256": "38ad7197284c8c8e3af6db58d293715521bc2d67f105c8df6ca974eff17cd2be"
       },
       "upstream": "https://github.com/Metalit/MetaCore.git",
       "upstream_commit": "906b9e34c6b2e6b7755432db43a9d4be3c9838d5",
@@ -592,7 +639,7 @@
       "filename": "metacore-bs-1.0.0+local.1451.qmod",
       "local_build": {
         "target": "metacore-bs-1451",
-        "inputs_sha256": "457039db4a459735de3d35a22296e32de23eb121bb8eb310e455ffdb777bd6c0"
+        "inputs_sha256": "f92c80bab281a1f128663dc1294d94e09db964f93f60bab917d74ceefb7493b3"
       },
       "upstream": "https://github.com/Metalit/MetaCoreBS.git",
       "upstream_commit": "1d092b323571b5c4c2629212d9c8b49a34fc6a27",
@@ -696,7 +743,7 @@
       "filename": "NoodleExtensions-1.6.3+local.1451.4.qmod",
       "local_build": {
         "target": "NoodleExtensions",
-        "inputs_sha256": "4e3bd6bc0deafdf1981d15492476d01838e597c7f6634e7032a75de7bab30b16"
+        "inputs_sha256": "931471deb1ab8b2ef5757b2dd9b7744d6b806a852a92d9b0098467618c9d1f81"
       },
       "upstream": "https://github.com/bsq-ports/NoodleExtensions",
       "upstream_commit": "565e3b33c98e9536d5b7e9c78d7f96e3ab2a4fad",
@@ -775,7 +822,7 @@
       "filename": "playlistcore-1.7.1+local.1451.qmod",
       "local_build": {
         "target": "PlaylistCore-1451",
-        "inputs_sha256": "4eac0de4e4fdd7ad14abce5008b510bb2e20d0aa24323239955c027042186b23"
+        "inputs_sha256": "dad19e483f5bf4e1050604bed60e7ec3c884fccd8e41c9a5ac421b885ff25968"
       },
       "upstream": "https://github.com/Metalit/PlaylistCore.git",
       "upstream_commit": "5aa74ed2200870402ec6b4a5fb36e6bf8050cc7a",
@@ -941,7 +988,7 @@
       "filename": "songdownloader-0.8.7+local.1451.3.qmod",
       "local_build": {
         "target": "SongDownloader",
-        "inputs_sha256": "0d22a0baaf9ff3b6f8e23294425bc20440622ff64c3490dd63d018b32debb35d"
+        "inputs_sha256": "723787143bb17eaf9d178d2300ab34ae8c6d13919198e341c2e1c01f1c08bc17"
       },
       "upstream": "https://github.com/darknight1050/SongDownloader.git",
       "upstream_commit": "17448f9e13dfabb4c05b948c3951f85e939d78ba",
@@ -1002,7 +1049,7 @@
       "filename": "tracks-2.5.4+local.1451.3.qmod",
       "local_build": {
         "target": "Tracks",
-        "inputs_sha256": "9cdca96d90925ea15c3e04efbfd532d536773fb40b3650138b6e6d8ca5e3327f"
+        "inputs_sha256": "e87d50e220e77450ce8f92902a214e811b6564fc876caebbb5343c00796dd9ea"
       },
       "upstream": "https://github.com/bsq-ports/Tracks",
       "upstream_commit": "9c0f8889f9ac29eff46437a8dfdc61e61ba36354",
@@ -1038,7 +1085,7 @@
       "filename": "unicode-0.1.8+local.1451.qmod",
       "local_build": {
         "target": "UnicodeQuest",
-        "inputs_sha256": "66589b1972f90e5b425b51c98e92b21287ea05c8c949757f89a78c2c7e328f5e"
+        "inputs_sha256": "9e0afc72bcc435a48ace75b0a6c56c445c7ef7b573dbe1c0d3052441717c06ac"
       },
       "upstream": "https://github.com/Metalit/UnicodeQuest.git",
       "upstream_commit": "a411756d57dd23c6d561cf008ae601447015b7b3",

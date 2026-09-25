@@ -1,0 +1,43 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Lauriethefish/QuestPatcher.QMod/main/QuestPatcher.QMod/Resources/qmod.schema.json",
+  "_QPVersion": "0.1.1",
+  "name": "CongXinJian",
+  "id": "CongXinJian",
+  "author": "lxtend",
+  "version": "0.1.0+local.1451.5",
+  "packageId": "com.beatgames.beatsaber",
+  "packageVersion": "1.45.1_27839",
+  "description": "Experimental Quest 1.45.1 local source build. Measured per-hand visual reference for saber offsets and calibration; physical calibration and gameplay anchor coverage remain under validation.",
+  "dependencies": [
+    {
+      "id": "custom-types",
+      "version": "^0.20.1"
+    },
+    {
+      "id": "paper2_scotland2",
+      "version": "^4.8.0"
+    },
+    {
+      "id": "tinyxml2",
+      "version": "^10.0.0"
+    },
+    {
+      "id": "beatsaber-hook",
+      "version": "^8.2.1"
+    },
+    {
+      "id": "bsml",
+      "version": "^0.5.8"
+    },
+    {
+      "id": "flamingo",
+      "version": "^1.2.1"
+    }
+  ],
+  "modFiles": [
+    "libCongXinJian.so"
+  ],
+  "libraryFiles": [],
+  "fileCopies": [],
+  "modloader": "Scotland2"
+}

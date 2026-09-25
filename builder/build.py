@@ -38,6 +38,15 @@ def output(argv,cwd=None):return subprocess.check_output(list(map(str,argv)),cwd
 def check_file(p,expected):
     if not pathlib.Path(p).is_file() or sha(p)!=expected:raise RuntimeError(f'Integrity mismatch: {p}')
 def write_json(p,x):p.parent.mkdir(parents=True,exist_ok=True);p.write_text(json.dumps(x,indent=2)+'\n')
+def install_bytes(dest,blob):
+    dest.parent.mkdir(parents=True,exist_ok=True)
+    if dest.is_file() and not dest.is_symlink() and sha(dest)==hashlib.sha256(blob).hexdigest():return
+    fd,tmp=tempfile.mkstemp(prefix='.native-',dir=dest.parent)
+    try:
+        with os.fdopen(fd,'wb') as f:f.write(blob);f.flush();os.fsync(f.fileno())
+        os.replace(tmp,dest)
+    finally:
+        if os.path.exists(tmp):os.unlink(tmp)
 def record_package(receipt,id,entry):
     with (receipt.parent/'.receipt.lock').open('a') as guard:
         fcntl.flock(guard,fcntl.LOCK_EX)
@@ -165,9 +174,15 @@ def local_libraries(args,work):
             if id not in LOCK['required_local_dependencies']:continue
             p=LOCK['required_local_dependencies'][id];blob=z.read(p['binary'])
             if hashlib.sha256(blob).hexdigest()!=p['sha256']:raise RuntimeError('Wrong exact-target dependency: '+id)
-            dest=work/'core-qmods/native'/LOCAL[id][0]/p['binary'];dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(blob)
+            dest=work/'core-qmods/native'/LOCAL[id][0]/p['binary'];install_bytes(dest,blob)
 
 def dependency(key,project,args,work):
+    locks=work/'.dependency-locks';locks.mkdir(parents=True,exist_ok=True)
+    with (locks/(hashlib.sha256(key.encode()).hexdigest()+'.lock')).open('a') as guard:
+        fcntl.flock(guard,fcntl.LOCK_EX)
+        return prepare_dependency(key,project,args,work)
+
+def prepare_dependency(key,project,args,work):
     d=LOCK['dependencies'][key];dest=project/'extern/includes'/d['id']
     if d.get('local_generated'):link(work/'toolchain/codegen/include',dest/'include');return None
     cache=pathlib.Path(args.qpm_cache).expanduser()/d['id']/d['version']/'src' if args.qpm_cache else None
@@ -289,7 +304,7 @@ def build(name,args,work,ndk):
     if native.read_bytes()[:4]!=b'\x7fELF':raise RuntimeError('Build did not produce an ELF')
     manifest=json.loads((ROOT/t['manifest']).read_text());id=manifest['id']
     if id in LOCAL:
-        folder,_=LOCAL[id];dest=work/'core-qmods/native'/folder/t['binary'];dest.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(native,dest)
+        folder,_=LOCAL[id];dest=work/'core-qmods/native'/folder/t['binary'];install_bytes(dest,native.read_bytes())
     out=work/'output';out.mkdir(exist_ok=True);qmod=out/(id+'-'+manifest['version']+'.qmod')
     provenance={'experimental':True,'target_game':LOCK['target_game'],'inputs_sha256':t['inputs_sha256'],'headers_tree_sha256':tree_sha(work/'toolchain/codegen/include'),'runtime_tested_this_build':False,'source_commit':t['commit'],'native_sha256':sha(native)}
     with zipfile.ZipFile(qmod,'w',compression=zipfile.ZIP_DEFLATED) as z:

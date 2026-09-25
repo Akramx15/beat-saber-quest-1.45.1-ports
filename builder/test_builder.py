@@ -107,4 +107,31 @@ class BuilderChecks(unittest.TestCase):
             try:
                 with self.assertRaisesRegex(RuntimeError,'Changed extracted dependency'):build.dependency(key,work/'sources/_test_project',__import__('argparse').Namespace(qpm_cache=None),work)
             finally:del build.LOCK['dependencies'][key];del build.LOCK['targets']['_test_project']
+    def test_same_dependency_preparation_serialized_between_processes(self):
+        import multiprocessing, time
+        ctx=multiprocessing.get_context('fork')
+        with tempfile.TemporaryDirectory() as td:
+            work=pathlib.Path(td);events=work/'events';start=ctx.Event()
+            def inner(*args):
+                with events.open('a') as f:f.write('begin\n')
+                time.sleep(0.08)
+                with events.open('a') as f:f.write('end\n')
+            def worker():
+                start.wait(3);build.dependency('same-dependency',work,None,work)
+            with patch.object(build,'prepare_dependency',inner):
+                children=[ctx.Process(target=worker) for _ in range(2)]
+                for child in children:child.start()
+                start.set()
+                for child in children:child.join(5);self.assertEqual(child.exitcode,0)
+            self.assertEqual(events.read_text().splitlines(),['begin','end','begin','end'])
+    def test_identical_native_import_keeps_timestamp(self):
+        with tempfile.TemporaryDirectory() as td:
+            p=pathlib.Path(td)/'native.so';build.install_bytes(p,b'exact')
+            os.utime(p,ns=(1_000_000_000,1_000_000_000));build.install_bytes(p,b'exact')
+            self.assertEqual(p.stat().st_mtime_ns,1_000_000_000)
+    def test_native_import_replaces_link_without_writing_outside(self):
+        with tempfile.TemporaryDirectory() as td:
+            root=pathlib.Path(td);outside=root/'outside';outside.write_bytes(b'keep')
+            dest=root/'native.so';dest.symlink_to(outside);build.install_bytes(dest,b'new')
+            self.assertEqual(outside.read_bytes(),b'keep');self.assertFalse(dest.is_symlink());self.assertEqual(dest.read_bytes(),b'new')
 if __name__=='__main__':unittest.main(verbosity=2)

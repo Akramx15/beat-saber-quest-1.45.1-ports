@@ -1,0 +1,1076 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 7953401..b700d48 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -6,2 +6,2 @@ option(QUEST "Build for quest" ON)
+-set(CMAKE_CXX_STANDARD 20)
+-set(CMAKE_CXX_STANDARD_REQUIRED 20)
++set(CMAKE_CXX_STANDARD 23)
++set(CMAKE_CXX_STANDARD_REQUIRED ON)
+@@ -80 +80,3 @@ target_sources(${COMPILE_ID} PRIVATE ${src_inline_hook_beatsaber_hook_local_extr
+-target_sources(${COMPILE_ID} PRIVATE ${src_inline_hook_beatsaber_hook_local_extra_cpp})
+\ No newline at end of file
++target_sources(${COMPILE_ID} PRIVATE ${src_inline_hook_beatsaber_hook_local_extra_cpp})
++target_include_directories(${COMPILE_ID} BEFORE PRIVATE "${BEAT_SABER_CODEGEN_INCLUDE}")
++target_link_options(${COMPILE_ID} PRIVATE -Wl,--no-undefined -Wl,--thinlto-jobs=2 -Wl,--threads=2)
+diff --git a/cmake/qpm.cmake b/cmake/qpm.cmake
+index 256ee8c..fbc08d7 100644
+--- a/cmake/qpm.cmake
++++ b/cmake/qpm.cmake
+@@ -32,0 +33,3 @@ function(_setup_qpm_project)
++    get_target_property(port_link_libraries ${COMPILE_ID} LINK_LIBRARIES)
++    list(FILTER port_link_libraries EXCLUDE REGEX "(^|/)(debug_[^/]*|[^/]*\\.debug)\\.so$")
++    set_property(TARGET ${COMPILE_ID} PROPERTY LINK_LIBRARIES "${port_link_libraries}")
+diff --git a/cmake/targets/quest.cmake b/cmake/targets/quest.cmake
+index 4260438..6283c35 100644
+--- a/cmake/targets/quest.cmake
++++ b/cmake/targets/quest.cmake
+@@ -7 +7 @@ add_compile_definitions(QUEST)
+-add_compile_definitions(UNITY_2021)
++add_compile_definitions(UNITY_6)
+diff --git a/include/config.hpp b/include/config.hpp
+index 55cf093..4e3ad98 100644
+--- a/include/config.hpp
++++ b/include/config.hpp
+@@ -63,12 +63 @@ struct OffsetConfig {
+-// Saber mesh forward direction in VRController local space.
+-// The saber child (MenuHandle) has a ~40° X-axis rotation relative to the
+-// VRController transform: Quaternion(-0.342, 0, 0, 0.940).
+-// So the saber extends along (0, 0.643, 0.766) rather than (0, 0, 1).
+-inline constexpr float kSaberFwdX = 0.0f;
+-inline constexpr float kSaberFwdY = 0.6428f;
+-inline constexpr float kSaberFwdZ = 0.7660f;
+-
+-// MenuHandle child localPosition (saber root offset from controller origin).
+-// Right: (0.005, 0.030, 0.055), Left: (-0.005, 0.030, 0.055). X is negligible.
+-inline constexpr float kMenuHandleOffY = 0.030f;
+-inline constexpr float kMenuHandleOffZ = 0.055f;
++// Saber reference geometry is measured from the game visual anchor per hand.
+diff --git a/include/gesture_controller.hpp b/include/gesture_controller.hpp
+index 0b11dce..e01f59e 100644
+--- a/include/gesture_controller.hpp
++++ b/include/gesture_controller.hpp
+@@ -6,0 +7,2 @@
++namespace UnityEngine { class Transform; }
++
+@@ -9,5 +11,2 @@
+-// While the user holds the trigger on one controller (the "free hand"),
+-// movements and rotations of that hand are tracked as deltas from the grab
+-// anchor and applied as offset changes to the OPPOSITE hand's config.
+-//
+-// This mirrors Easy Offset's Position+Rotation mode with UseFreeHand=true.
++// Hold the assigned button on one controller and move the OPPOSITE hand.
++// The opposite hand supplies the poses and receives the offset adjustment.
+@@ -27 +26,8 @@ void OnControllerUpdate(::UnityEngine::XR::XRNode node,
+-                        float triggerVal);
++                        float triggerVal, bool poseValid,
++                        ::UnityEngine::Transform* controllerTransform);
++
++// Bounded comparison of rendered gizmo against the independently read visual anchor.
++void AfterOffsetApplied(::UnityEngine::XR::XRNode node);
++
++/// Cancel without persisting a partial calibration, restoring the grab start.
++void CancelAdjustment(char const* reason);
+diff --git a/include/gizmo_controller.hpp b/include/gizmo_controller.hpp
+index c6211fe..380bd3e 100644
+--- a/include/gizmo_controller.hpp
++++ b/include/gizmo_controller.hpp
+@@ -3,0 +4 @@
++#include "saber_geometry_math.hpp"
+@@ -7,0 +9,2 @@
++namespace UnityEngine { class Transform; }
++
+@@ -20 +23,2 @@ void Show(AdjustmentMode mode);
+-// controllerPos/Rot = raw un-offset controller pose.
++// trackingParent   = parent of the target VRController. Null means world root.
++// controllerPos/Rot = raw un-offset pose LOCAL to trackingParent.
+@@ -26 +30,2 @@ void Show(AdjustmentMode mode);
+-void Update(UnityEngine::Vector3 controllerPos,
++void Update(UnityEngine::Transform* trackingParent,
++            UnityEngine::Vector3 controllerPos,
+@@ -29,0 +35 @@ void Update(UnityEngine::Vector3 controllerPos,
++            SaberGeometry::Reference reference, float zOffset,
+@@ -31,0 +38,4 @@ void Update(UnityEngine::Vector3 controllerPos,
++// Exact world endpoints last submitted by SetLine to LineRenderer.SetPosition.
++// This is a write-path record, not a renderer readback (getters are stripped).
++bool ReadWrittenWorldLine(UnityEngine::Vector3& start, UnityEngine::Vector3& end);
++
+diff --git a/include/main.hpp b/include/main.hpp
+index c00cd06..a6ffcf4 100644
+--- a/include/main.hpp
++++ b/include/main.hpp
+@@ -10,4 +10,4 @@
+-#include "beatsaber-hook/shared/config/config-utils.hpp"
+-#include "beatsaber-hook/shared/utils/hooking.hpp"
+-#include "beatsaber-hook/shared/utils/il2cpp-functions.hpp"
+-#include "beatsaber-hook/shared/utils/logging.hpp"
++#include "config-compat.hpp"
++#include "beatsaber-hook/shared/hooking.hpp"
++#include "beatsaber-hook/shared/api.hpp"
++#include "paper2_scotland2/shared/logger.hpp"
+@@ -21 +21 @@ Configuration &getConfig();
+-constexpr auto PaperLogger = Paper::ConstLoggerContext("CongXinJian");
+\ No newline at end of file
++constexpr auto PaperLogger = Paper::ConstLoggerContext("CongXinJian");
+diff --git a/include/offset_controller.hpp b/include/offset_controller.hpp
+index 0dd9d97..c9c1457 100644
+--- a/include/offset_controller.hpp
++++ b/include/offset_controller.hpp
+@@ -2,0 +3 @@
++#include "saber_geometry_math.hpp"
+@@ -12 +13 @@
+-//   translation = pivot + Quaternion::Euler(rotationEuler) * (0, 0, zOffset)
++//   translation = pivot + rotation * (measuredSaberForward * zOffset)
+@@ -20,0 +22,7 @@ namespace OffsetController {
++// Capture an actual descendant view anchor before applying our own offsets.
++// A direct MenuHandle child is used only when the game's view-anchor is absent.
++void CaptureReference(::UnityEngine::XR::XRNode node, ::UnityEngine::Transform* controller,
++                      ::UnityEngine::Transform* viewAnchor);
++SaberGeometry::Reference GetReference(::UnityEngine::XR::XRNode node);
++::UnityEngine::Transform* GetVisibleReference(::UnityEngine::XR::XRNode node);
++
+diff --git a/qpm.json b/qpm.json
+index 5b6cafc..1944897 100644
+--- a/qpm.json
++++ b/qpm.json
+@@ -53 +53 @@
+-      "versionRange": "^0.1.4",
++      "versionRange": "^0.1.7",
+@@ -60 +60 @@
+-      "versionRange": "^6.4.0",
++      "versionRange": "^8.2.1",
+@@ -65 +65 @@
+-      "versionRange": "^4008.0.0",
++      "versionRange": "^4500.0.1",
+@@ -70 +70 @@
+-      "versionRange": "^0.4.0",
++      "versionRange": "^0.5.8",
+@@ -75 +75 @@
+-      "versionRange": "^0.18.0",
++      "versionRange": "^0.20.1",
+@@ -80 +80,6 @@
+-      "versionRange": "^4.7.0",
++      "versionRange": "^4.8.0",
++      "additionalData": {}
++    },
++    {
++      "id": "flamingo",
++      "versionRange": "^1.2.1",
+@@ -84 +89 @@
+-}
+\ No newline at end of file
++}
+diff --git a/src/gesture_controller.cpp b/src/gesture_controller.cpp
+index f14aa82..223a302 100644
+--- a/src/gesture_controller.cpp
++++ b/src/gesture_controller.cpp
+@@ -6,0 +7 @@
++#include "unity_reference.hpp"
+@@ -14,0 +16,4 @@
++#include "UnityEngine/InputSystem/XR/XRController.hpp"
++#include "UnityEngine/InputSystem/Controls/ButtonControl.hpp"
++#include "UnityEngine/XR/OpenXR/Features/Interactions/OculusTouchControllerProfile.hpp"
++#include "UnityEngine/XR/OpenXR/Features/Interactions/MetaQuestTouchPlusControllerProfile.hpp"
+@@ -24,2 +29,8 @@ using Quat = UnityEngine::Quaternion;
+-// Saber forward in VRController local space (from config.hpp constants)
+-const Vec3 kSaberFwd{kSaberFwdX, kSaberFwdY, kSaberFwdZ};
++// Stable measured visual reference for the duration of one calibration grab.
++SaberGeometry::Reference g_grabReference{};
++UnityW<UnityEngine::Transform> g_grabController{};
++UnityW<UnityEngine::Transform> g_grabVisible{};
++UnityW<UnityEngine::Transform> g_grabParent{};
++bool g_grabHadParent = false;
++int g_grabRenderFrames = 0;
++bool g_gizmoUpdated = false;
+@@ -37,2 +48,2 @@ HandTweakConfig g_storedConfig{};
+-// Saber world-space position at grab start (for exact position compensation)
+-Vec3 g_saberWorldPos{0, 0, 0};
++// Visible saber-root position in the tracking frame at grab start.
++Vec3 g_saberTrackingPos{0, 0, 0};
+@@ -42,0 +54,44 @@ Quat g_lastRawRot[2] = {{0, 0, 0, 1}, {0, 0, 0, 1}};
++bool g_poseValid[2] = {false, false};
++UnityW<UnityEngine::Transform> g_controllerTransforms[2]{};
++Vec3 g_lastRawWorldPos[2]{};
++Quat g_lastRawWorldRot[2]{};
++
++// Grab-edge-only diagnostics. Child world poses can already include the previous
++// offset; cached raw local/world samples are captured before Apply in the hook.
++void LogGrabGeometry(int targetIdx) {
++    static int grabsRemaining = 12;
++    auto controller = g_controllerTransforms[targetIdx];
++    if (grabsRemaining <= 0 || !controller) return;
++    --grabsRemaining;
++    auto lp = g_lastRawPos[targetIdx];
++    auto lr = g_lastRawRot[targetIdx];
++    auto wp = g_lastRawWorldPos[targetIdx];
++    auto wr = g_lastRawWorldRot[targetIdx];
++    auto const& cfg = GetTweakConfig();
++    PaperLogger.info("Geometry grab: hand={} slot={} button={} mode={} controller='{}' rawLocalPos=({:.4f},{:.4f},{:.4f}) rawLocalRot=({:.5f},{:.5f},{:.5f},{:.5f}) rawWorldPos=({:.4f},{:.4f},{:.4f}) rawWorldRot=({:.5f},{:.5f},{:.5f},{:.5f})",
++        targetIdx == 0 ? "L" : "R", cfg.activeSlot, ControllerButtonToString(cfg.assignedButton),
++        AdjustmentModeToString(cfg.adjustmentMode), static_cast<std::string>(StringW(controller->get_name())),
++        lp.x, lp.y, lp.z, lr.x, lr.y, lr.z, lr.w, wp.x, wp.y, wp.z, wr.x, wr.y, wr.z, wr.w);
++    auto parent = controller->get_parent();
++    if (parent) {
++        auto p = parent->get_position(); auto q = parent->get_rotation(); auto scale = parent->get_lossyScale();
++        PaperLogger.info("Geometry parent: name='{}' worldPos=({:.4f},{:.4f},{:.4f}) worldRot=({:.5f},{:.5f},{:.5f},{:.5f}) worldScale=({:.4f},{:.4f},{:.4f})",
++            static_cast<std::string>(StringW(parent->get_name())), p.x,p.y,p.z,q.x,q.y,q.z,q.w,scale.x,scale.y,scale.z);
++    } else PaperLogger.info("Geometry parent: null (controller local frame is world)");
++    auto ref = OffsetController::GetReference(targetIdx == 0 ? XRNode::LeftHand : XRNode::RightHand);
++    auto visible = OffsetController::GetVisibleReference(targetIdx == 0 ? XRNode::LeftHand : XRNode::RightHand);
++    PaperLogger.info("Geometry reference: hand={} valid={} visible='{}' root=({:.4f},{:.4f},{:.4f}) forward=({:.4f},{:.4f},{:.4f})",
++        targetIdx == 0 ? "L" : "R", ref.valid, visible ? static_cast<std::string>(StringW(visible->get_name())) : "missing",
++        ref.root.x,ref.root.y,ref.root.z,ref.forward.x,ref.forward.y,ref.forward.z);
++    const int count = controller->get_childCount();
++    for (int i = 0; i < count && i < 8; ++i) {
++        auto child = controller->GetChild(i);
++        if (!child) continue;
++        auto p = child->get_localPosition(); auto q = child->get_localRotation();
++        auto w = child->get_position(); auto r = child->get_rotation();
++        auto f = Quat::op_Multiply(q, Vec3{0,0,1});
++        PaperLogger.info("Geometry child: index={} name='{}' localPos=({:.4f},{:.4f},{:.4f}) localRot=({:.5f},{:.5f},{:.5f},{:.5f}) localForward=({:.4f},{:.4f},{:.4f}) currentWorldPos=({:.4f},{:.4f},{:.4f}) currentWorldRot=({:.5f},{:.5f},{:.5f},{:.5f})",
++            i, static_cast<std::string>(StringW(child->get_name())),p.x,p.y,p.z,q.x,q.y,q.z,q.w,f.x,f.y,f.z,w.x,w.y,w.z,r.x,r.y,r.z,r.w);
++    }
++}
++
+@@ -61 +116 @@ int g_rotAutoFrameNum = 0;
+-Vec3 g_rotAutoPositiveDir{0, 0, 1};  // world-space sign reference, set at grab start
++Vec3 g_rotAutoPositiveDir{0, 0, 1};  // tracking-frame sign reference at grab start
+@@ -73,2 +128,2 @@ float ClampAngle(float a) {
+-// ── Button reading via OVRInput ─────────────────────────────────────────
+-bool IsButtonDown(ControllerButton btn, XRNode node) {
++// Legacy fallback for controller layouts not supplied by Unity Input System.
++bool LegacyButtonDown(ControllerButton btn, XRNode node) {
+@@ -107,0 +163,43 @@ bool IsButtonDown(ControllerButton btn, XRNode node) {
++template<class T>
++UnityEngine::InputSystem::Controls::ButtonControl* GetButton(T* controller, ControllerButton button) {
++    switch (button) {
++    case ControllerButton::Trigger: return controller->get_triggerPressed();
++    case ControllerButton::Grip: return controller->get_gripPressed();
++    case ControllerButton::PrimaryButton: return controller->get_primaryButton();
++    case ControllerButton::SecondaryButton: return controller->get_secondaryButton();
++    case ControllerButton::ThumbstickPress: return controller->get_thumbstickClicked();
++    }
++    return nullptr;
++}
++
++struct ButtonSample { bool down; char const* backend; };
++
++ButtonSample ReadButton(ControllerButton button, XRNode node, float triggerValue) {
++    // This is the same trigger source the game's UI already uses. OVRInput's
++    // legacy static state is not guaranteed to be updated under OpenXR.
++    if (button == ControllerButton::Trigger && std::isfinite(triggerValue))
++        return {triggerValue > 0.5f, "game-trigger"};
++
++    using namespace UnityEngine::XR::OpenXR::Features::Interactions;
++    auto* controller = node == XRNode::LeftHand
++        ? UnityEngine::InputSystem::XR::XRController::get_leftHand()
++        : UnityEngine::InputSystem::XR::XRController::get_rightHand();
++    UnityEngine::InputSystem::Controls::ButtonControl* control = nullptr;
++    char const* backend = "OVR-fallback";
++    if (auto* touch = i2c::try_cast<MetaQuestTouchPlusControllerProfile_QuestTouchPlusController*>(controller)) {
++        control = GetButton(touch, button);
++        backend = "Unity-QuestTouchPlus";
++    } else if (auto* touch = i2c::try_cast<OculusTouchControllerProfile_OculusTouchController*>(controller)) {
++        control = GetButton(touch, button);
++        backend = "Unity-OculusTouch";
++    }
++    if (control) return {control->get_isPressed(), backend};
++    return {LegacyButtonDown(button, node), "OVR-fallback"};
++}
++
++bool ValidPose(Vec3 pos, Quat rot) {
++    return std::isfinite(pos.x) && std::isfinite(pos.y) && std::isfinite(pos.z)
++        && std::isfinite(rot.x) && std::isfinite(rot.y) && std::isfinite(rot.z) && std::isfinite(rot.w)
++        && rot.x * rot.x + rot.y * rot.y + rot.z * rot.z + rot.w * rot.w > 1e-6f;
++}
++
+@@ -126,22 +224,16 @@ void OnGrabStart(XRNode pressedNode) {
+-
+-    // Compute saber world position at grab start:
+-    // saberPos = rawPos + rawRot * translation
+-    // translation = pivot + rotation * (0, 0, zOffset)
+-    {
+-        auto rot = g_storedConfig.rotation;
+-        Vec3 bladeOff{kSaberFwd.x * g_storedConfig.zOffset,
+-                          kSaberFwd.y * g_storedConfig.zOffset,
+-                          kSaberFwd.z * g_storedConfig.zOffset};
+-        auto rb = Quat::op_Multiply(rot, bladeOff);
+-        Vec3 translation = {
+-            g_storedConfig.pivot.x + rb.x,
+-            g_storedConfig.pivot.y + rb.y,
+-            g_storedConfig.pivot.z + rb.z,
+-        };
+-        auto worldOff = Quat::op_Multiply(g_grabRot, translation);
+-        g_saberWorldPos = {
+-            g_grabPos.x + worldOff.x,
+-            g_grabPos.y + worldOff.y,
+-            g_grabPos.z + worldOff.z,
+-        };
+-    }
++    auto targetNode = targetIdx == 0 ? XRNode::LeftHand : XRNode::RightHand;
++    g_grabReference = OffsetController::GetReference(targetNode);
++    g_grabController = g_controllerTransforms[targetIdx];
++    g_grabVisible = OffsetController::GetVisibleReference(targetNode);
++    if (!g_grabReference.valid || !g_grabController || !g_grabVisible) { g_state = State::Idle; return; }
++    g_grabParent = g_grabController->get_parent();
++    g_grabHadParent = static_cast<bool>(g_grabParent);
++    g_grabRenderFrames = 0;
++    g_gizmoUpdated = false;
++    LogGrabGeometry(targetIdx);
++
++    // Include the measured child root and existing z offset when freezing the
++    // visible saber. Config values themselves are unchanged until calibration.
++    auto rootLocal = SaberGeometry::Root(g_storedConfig.pivot, g_storedConfig.rotation,
++                                        g_grabReference, g_storedConfig.zOffset);
++    g_saberTrackingPos = SaberGeometry::Add(g_grabPos, Quat::op_Multiply(g_grabRot, rootLocal));
+@@ -156,3 +248,4 @@ void OnGrabStart(XRNode pressedNode) {
+-        // Sign reference: saber world forward at grab start.
+-        // Uses kSaberFwd (actual saber direction) not (0,0,1) (controller Z).
+-        g_rotAutoPositiveDir = Quat::op_Multiply(g_grabRot, kSaberFwd);
++        // Actual visible forward in the tracking frame, including the existing
++        // stored offset rotation and the measured child basis.
++        g_rotAutoPositiveDir = Quat::op_Multiply(
++            Quat::op_Multiply(g_grabRot, g_storedConfig.rotation), g_grabReference.forward);
+@@ -170 +263 @@ void OnGrabStart(XRNode pressedNode) {
+-void OnGrabUpdate(Vec3 rawPos, Quat rawRot) {
++void OnGrabUpdate(Vec3 rawPos, Quat rawRot, UnityEngine::Transform* trackingParent) {
+@@ -190,19 +283,5 @@ void OnGrabUpdate(Vec3 rawPos, Quat rawRot) {
+-        // Solve for pivot that keeps the saber at g_saberWorldPos:
+-        //   saberPos = rawPos + rawRot * (pivot + rot * bladeOffset)
+-        //   pivot = inverse(rawRot) * (g_saberWorldPos - rawPos) - rot * bladeOffset
+-        // Use current rotation (may have been updated above in PosAndRot).
+-        auto curRot = targetCfg.rotation;
+-        Vec3 bladeOff{kSaberFwd.x * g_storedConfig.zOffset,
+-                          kSaberFwd.y * g_storedConfig.zOffset,
+-                          kSaberFwd.z * g_storedConfig.zOffset};
+-        auto rb = Quat::op_Multiply(curRot, bladeOff);
+-
+-        Vec3 diff = {g_saberWorldPos.x - rawPos.x,
+-                     g_saberWorldPos.y - rawPos.y,
+-                     g_saberWorldPos.z - rawPos.z};
+-        auto newTranslation = Quat::op_Multiply(Quat::Inverse(rawRot), diff);
+-        targetCfg.pivot = {
+-            newTranslation.x - rb.x,
+-            newTranslation.y - rb.y,
+-            newTranslation.z - rb.z,
+-        };
++        // Solve for the actual visible root, including child translation and z.
++        auto rootLocal = Quat::op_Multiply(Quat::Inverse(rawRot),
++                            SaberGeometry::Sub(g_saberTrackingPos, rawPos));
++        targetCfg.pivot = SaberGeometry::PivotForRoot(rootLocal, targetCfg.rotation,
++                                g_grabReference, g_storedConfig.zOffset);
+@@ -214,2 +293,2 @@ void OnGrabUpdate(Vec3 rawPos, Quat rawRot) {
+-            // Shift along current saber direction to map pivot to saber root.
+-            // Actual saber forward = currentRotation * kSaberFwd (dynamic).
++            // Preserve the upstream 0.1m wrist-to-root intent, but solve for
++            // the config pivot after accounting for the actual visual child.
+@@ -217,4 +296,2 @@ void OnGrabUpdate(Vec3 rawPos, Quat rawRot) {
+-            auto saberLocalDir = Quat::op_Multiply(targetCfg.rotation, kSaberFwd);
+-            targetCfg.pivot = {origin.x + saberLocalDir.x * kSaberRootOffset,
+-                               origin.y + saberLocalDir.y * kSaberRootOffset,
+-                               origin.z + saberLocalDir.z * kSaberRootOffset};
++            targetCfg.pivot = SaberGeometry::AutoPositionPivot(origin, targetCfg.rotation,
++                                  g_grabReference, targetCfg.zOffset, kSaberRootOffset);
+@@ -298 +375 @@ void OnGrabUpdate(Vec3 rawPos, Quat rawRot) {
+-                        auto grabDir = Quat::op_Multiply(storedQuat, kSaberFwd);
++                        auto grabDir = Quat::op_Multiply(storedQuat, g_grabReference.forward);
+@@ -311,3 +388,4 @@ void OnGrabUpdate(Vec3 rawPos, Quat rawRot) {
+-                        // Compensate pivot for rotation change around controller origin
+-                        auto deltaRot = Quat::op_Multiply(newRot, Quat::Inverse(g_storedConfig.rotation));
+-                        targetCfg.pivot = Quat::op_Multiply(deltaRot, g_storedConfig.pivot);
++                        // Rotate around the actual visible root, keeping its
++                        // position unchanged while the alignment quaternion changes.
++                        targetCfg.pivot = SaberGeometry::PreserveRoot(g_storedConfig.pivot,
++                            g_storedConfig.rotation, newRot, g_grabReference, g_storedConfig.zOffset);
+@@ -335,2 +413,3 @@ void OnGrabUpdate(Vec3 rawPos, Quat rawRot) {
+-    GizmoController::Update(rawPos, rawRot, targetCfg.rotation,
+-                            targetCfg.pivot, gizmoExtraAxis);
++    GizmoController::Update(trackingParent, rawPos, rawRot, targetCfg.rotation,
++                            targetCfg.pivot, g_grabReference, targetCfg.zOffset, gizmoExtraAxis);
++    g_gizmoUpdated = true;
+@@ -358,18 +437,7 @@ void OnGrabEnd() {
+-        // Compensate pivot: rotation changed, so pivot must rotate around
+-        // the reference point (old pivot) to keep the saber root in place.
+-        // newPivot = deltaRot * (oldPivot - pivotRef) + pivotRef
+-        // With pivotRef = oldPivot, this simplifies to: pivot stays the same
+-        // only if rotation is around pivotRef. But our rotation is around
+-        // controller origin, so we need:
+-        // newPivot = newRot * Inverse(oldRot) * oldPivot
+-        {
+-            auto oldRot = g_storedConfig.rotation;
+-            auto newRot = targetCfg.rotation;
+-            auto deltaRot = Quat::op_Multiply(newRot, Quat::Inverse(oldRot));
+-            auto oldPivot = g_storedConfig.pivot;
+-            auto rotatedPivot = Quat::op_Multiply(deltaRot, oldPivot);
+-            targetCfg.pivot = rotatedPivot;
+-            PaperLogger.info("RotAuto pivot compensated: ({:.3f},{:.3f},{:.3f}) -> ({:.3f},{:.3f},{:.3f})",
+-                             oldPivot.x, oldPivot.y, oldPivot.z,
+-                             rotatedPivot.x, rotatedPivot.y, rotatedPivot.z);
+-        }
++        // The per-frame solve already uses this same exact visible-root invariant.
++        auto oldPivot = g_storedConfig.pivot;
++        targetCfg.pivot = SaberGeometry::PreserveRoot(oldPivot, g_storedConfig.rotation,
++                              targetCfg.rotation, g_grabReference, g_storedConfig.zOffset);
++        auto newPivot = targetCfg.pivot;
++        PaperLogger.info("RotAuto root preserved: pivot ({:.3f},{:.3f},{:.3f}) -> ({:.3f},{:.3f},{:.3f})",
++            oldPivot.x,oldPivot.y,oldPivot.z,newPivot.x,newPivot.y,newPivot.z);
+@@ -378,2 +446,2 @@ void OnGrabEnd() {
+-            auto grabDir = Quat::op_Multiply(g_storedConfig.rotation, kSaberFwd);
+-            auto saberDir = Quat::op_Multiply(targetCfg.rotation, kSaberFwd);
++            auto grabDir = Quat::op_Multiply(g_storedConfig.rotation, g_grabReference.forward);
++            auto saberDir = Quat::op_Multiply(targetCfg.rotation, g_grabReference.forward);
+@@ -424,0 +493,12 @@ namespace GestureController {
++void CancelAdjustment(char const* reason) {
++    if (g_state == State::Idle) return;
++    auto& target = g_state == State::AdjustingRight ? GetTweakConfig().right : GetTweakConfig().left;
++    target = g_storedConfig;
++    OffsetController::Refresh();
++    GizmoController::Hide();
++    g_state = State::Idle;
++    g_hasPrevRotAuto = false;
++    g_posAutoTracker.Reset();
++    PaperLogger.info("Gesture cancelled: {} (restored starting offsets)", reason);
++}
++
+@@ -426 +506 @@ void OnControllerUpdate(XRNode node, Vec3 rawPos, Quat rawRot,
+-                        float /*triggerVal*/) {
++                        float triggerVal, bool poseValid, UnityEngine::Transform* controllerTransform) {
+@@ -430,2 +510,9 @@ void OnControllerUpdate(XRNode node, Vec3 rawPos, Quat rawRot,
+-    g_lastRawPos[HandIndex(node)] = rawPos;
+-    g_lastRawRot[HandIndex(node)] = rawRot;
++    int hi = HandIndex(node);
++    g_controllerTransforms[hi] = controllerTransform;
++    g_poseValid[hi] = poseValid && controllerTransform != nullptr && ValidPose(rawPos, rawRot);
++    if (g_poseValid[hi]) {
++        g_lastRawPos[hi] = rawPos;
++        g_lastRawRot[hi] = rawRot;
++        g_lastRawWorldPos[hi] = controllerTransform->get_position();
++        g_lastRawWorldRot[hi] = controllerTransform->get_rotation();
++    }
+@@ -434 +520,0 @@ void OnControllerUpdate(XRNode node, Vec3 rawPos, Quat rawRot,
+-    int hi = HandIndex(node);
+@@ -437 +523 @@ void OnControllerUpdate(XRNode node, Vec3 rawPos, Quat rawRot,
+-    bool triggerDown = IsButtonDown(ControllerButton::Trigger, node);
++    bool triggerDown = ReadButton(ControllerButton::Trigger, node, triggerVal).down;
+@@ -445 +531,19 @@ void OnControllerUpdate(XRNode node, Vec3 rawPos, Quat rawRot,
+-                  SceneTracker::IsInMenu();
++                  SceneTracker::IsInMenu() && g_poseValid[0] && g_poseValid[1]
++                  && OffsetController::GetReference(XRNode::LeftHand).valid
++                  && OffsetController::GetReference(XRNode::RightHand).valid;
++
++    if (g_state != State::Idle) {
++        auto targetNode = g_state == State::AdjustingRight ? XRNode::RightHand : XRNode::LeftHand;
++        auto controller = g_controllerTransforms[HandIndex(targetNode)];
++        auto visible = OffsetController::GetVisibleReference(targetNode);
++        auto parent = controller ? controller->get_parent() : UnityW<UnityEngine::Transform>{};
++        const bool sameIdentity = g_grabController && g_grabVisible && controller
++            && UnityReference::NullablePtr(controller) == UnityReference::NullablePtr(g_grabController) && visible == UnityReference::NullablePtr(g_grabVisible)
++            && static_cast<bool>(parent) == g_grabHadParent
++            && (!g_grabHadParent || (g_grabParent && UnityReference::NullablePtr(parent) == UnityReference::NullablePtr(g_grabParent)));
++        if (!sameIdentity || !SaberGeometry::SameReference(g_grabReference, OffsetController::GetReference(targetNode)))
++            CancelAdjustment("controller, parent or visible saber reference changed or became unavailable");
++    }
++
++    if (g_state != State::Idle && (!active || cfg.adjustmentMode != g_grabMode))
++        CancelAdjustment("menu, mode or tracking changed");
+@@ -447 +551,2 @@ void OnControllerUpdate(XRNode node, Vec3 rawPos, Quat rawRot,
+-    bool btnDown = active && IsButtonDown(cfg.assignedButton, node);
++    const auto assigned = ReadButton(cfg.assignedButton, node, triggerVal);
++    bool btnDown = active && assigned.down;
+@@ -449 +554,17 @@ void OnControllerUpdate(XRNode node, Vec3 rawPos, Quat rawRot,
+-    g_btnHeldDown[hi] = btnDown;
++    const bool buttonEdge = assigned.down != g_btnHeldDown[hi];
++    g_btnHeldDown[hi] = assigned.down;
++
++    // Bounded edge diagnostics, never per-frame logging. Include a blocked
++    // physical press so menu-state and input-provider failures are separable.
++    static int diagnosticsLeft[2] = {64, 64};
++    static int previousMode[2] = {-1, -1};
++    static bool previousActive[2] = {false, false};
++    if (diagnosticsLeft[hi] > 0 && (buttonEdge || previousMode[hi] != (int)cfg.adjustmentMode || previousActive[hi] != active)) {
++        --diagnosticsLeft[hi];
++        PaperLogger.info("Gesture input: hand={} button={} down={} source={} enabled={} mode={} menu={} tracked={}/{} active={}",
++            hi == 0 ? "L" : "R", ControllerButtonToString(cfg.assignedButton), assigned.down, assigned.backend,
++            cfg.enabled, AdjustmentModeToString(cfg.adjustmentMode), SceneTracker::IsInMenu(),
++            g_poseValid[0], g_poseValid[1], active);
++    }
++    previousMode[hi] = (int)cfg.adjustmentMode;
++    previousActive[hi] = active;
+@@ -476 +597 @@ void OnControllerUpdate(XRNode node, Vec3 rawPos, Quat rawRot,
+-            OnGrabUpdate(rawPos, rawRot);
++            OnGrabUpdate(rawPos, rawRot, UnityReference::NullablePtr(controllerTransform->get_parent()));
+@@ -487 +608 @@ void OnControllerUpdate(XRNode node, Vec3 rawPos, Quat rawRot,
+-            OnGrabUpdate(rawPos, rawRot);
++            OnGrabUpdate(rawPos, rawRot, UnityReference::NullablePtr(controllerTransform->get_parent()));
+@@ -492,0 +614,26 @@ void OnControllerUpdate(XRNode node, Vec3 rawPos, Quat rawRot,
++void AfterOffsetApplied(XRNode node) {
++    const bool target = (g_state == State::AdjustingLeft && node == XRNode::LeftHand)
++                     || (g_state == State::AdjustingRight && node == XRNode::RightHand);
++    if (!target || !g_gizmoUpdated) return;
++    ++g_grabRenderFrames;
++    static int remaining = 24;
++    if (remaining <= 0 || (g_grabRenderFrames != 1 && g_grabRenderFrames != 30)) return;
++    auto visible = OffsetController::GetVisibleReference(node);
++    Vec3 start{},end{};
++    if (!visible || !GizmoController::ReadWrittenWorldLine(start,end)) return;
++    --remaining;
++    // Compare the exact SetPosition write-path endpoints with an independent
++    // read of the game's visual Transform AFTER Apply. These are not renderer
++    // readback values and are not both recomputed from our reference basis.
++    auto line = SaberGeometry::Sub(end,start);
++    auto actualDirection = visible->get_forward();
++    auto actualPosition = visible->get_position();
++    float denom = std::sqrt(SaberGeometry::Dot(line,line)*SaberGeometry::Dot(actualDirection,actualDirection));
++    float dot = denom > 1e-8f ? SaberGeometry::Dot(line,actualDirection)/denom : 0;
++    auto delta = SaberGeometry::Sub(start,actualPosition);
++    float distance = std::sqrt(SaberGeometry::Dot(delta,delta));
++    PaperLogger.info("Geometry written_line_to_anchor: hand={} frame={} visible='{}' writtenVsAnchorDot={:.6f} rootDistanceM={:.6f} writtenRoot=({:.4f},{:.4f},{:.4f}) actualRoot=({:.4f},{:.4f},{:.4f}) actualForward=({:.4f},{:.4f},{:.4f})",
++        node == XRNode::LeftHand ? "L" : "R",g_grabRenderFrames,static_cast<std::string>(StringW(visible->get_name())),dot,distance,
++        start.x,start.y,start.z,actualPosition.x,actualPosition.y,actualPosition.z,actualDirection.x,actualDirection.y,actualDirection.z);
++}
++
+diff --git a/src/gizmo_controller.cpp b/src/gizmo_controller.cpp
+index c83f458..356cbbb 100644
+--- a/src/gizmo_controller.cpp
++++ b/src/gizmo_controller.cpp
+@@ -1,0 +2 @@
++#include "tracking_space.hpp"
+@@ -28,0 +30,2 @@ AdjustmentMode g_activeMode = AdjustmentMode::None;
++Vec3 g_writtenStart{}, g_writtenEnd{};
++bool g_hasWrittenLine = false;
+@@ -92,0 +96,5 @@ void SetLine(UnityEngine::GameObject* go, Vec3 start, Vec3 dir, float length) {
++    if (go == g_saberLine) {
++        g_writtenStart = start;
++        g_writtenEnd = end;
++        g_hasWrittenLine = true;
++    }
+@@ -113,4 +121,6 @@ void Show(AdjustmentMode mode) {
+-void Update(Vec3 controllerPos, Quat controllerRot, Quat saberRotation,
+-            Vec3 pivotLocal, Vec3 extraAxis) {
+-    auto pivotOffset = Quat::op_Multiply(controllerRot, pivotLocal);
+-    Vec3 pivotWorld = {controllerPos.x + pivotOffset.x,
++void Update(UnityEngine::Transform* trackingParent,
++            Vec3 controllerPos, Quat controllerRot, Quat saberRotation,
++            Vec3 pivotLocal, SaberGeometry::Reference reference, float zOffset, Vec3 extraAxis) {
++    auto rootLocal = SaberGeometry::Root(pivotLocal, saberRotation, reference, zOffset);
++    auto pivotOffset = Quat::op_Multiply(controllerRot, rootLocal);
++    Vec3 pivotTracking = {controllerPos.x + pivotOffset.x,
+@@ -120,3 +130,5 @@ void Update(Vec3 controllerPos, Quat controllerRot, Quat saberRotation,
+-    auto saberWorldRot = Quat::op_Multiply(controllerRot, saberRotation);
+-    Vec3 saberFwd{kSaberFwdX, kSaberFwdY, kSaberFwdZ};
+-    auto saberDir = Quat::op_Multiply(saberWorldRot, saberFwd);
++    auto saberTrackingRot = Quat::op_Multiply(controllerRot, saberRotation);
++    auto saberFwd = reference.forward;
++    auto saberDirTracking = Quat::op_Multiply(saberTrackingRot, saberFwd);
++    auto pivotWorld = TrackingSpace::WorldPoint(trackingParent, pivotTracking);
++    auto saberDir = TrackingSpace::WorldDirection(trackingParent, saberDirTracking);
+@@ -126 +138,2 @@ void Update(Vec3 controllerPos, Quat controllerRot, Quat saberRotation,
+-        auto worldAxis = Quat::op_Multiply(controllerRot, extraAxis);
++        auto trackingAxis = Quat::op_Multiply(controllerRot, extraAxis);
++        auto worldAxis = TrackingSpace::WorldDirection(trackingParent, trackingAxis);
+@@ -131,0 +145,7 @@ void Update(Vec3 controllerPos, Quat controllerRot, Quat saberRotation,
++bool ReadWrittenWorldLine(Vec3& start, Vec3& end) {
++    if (!g_saberLine || !g_hasWrittenLine) return false;
++    start = g_writtenStart;
++    end = g_writtenEnd;
++    return true;
++}
++
+@@ -132,0 +153 @@ void Hide() {
++    g_hasWrittenLine = false;
+diff --git a/src/hooks/scene_hooks.cpp b/src/hooks/scene_hooks.cpp
+index 6d3628b..8a4205f 100644
+--- a/src/hooks/scene_hooks.cpp
++++ b/src/hooks/scene_hooks.cpp
+@@ -2,0 +3,2 @@
++#include "menu_scene_state.hpp"
++#include "gesture_controller.hpp"
+@@ -5 +7 @@
+-#include "GlobalNamespace/StandardLevelScenesTransitionSetupDataSO.hpp"
++#include "GlobalNamespace/StandardLevelScenesTransitionSetupData.hpp"
+@@ -6,0 +9,4 @@
++#include "UnityEngine/SceneManagement/SceneManager.hpp"
++#include "UnityEngine/SceneManagement/Scene.hpp"
++#include "UnityEngine/SceneManagement/SceneHandle.hpp"
++#include "UnityEngine/SceneManagement/LoadSceneMode.hpp"
+@@ -9 +15 @@ namespace {
+-bool g_inMenu = true;  // We load during menu, so default is true.
++MenuSceneState g_sceneState;
+@@ -13 +19 @@ namespace SceneTracker {
+-bool IsInMenu() { return g_inMenu; }
++bool IsInMenu() { return g_sceneState.IsInMenu(); }
+@@ -18,2 +24,2 @@ MAKE_HOOK_MATCH(
+-    SLSTSD_InitAndSetupScenes,
+-    &GlobalNamespace::StandardLevelScenesTransitionSetupDataSO::InitAndSetupScenes,
++    SLSTSD_Init,
++    &GlobalNamespace::StandardLevelScenesTransitionSetupData::Init,
+@@ -21,7 +27,26 @@ MAKE_HOOK_MATCH(
+-    GlobalNamespace::StandardLevelScenesTransitionSetupDataSO* self,
+-    GlobalNamespace::PlayerSpecificSettings* settings,
+-    StringW backButtonText,
+-    bool startPaused) {
+-    g_inMenu = false;
+-    PaperLogger.info("Scene: entering gameplay (InitAndSetupScenes)");
+-    SLSTSD_InitAndSetupScenes(self, settings, backButtonText, startPaused);
++    GlobalNamespace::StandardLevelScenesTransitionSetupData* self,
++    StringW gameMode,
++    by_ref<GlobalNamespace::BeatmapKey> beatmapKey,
++    GlobalNamespace::BeatmapLevel* beatmapLevel,
++    GlobalNamespace::OverrideEnvironmentSettings* overrideEnvironmentSettings,
++    GlobalNamespace::ColorScheme* playerOverrideColorScheme,
++    bool playerOverrideLightshowColors,
++    GlobalNamespace::GameplayModifiers* gameplayModifiers,
++    GlobalNamespace::PlayerSpecificSettings* playerSpecificSettings,
++    GlobalNamespace::PracticeSettings* practiceSettings,
++    GlobalNamespace::EnvironmentsListModel* environmentsListModel,
++    GlobalNamespace::AudioClipAsyncLoader* audioClipAsyncLoader,
++    GlobalNamespace::SettingsManager* settingsManager,
++    GlobalNamespace::GameplayAdditionalInformation* gameplayAdditionalInformation,
++    GlobalNamespace::BeatmapDataLoader* beatmapDataLoader,
++    GlobalNamespace::BeatmapLevelsEntitlementModel* beatmapLevelsEntitlementModel,
++    GlobalNamespace::BeatmapLevelsModel* beatmapLevelsModel,
++    GlobalNamespace::IBeatmapLevelData* beatmapLevelData) {
++    GestureController::CancelAdjustment("starting gameplay");
++    g_sceneState.BeginGameplay();
++    PaperLogger.info("Scene: entering gameplay (Init)");
++    SLSTSD_Init(self, gameMode, beatmapKey, beatmapLevel, overrideEnvironmentSettings,
++        playerOverrideColorScheme, playerOverrideLightshowColors, gameplayModifiers,
++        playerSpecificSettings, practiceSettings, environmentsListModel, audioClipAsyncLoader,
++        settingsManager, gameplayAdditionalInformation, beatmapDataLoader,
++        beatmapLevelsEntitlementModel, beatmapLevelsModel, beatmapLevelData);
+@@ -30 +55,2 @@ MAKE_HOOK_MATCH(
+-// ── Returning to menu ───────────────────────────────────────────────────
++// Follow actual scene lifetime: 1.45.1 does not call the old Finish(results)
++// overload on every path back to song selection.
+@@ -32,4 +58,2 @@ MAKE_HOOK_MATCH(
+-    SLSTSD_Finish,
+-    static_cast<void (GlobalNamespace::StandardLevelScenesTransitionSetupDataSO::*)(
+-        GlobalNamespace::LevelCompletionResults*)>(
+-        &GlobalNamespace::StandardLevelScenesTransitionSetupDataSO::Finish),
++    SceneManager_Internal_SceneLoaded,
++    &UnityEngine::SceneManagement::SceneManager::Internal_SceneLoaded,
+@@ -37,5 +61,22 @@ MAKE_HOOK_MATCH(
+-    GlobalNamespace::StandardLevelScenesTransitionSetupDataSO* self,
+-    GlobalNamespace::LevelCompletionResults* results) {
+-    SLSTSD_Finish(self, results);
+-    g_inMenu = true;
+-    PaperLogger.info("Scene: back to menu (Finish)");
++    UnityEngine::SceneManagement::Scene scene,
++    UnityEngine::SceneManagement::LoadSceneMode mode) {
++    if (scene.IsValid()) {
++        auto name = std::string(scene.get_name());
++        auto handle = UnityEngine::SceneManagement::SceneHandle::op_Implicit_int32_t(scene.handle);
++        g_sceneState.Loaded(handle, name);
++        if (name == "GameCore") GestureController::CancelAdjustment("GameCore loaded");
++        if (name == "GameCore" || name == "MenuCore")
++            PaperLogger.info("Scene loaded: {} menu={}", name, g_sceneState.IsInMenu());
++    }
++    SceneManager_Internal_SceneLoaded(scene, mode);
++}
++
++MAKE_HOOK_MATCH(
++    SceneManager_Internal_SceneUnloaded,
++    &UnityEngine::SceneManagement::SceneManager::Internal_SceneUnloaded,
++    void, UnityEngine::SceneManagement::Scene scene) {
++    auto handle = UnityEngine::SceneManagement::SceneHandle::op_Implicit_int32_t(scene.handle);
++    const bool gameplayUnloaded = g_sceneState.Unloaded(handle);
++    SceneManager_Internal_SceneUnloaded(scene);
++    if (gameplayUnloaded)
++        PaperLogger.info("GameCore unloaded: menu={}", g_sceneState.IsInMenu());
+@@ -46,2 +87,3 @@ void InstallHooks() {
+-    INSTALL_HOOK(PaperLogger, SLSTSD_InitAndSetupScenes);
+-    INSTALL_HOOK(PaperLogger, SLSTSD_Finish);
++    INSTALL_HOOK(PaperLogger, SLSTSD_Init);
++    INSTALL_HOOK(PaperLogger, SceneManager_Internal_SceneLoaded);
++    INSTALL_HOOK(PaperLogger, SceneManager_Internal_SceneUnloaded);
+diff --git a/src/hooks/vr_controller_hook.cpp b/src/hooks/vr_controller_hook.cpp
+index b609db6..4f92206 100644
+--- a/src/hooks/vr_controller_hook.cpp
++++ b/src/hooks/vr_controller_hook.cpp
+@@ -3,0 +4 @@
++#include "unity_reference.hpp"
+@@ -8,0 +10 @@
++#include <limits>
+@@ -39,0 +42,2 @@ MAKE_HOOK_MATCH(VRController_Update, &GlobalNamespace::VRController::Update, voi
++    if (!transform) return;
++
+@@ -55,0 +60,4 @@ MAKE_HOOK_MATCH(VRController_Update, &GlobalNamespace::VRController::Update, voi
++    // Resolve the actual game visual anchor in this raw controller frame.
++    // The original Update has reset our previous frame's controller offset.
++    OffsetController::CaptureReference(node, UnityReference::NullablePtr(transform), UnityReference::NullablePtr(self->get_viewAnchorTransform()));
++
+@@ -57 +65 @@ MAKE_HOOK_MATCH(VRController_Update, &GlobalNamespace::VRController::Update, voi
+-    float triggerVal = 0.0f;
++    float triggerVal = std::numeric_limits<float>::quiet_NaN();
+@@ -62 +70 @@ MAKE_HOOK_MATCH(VRController_Update, &GlobalNamespace::VRController::Update, voi
+-    GestureController::OnControllerUpdate(node, rawPos, rawRot, triggerVal);
++    GestureController::OnControllerUpdate(node, rawPos, rawRot, triggerVal, self->get_poseValid(), UnityReference::NullablePtr(transform));
+@@ -65 +73,2 @@ MAKE_HOOK_MATCH(VRController_Update, &GlobalNamespace::VRController::Update, voi
+-    OffsetController::Apply(node, transform);
++    OffsetController::Apply(node, UnityReference::NullablePtr(transform));
++    GestureController::AfterOffsetApplied(node);
+diff --git a/src/main.cpp b/src/main.cpp
+index f4d8a16..a31715d 100644
+--- a/src/main.cpp
++++ b/src/main.cpp
+@@ -33 +33 @@ MOD_EXTERN_FUNC void setup(CModInfo *info) noexcept {
+-  // refresh until late_load when il2cpp_functions::Init() has run -- otherwise
++  // refresh until late_load when i2c::functions::initialize() has run -- otherwise
+@@ -42 +42 @@ MOD_EXTERN_FUNC void late_load() noexcept {
+-  il2cpp_functions::Init();
++  i2c::functions::initialize();
+diff --git a/src/offset_controller.cpp b/src/offset_controller.cpp
+index 6f20bee..22d8acb 100644
+--- a/src/offset_controller.cpp
++++ b/src/offset_controller.cpp
+@@ -2 +2 @@
+-
++#include "unity_reference.hpp"
+@@ -4,0 +5,2 @@
++#include "scene_tracker.hpp"
++#include <cmath>
+@@ -7 +9,3 @@ namespace {
+-
++using V = UnityEngine::Vector3;
++using Q = UnityEngine::Quaternion;
++using Node = UnityEngine::XR::XRNode;
+@@ -9,2 +13,9 @@ struct HandCache {
+-    UnityEngine::Vector3 translation{0.0f, 0.0f, 0.0f};
+-    UnityEngine::Quaternion rotation{0.0f, 0.0f, 0.0f, 1.0f};
++    V translation{};
++    Q rotation{0,0,0,1};
++    UnityW<UnityEngine::Transform> controller{};
++    UnityW<UnityEngine::Transform> visible{};
++    SaberGeometry::Reference reference{};
++    bool warnedUnresolved = false;
++    int unresolvedWarningsRemaining = 4;
++    int appliedFrames = 0;
++    int geometryLogsRemaining = 12;
+@@ -12,18 +23,13 @@ struct HandCache {
+-
+-HandCache g_left{};
+-HandCache g_right{};
+-
+-HandCache BuildCache(HandTweakConfig const& cfg) {
+-    HandCache out{};
+-    out.rotation = cfg.rotation;
+-    // pivot + rotation * (saberFwd * zOffset)
+-    UnityEngine::Vector3 bladeOffset{kSaberFwdX * cfg.zOffset,
+-                                     kSaberFwdY * cfg.zOffset,
+-                                     kSaberFwdZ * cfg.zOffset};
+-    UnityEngine::Vector3 rotated = UnityEngine::Quaternion::op_Multiply(out.rotation, bladeOffset);
+-    out.translation = {
+-        cfg.pivot.x + rotated.x,
+-        cfg.pivot.y + rotated.y,
+-        cfg.pivot.z + rotated.z,
+-    };
+-    return out;
++HandCache g_hands[2];
++int Index(Node node) { return node==Node::LeftHand?0:node==Node::RightHand?1:-1; }
++bool Finite(V v) { return std::isfinite(v.x)&&std::isfinite(v.y)&&std::isfinite(v.z); }
++void RefreshHand(int i) {
++    auto const& cfg=i==0?GetTweakConfig().left:GetTweakConfig().right;
++    auto& hand=g_hands[i];
++    hand.rotation=cfg.rotation;
++    hand.translation=cfg.pivot;
++    if (hand.reference.valid)
++        hand.translation=SaberGeometry::ControllerTranslation(cfg.pivot,cfg.rotation,hand.reference,cfg.zOffset);
++    // Without a resolved reference, retain manual numeric pivot/rotation and
++    // do not invent a z direction. Automatic gestures are blocked separately.
++}
+@@ -31,3 +36,0 @@ HandCache BuildCache(HandTweakConfig const& cfg) {
+-
+-}  // namespace
+-
+@@ -35 +38,45 @@ namespace OffsetController {
+-
++void CaptureReference(Node node,UnityEngine::Transform* controller,UnityEngine::Transform* viewAnchor) {
++    int i=Index(node);if(i<0)return;
++    auto& hand=g_hands[i];
++    UnityW<UnityEngine::Transform> visible{};
++    if(controller && viewAnchor && viewAnchor!=controller && viewAnchor->IsChildOf(controller)) visible=viewAnchor;
++    if(controller && !visible) {
++        // Confirmed menu visual name; never substitute an arbitrary first child.
++        for(int n=0;n<controller->get_childCount();++n) {
++            auto child=controller->GetChild(n);
++            if(child && static_cast<std::string>(StringW(child->get_name()))=="MenuHandle") {visible=child;break;}
++        }
++    }
++    SaberGeometry::Reference ref{};
++    if(controller && visible) {
++        if(UnityReference::NullablePtr(visible->get_parent())==controller) {
++            ref.root=visible->get_localPosition();
++            ref.forward=SaberGeometry::Rotate(visible->get_localRotation(),V{0,0,1});
++        } else {
++            ref.root=controller->InverseTransformPoint(visible->get_position());
++            ref.forward=controller->InverseTransformDirection(visible->get_forward());
++        }
++        float norm2=SaberGeometry::Dot(ref.forward,ref.forward);
++        ref.valid=Finite(ref.root)&&Finite(ref.forward)&&norm2>1e-6f;
++        if(ref.valid)ref.forward=SaberGeometry::Scale(ref.forward,1/std::sqrt(norm2));
++    }
++    bool identityChanged=UnityReference::NullablePtr(hand.controller)!=controller || UnityReference::NullablePtr(hand.visible)!=UnityReference::NullablePtr(visible);
++    bool changed=identityChanged
++                 || hand.reference.valid!=ref.valid || (ref.valid&&!SaberGeometry::SameReference(hand.reference,ref));
++    if(identityChanged)hand.appliedFrames=0;
++    hand.controller=controller;hand.visible=visible;hand.reference=ref;
++    if(changed)RefreshHand(i);
++    if(!ref.valid && !hand.warnedUnresolved && hand.unresolvedWarningsRemaining > 0) {
++        --hand.unresolvedWarningsRemaining;
++        PaperLogger.warn("Saber reference unresolved: hand={}; auto gestures blocked, manual pivot/rotation retained, z direction not guessed",i==0?"L":"R");
++        hand.warnedUnresolved=true;
++    } else if(ref.valid)hand.warnedUnresolved=false;
++}
++SaberGeometry::Reference GetReference(Node node) {
++    int i=Index(node);if(i<0)return {};
++    auto const& hand=g_hands[i];auto ref=hand.reference;
++    ref.valid=ref.valid&&hand.controller&&hand.visible;return ref;
++}
++UnityEngine::Transform* GetVisibleReference(Node node) {
++    int i=Index(node);return i>=0&&GetReference(node).valid?UnityReference::NullablePtr(g_hands[i].visible):nullptr;
++}
+@@ -37,4 +84,2 @@ void Refresh() {
+-    auto const& cfg = GetTweakConfig();
+-    g_left = BuildCache(cfg.left);
+-    g_right = BuildCache(cfg.right);
+-    PaperLogger.debug("Offset cache refreshed (enabled={})", cfg.enabled);
++    RefreshHand(0);RefreshHand(1);
++    PaperLogger.debug("Offset cache refreshed (enabled={})",GetTweakConfig().enabled);
+@@ -42,11 +87,20 @@ void Refresh() {
+-
+-void Apply(UnityEngine::XR::XRNode node, UnityEngine::Transform* transform) {
+-    if (!GetTweakConfig().enabled || transform == nullptr) return;
+-
+-    HandCache const* cache = nullptr;
+-    if (node == UnityEngine::XR::XRNode::LeftHand) {
+-        cache = &g_left;
+-    } else if (node == UnityEngine::XR::XRNode::RightHand) {
+-        cache = &g_right;
+-    } else {
+-        return;
++void Apply(Node node,UnityEngine::Transform* transform) {
++    if(!GetTweakConfig().enabled || !transform)return;
++    int i=Index(node);if(i<0)return;
++    auto& hand=g_hands[i];
++    transform->Translate(hand.translation);
++    transform->set_localRotation(Q::op_Multiply(transform->get_localRotation(),hand.rotation));
++    // Bounded post-Apply anchor coverage for menu/gameplay transitions. These
++    // are independent Unity Transform reads, not a claim about rendered pixels.
++    if(hand.appliedFrames < 30)++hand.appliedFrames;
++    if(hand.geometryLogsRemaining > 0 && (hand.appliedFrames == 1 || hand.appliedFrames == 30)) {
++        if(hand.appliedFrames == 30)++hand.appliedFrames;
++        --hand.geometryLogsRemaining;
++        const bool valid=GetReference(node).valid;
++        auto p=valid?hand.visible->get_position():V{};
++        auto f=valid?hand.visible->get_forward():V{};
++        PaperLogger.info("Geometry after_apply_reference: hand={} menu={} frame={} valid={} controller='{}' visible='{}' localRoot=({:.4f},{:.4f},{:.4f}) localForward=({:.4f},{:.4f},{:.4f}) actualRoot=({:.4f},{:.4f},{:.4f}) actualForward=({:.4f},{:.4f},{:.4f})",
++            i==0?"L":"R",SceneTracker::IsInMenu(),hand.appliedFrames==31?30:hand.appliedFrames,valid,
++            static_cast<std::string>(StringW(transform->get_name())),valid?static_cast<std::string>(StringW(hand.visible->get_name())):"missing",
++            hand.reference.root.x,hand.reference.root.y,hand.reference.root.z,
++            hand.reference.forward.x,hand.reference.forward.y,hand.reference.forward.z,p.x,p.y,p.z,f.x,f.y,f.z);
+@@ -54,7 +107,0 @@ void Apply(UnityEngine::XR::XRNode node, UnityEngine::Transform* transform) {
+-
+-    // Translate in the controller's own frame: this matches transform.Translate(v)
+-    // with the default Space.Self, i.e. localPosition += localRotation * v.
+-    transform->Translate(cache->translation);
+-
+-    auto localRot = transform->get_localRotation();
+-    transform->set_localRotation(UnityEngine::Quaternion::op_Multiply(localRot, cache->rotation));
+@@ -62,2 +109 @@ void Apply(UnityEngine::XR::XRNode node, UnityEngine::Transform* transform) {
+-
+-}  // namespace OffsetController
++}
+diff --git a/src/rotation_point_tracker.cpp b/src/rotation_point_tracker.cpp
+index 749996e..6ff239a 100644
+--- a/src/rotation_point_tracker.cpp
++++ b/src/rotation_point_tracker.cpp
+@@ -107,2 +107,3 @@ void RotationPointTracker::Update(Vec3 pos, Quat rot) {
+-        prevPos_ = pos;
+-        prevRot_ = rot;
++        // Accumulate rotation from the last accepted pose. Resetting the
++        // anchor each frame discards all motion below 2 degrees per frame
++        // (180 degrees/second at 90 Hz), regardless of capture duration.
+diff --git a/src/ui/settings_tab.cpp b/src/ui/settings_tab.cpp
+index a08a422..6e5aa97 100644
+--- a/src/ui/settings_tab.cpp
++++ b/src/ui/settings_tab.cpp
+@@ -10,0 +11 @@
++#include "bsml/shared/BSML-Lite/Creation/Misc.hpp"
+@@ -225,0 +227 @@ void BuildTabContent(UnityEngine::GameObject* container, bool firstActivation) {
++                GestureController::CancelAdjustment("enable setting changed");
+@@ -236,0 +239 @@ void BuildTabContent(UnityEngine::GameObject* container, bool firstActivation) {
++                GestureController::CancelAdjustment("adjustment mode changed");
+@@ -247,0 +251,4 @@ void BuildTabContent(UnityEngine::GameObject* container, bool firstActivation) {
++        BSML::Lite::AddHoverHint(g_modeDropdown,
++            "Hold the assigned button on the OPPOSITE hand, then move the hand being adjusted. Release to save.\n"
++            "Auto Pos: rotate your wrist around a steady pivot in several directions.\n"
++            "Auto Rot: roll around the intended saber axis. Left/Right below selects sliders only.");
+@@ -263,0 +271 @@ void BuildTabContent(UnityEngine::GameObject* container, bool firstActivation) {
++                    GestureController::CancelAdjustment("assigned button changed");
+@@ -286,0 +295 @@ void BuildTabContent(UnityEngine::GameObject* container, bool firstActivation) {
++                            GestureController::CancelAdjustment("offset slot changed");
+diff --git a/include/config-compat.hpp b/include/config-compat.hpp
+new file mode 100644
+--- /dev/null
++++ b/include/config-compat.hpp
+@@ -0,0 +1,45 @@
++#pragma once
++#include "scotland2/shared/loader.hpp"
++#include "beatsaber-hook/shared/rapidjson.hpp"
++#include <filesystem>
++#include <fstream>
++#include <stdexcept>
++#include <string>
++
++// Preserve the original JSON schema and package-specific locations after
++// bshook 8 removed its legacy Configuration wrapper.
++inline std::filesystem::path CongConfigRoot() {
++    return std::filesystem::path("/sdcard/ModData") / modloader::get_application_id();
++}
++inline std::string getDataDir(modloader::ModInfo const& info) {
++    return (CongConfigRoot() / "Mods" / info.id).string() + "/";
++}
++struct Configuration {
++    modloader::ModInfo info;
++    rapidjson::Document config;
++    explicit Configuration(modloader::ModInfo value) : info(std::move(value)) { config.SetObject(); }
++    std::filesystem::path Path() const { return CongConfigRoot() / "Configs" / (info.id + ".json"); }
++    void Load() {
++        std::ifstream stream(Path());
++        if (!stream) return;
++        std::string json((std::istreambuf_iterator<char>(stream)), {});
++        config.Parse(json.c_str());
++        if (config.HasParseError() || !config.IsObject())
++            throw std::runtime_error("CongXinJian config is invalid; refusing to overwrite it");
++    }
++    void Write() {
++        auto path = Path();
++        std::filesystem::create_directories(path.parent_path());
++        rapidjson::StringBuffer text;
++        rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(text);
++        config.Accept(writer);
++        auto temporary = path; temporary += ".tmp";
++        {
++            std::ofstream stream(temporary);
++            stream << text.GetString() << '\n';
++            stream.flush();
++            if (!stream) throw std::runtime_error("CongXinJian config write failed");
++        }
++        std::filesystem::rename(temporary, path);
++    }
++};
+diff --git a/include/menu_scene_state.hpp b/include/menu_scene_state.hpp
+new file mode 100644
+--- /dev/null
++++ b/include/menu_scene_state.hpp
+@@ -0,0 +1,26 @@
++#pragma once
++#include <optional>
++#include <string_view>
++
++// A completion-results overload is not a scene-exit notification. Keep the
++// actual GameCore lifetime, including additive scenes and restart ordering.
++class MenuSceneState {
++    std::optional<int> gameplayHandle;
++    bool startingGameplay = false;
++public:
++    bool IsInMenu() const { return !startingGameplay && !gameplayHandle; }
++    void BeginGameplay() { startingGameplay = true; }
++    void Loaded(int handle, std::string_view name) {
++        if (name == "GameCore") {
++            gameplayHandle = handle;
++            startingGameplay = false;
++        } else if (name == "MenuCore" && !gameplayHandle) {
++            startingGameplay = false;
++        }
++    }
++    bool Unloaded(int handle) {
++        if (!gameplayHandle || *gameplayHandle != handle) return false;
++        gameplayHandle.reset();
++        return true;
++    }
++};
+diff --git a/include/saber_geometry_math.hpp b/include/saber_geometry_math.hpp
+new file mode 100644
+--- /dev/null
++++ b/include/saber_geometry_math.hpp
+@@ -0,0 +1,44 @@
++#pragma once
++#include "UnityEngine/Vector3.hpp"
++#include "UnityEngine/Quaternion.hpp"
++#include <cmath>
++
++// All values here are in the raw controller's local frame. The reference is
++// measured from its actual visual anchor; there is no fixed controller angle.
++namespace SaberGeometry {
++using V = UnityEngine::Vector3;
++using Q = UnityEngine::Quaternion;
++struct Reference { V root{}; V forward{}; bool valid = false; };
++inline V Add(V a,V b) { return {a.x+b.x,a.y+b.y,a.z+b.z}; }
++inline V Sub(V a,V b) { return {a.x-b.x,a.y-b.y,a.z-b.z}; }
++inline V Scale(V a,float s) { return {a.x*s,a.y*s,a.z*s}; }
++inline float Dot(V a,V b) { return a.x*b.x+a.y*b.y+a.z*b.z; }
++inline V Rotate(Q q,V v) {
++    // Quaternion-vector product for the normalized Unity/config quaternion.
++    V u{q.x,q.y,q.z};
++    V cross{u.y*v.z-u.z*v.y,u.z*v.x-u.x*v.z,u.x*v.y-u.y*v.x};
++    return Add(Add(Scale(u,2*Dot(u,v)),Scale(v,q.w*q.w-Dot(u,u))),Scale(cross,2*q.w));
++}
++inline V ControllerTranslation(V pivot,Q rotation,Reference ref,float z) {
++    return Add(pivot,Rotate(rotation,Scale(ref.forward,z)));
++}
++inline V ChildContribution(Q rotation, Reference ref, float z) {
++    return Rotate(rotation,Add(ref.root,Scale(ref.forward,z)));
++}
++inline V Root(V pivot,Q rotation,Reference ref,float z) {
++    return Add(pivot,ChildContribution(rotation,ref,z));
++}
++inline V PivotForRoot(V desiredRoot,Q rotation,Reference ref,float z) {
++    return Sub(desiredRoot,ChildContribution(rotation,ref,z));
++}
++inline V AutoPositionPivot(V wrist,Q rotation,Reference ref,float z,float rootDistance) {
++    return PivotForRoot(Add(wrist,Scale(Rotate(rotation,ref.forward),rootDistance)),rotation,ref,z);
++}
++inline V PreserveRoot(V oldPivot,Q oldRotation,Q newRotation,Reference ref,float z) {
++    return PivotForRoot(Root(oldPivot,oldRotation,ref,z),newRotation,ref,z);
++}
++inline bool SameReference(Reference a,Reference b) {
++    auto p=Sub(a.root,b.root), f=Sub(a.forward,b.forward);
++    return a.valid && b.valid && Dot(p,p)<1e-8f && Dot(f,f)<1e-8f;
++}
++}
+diff --git a/include/tracking_space.hpp b/include/tracking_space.hpp
+new file mode 100644
+--- /dev/null
++++ b/include/tracking_space.hpp
+@@ -0,0 +1,15 @@
++#pragma once
++
++// Controller samples and calibration stay in the tracking parent's local frame.
++// Only presentation crosses to world space. Directions intentionally exclude
++// parent translation and scale; gizmo lengths remain measured in world metres.
++namespace TrackingSpace {
++template<class Transform, class Vector>
++Vector WorldPoint(Transform* parent, Vector point) {
++    return parent ? parent->TransformPoint(point) : point;
++}
++template<class Transform, class Vector>
++Vector WorldDirection(Transform* parent, Vector direction) {
++    return parent ? parent->TransformDirection(direction) : direction;
++}
++}
+diff --git a/include/unity_reference.hpp b/include/unity_reference.hpp
+new file mode 100644
+--- /dev/null
++++ b/include/unity_reference.hpp
+@@ -0,0 +1,10 @@
++#pragma once
++
++namespace UnityReference {
++// UnityW::ptr() throws for null or destroyed Unity objects. Optional anchors and
++// initially empty caches must be checked before extracting their live pointer.
++template <class WeakReference>
++auto NullablePtr(WeakReference reference) -> decltype(reference.ptr()) {
++    return reference ? reference.ptr() : nullptr;
++}
++}  // namespace UnityReference

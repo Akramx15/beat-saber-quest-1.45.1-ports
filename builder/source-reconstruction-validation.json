@@ -53,5 +53,11 @@
     "commit": "17448f9e13dfabb4c05b948c3951f85e939d78ba",
     "checked_files": 5,
     "result": "pass"
+  },
+  "CongXinJian": {
+    "commit": "ece4b8a01c14930bc61bdd500ba36152b869855d",
+    "checked_files": 22,
+    "result": "pass",
+    "independent_owner_validation": true
   }
 }

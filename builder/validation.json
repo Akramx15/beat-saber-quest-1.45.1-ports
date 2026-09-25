@@ -5,13 +5,13 @@
   "complete_clean_build_pass": false,
   "runtime_tested_portable_outputs": false,
   "host_tests": {
-    "passed": 18,
+    "passed": 21,
     "failed": 0,
-    "scope": "Integrity guards, safe archive paths, compiler launch arguments, fingerprint tampering, declared build order."
+    "scope": "Source/header/dependency integrity, safe archive paths, compiler launch arguments, fingerprints, atomic native installation and real two-process cache serialization."
   },
   "source_reconstruction": {
-    "targets": 11,
-    "changed_files": 227,
+    "targets": 12,
+    "changed_files": 249,
     "result": "pass",
     "report": "source-reconstruction-validation.json"
   },
@@ -48,10 +48,10 @@
       "state": "fresh_Android_build_and_initial_QMOD_passed_final_receipt_pending"
     },
     "Tracks": {
-      "state": "not_yet_clean_built"
+      "state": "fresh_Android_Rust_and_native_build_passed_initial_receipt_pending_final_seal"
     },
     "NoodleExtensions": {
-      "state": "not_yet_clean_built"
+      "state": "fresh_native_build_in_progress"
     },
     "Chroma": {
       "state": "not_yet_clean_built"
@@ -64,6 +64,11 @@
     },
     "SongDownloader": {
       "state": "not_yet_clean_built"
+    },
+    "CongXinJian": {
+      "state": "portable_clean_build_pending",
+      "frozen_v5_local_startup": "40_seconds_alive_no_fatal",
+      "physical_calibration": "pending"
     }
   },
   "bootstrap": {
@@ -75,6 +80,6 @@
   "limitations": [
     "No portable output has been installed or runtime-tested on a headset.",
     "Windows WSL execution and the optional full toolchain bootstrap have not been end-to-end tested.",
-    "CongXinJian remains held pending calibration review."
+    "CongXinJian v5 has bounded startup validation; physical calibration and rebuilt output runtime remain unverified."
   ]
 }
