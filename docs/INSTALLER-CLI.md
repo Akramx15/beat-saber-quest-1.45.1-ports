@@ -28,7 +28,7 @@ python manage_modpack.py install --profile recommended --qmods qmods --build-rec
 
 Select one of the profile names printed in `modpack.json`. Selecting a profile also includes its dependencies. An installed native outside the selected set causes a refusal before any device changes; this installer does not silently remove unrelated mods.
 
-Install verifies the exact game version, the installed APK's Scotland2 marker and pinned ARM64 bootstrap, and the pinned external loader. The owner must already have patched their own installed game. This tool never installs an APK, changes Android permissions, or modifies songs, player saves, runtime settings or accounts.
+Install verifies the exact game version, the installed APK's Scotland2 marker and pinned ARM64 bootstrap, and the pinned external loader. Offline `verify` checks the local package set; only `install` checks these headset-side requirements. The owner must already have patched their own installed game. Installation force-stops Beat Saber, so finish playing first. This tool never installs an APK, changes Android permissions, or modifies songs, player saves, runtime settings or accounts.
 
 Before writing, it saves and SHA256-verifies every file it may replace or remove under a unique `private-backups` directory. It uploads into a temporary directory, verifies the uploads, then commits individual files. Older registrations of the selected package IDs are replaced. If a transfer or commit fails, it attempts to restore all changed files from that verified backup. A concurrent file change is preserved and reported instead of overwritten. The backup's `receipt.json` records completed work, rollback failures and cleanup issues. Keep that directory private; do not upload it to an issue.
 
